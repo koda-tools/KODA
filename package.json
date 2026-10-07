@@ -1,0 +1,48 @@
+{
+  "name": "koda-agent",
+  "version": "0.1.0",
+  "description": "A secure TypeScript AI coding agent CLI and SDK",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "koda": "bin/koda.js"
+  },
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "files": [
+    "bin",
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "koda": "tsc -p tsconfig.json && node ./bin/koda.js",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "format:check": "prettier --check package.json tsconfig.json \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write package.json tsconfig.json \"src/**/*.ts\" \"test/**/*.ts\"",
+    "test": "node --test --import tsx \"test/**/*.test.ts\""
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.68.0",
+    "@google/genai": "1.30.0",
+    "@termuijs/quick": "0.1.7",
+    "@termuijs/store": "0.1.7",
+    "@termuijs/ui": "0.1.7",
+    "@termuijs/widgets": "0.1.7",
+    "diff": "9.0.0",
+    "jsonc-parser": "3.3.1",
+    "openai": "6.8.1",
+    "shiki": "4.4.3",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.0",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,77 @@
+# Spec delta for the "write-file-diff-preview" capability.
+capability: write-file-diff-preview
+purpose: Mostrar, antes da confirmação de writeFile, um diff entre o conteúdo anterior e o novo quando o alvo é um arquivo existente, mantendo a renderização numerada e colorida para arquivos novos, sem relaxar nenhuma regra de segurança.
+
+operations:
+  - op: add
+    id: previous-content-read
+    title: Leitura segura do conteúdo anterior
+    statement: O sistema DEVE ler o conteúdo anterior de um alvo de writeFile somente após resolveSafeWritePath, devolvendo before indefinido para arquivo novo e nunca lendo caminhos bloqueados.
+    verify: npm test
+    scenarios:
+      - when: o alvo é um arquivo existente, legível, UTF-8 e dentro do limite de bytes
+        then: o conteúdo anterior é devolvido como before string para o cálculo do diff
+      - when: o alvo não existe
+        then: before é indefinido e o arquivo é tratado como novo
+      - when: o alvo é binário, ilegível ou acima do limite de bytes
+        then: nenhum diff é gerado, um aviso curto é exibido e o fluxo de confirmação segue normal
+      - when: o alvo é .env, .git, um caminho com traversal ou um symlink para fora do root
+        then: continua bloqueado e nunca é lido para o diff
+
+  - op: add
+    id: pure-file-diff
+    title: Módulo puro de diff com truncamento
+    statement: O sistema DEVE calcular, por função pura a partir de filePath, before e after, hunks com linhas add, remove e context contendo números de linha antigo e novo e as contagens added e removed, usando contexto de 3 linhas e truncando diffs acima de 200 linhas.
+    verify: npm test
+    scenarios:
+      - when: before é indefinido
+        then: o resultado indica arquivo novo sem hunks de remoção
+      - when: before e after são iguais
+        then: não há linhas add nem remove e as contagens são zero
+      - when: linhas são alteradas, adicionadas ou removidas
+        then: cada linha recebe o tipo e os números de linha antigo e novo corretos e as contagens batem
+      - when: o diff tem múltiplos trechos separados
+        then: múltiplos hunks são produzidos
+      - when: o diff excede 200 linhas renderizadas
+        then: é truncado com uma linha "... N linhas omitidas"
+
+  - op: add
+    id: diff-before-confirmation
+    title: Diff exibido antes da confirmação
+    statement: O sistema DEVE renderizar o diff do arquivo existente no conteúdo central imediatamente antes do prompt "Write file '...'? [y/N]", e negar a escrita quando não há política de aprovação.
+    verify: npm test
+    scenarios:
+      - when: o modelo edita um arquivo existente com writeFile
+        then: o diff é exibido antes do prompt de confirmação
+      - when: o alvo é um arquivo novo
+        then: nenhum diff é gerado e o arquivo é marcado como "new file"
+      - when: o usuário nega a confirmação
+        then: o arquivo não é gravado nem alterado
+      - when: nenhuma política de aprovação está configurada
+        then: a escrita é negada como no comportamento atual
+
+  - op: add
+    id: diff-rendering
+    title: Renderização do diff no TUI
+    statement: O sistema DEVE renderizar o diff com cabeçalho de resumo "path +a -b", margem com números de linha antigo e novo, fundos esmaecidos verde e vermelho com prefixos "+", "-" e espaço, realce de sintaxe do Shiki por extensão quando a linguagem é conhecida, usando apenas o canal writeStyled com cada linha sanitizada, e fallback em texto puro fora do Screen.
+    verify: npm test
+    scenarios:
+      - when: a linguagem do arquivo é conhecida pela extensão
+        then: o realce do Shiki é aplicado por cima das cores de diff
+      - when: a linguagem é desconhecida
+        then: apenas as cores de diff são usadas
+      - when: o conteúdo do modelo contém sequências de escape ANSI
+        then: o conteúdo é sanitizado e os escapes não chegam ao terminal
+      - when: não há canal writeStyled disponível
+        then: o diff é impresso em texto puro com prefixos "+", "-" e espaço
+
+  - op: add
+    id: post-write-summary
+    title: Resumo após a escrita
+    statement: O sistema DEVE, após gravar um arquivo existente, mostrar apenas um resumo "Updated path +a -b" sem reimprimir o arquivo inteiro, mantendo para arquivo novo a exibição numerada e colorida atual.
+    verify: npm test
+    scenarios:
+      - when: um arquivo existente é gravado com sucesso
+        then: um resumo "Updated path +a -b" é exibido sem o conteúdo completo
+      - when: um arquivo novo é gravado com sucesso
+        then: o arquivo é exibido numerado e colorido como hoje

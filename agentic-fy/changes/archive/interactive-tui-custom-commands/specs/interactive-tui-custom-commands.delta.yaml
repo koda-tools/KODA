@@ -1,0 +1,145 @@
+capability: interactive-tui-custom-commands
+purpose: Provide Koda with a testable interactive terminal session and a secure, deterministic custom slash-command system sourced from Markdown and JSON/JSONC files.
+
+operations:
+  - op: add
+    id: cli-mode-selection
+    title: CLI mode selection
+    statement: The system SHALL preserve positional batch execution, start interactive mode only when no prompt is supplied and terminal input/output are interactive, and fail without hanging when no prompt is supplied in a non-interactive environment.
+    verify: npm test
+    scenarios:
+      - when: positional prompt arguments are present
+        then: the CLI runs one batch request and exits with existing error semantics
+      - when: no prompt is present and stdin/stdout are TTYs
+        then: the CLI starts the interactive Koda session
+      - when: no prompt is present and either stream is not a TTY
+        then: the CLI prints usage and exits with status 2
+
+  - op: add
+    id: interactive-terminal-layout
+    title: Interactive terminal layout
+    statement: The system SHALL render Koda branding, provider, model, cumulative token usage, optional estimated cost, and a visible input prompt using terminal-capability-aware output.
+    verify: npm test
+    scenarios:
+      - when: an interactive session starts
+        then: the header and a ready prompt prefixed with ❯ are rendered
+      - when: a completed request reports usage
+        then: cumulative usage and known-model estimated cost are updated
+      - when: pricing is unknown or color is disabled
+        then: cost displays N/A and the layout remains readable without ANSI styling
+
+  - op: add
+    id: detailed-agent-execution
+    title: Detailed agent execution metadata
+    statement: The system SHALL expose a structured agent execution result that accumulates usage across all completion rounds and identifies the selected provider and model while preserving the existing string-returning run method.
+    verify: npm test
+    scenarios:
+      - when: a tool loop uses multiple provider completions
+        then: input and output token usage is accumulated in the detailed result
+      - when: an existing SDK caller invokes run
+        then: it receives the final answer string with backward-compatible behavior
+      - when: a command supplies a valid model override
+        then: the override is forwarded through provider-neutral completion options
+
+  - op: add
+    id: markdown-command-parsing
+    title: Markdown custom command parsing
+    statement: The system SHALL parse size-limited Markdown command files whose optional leading YAML frontmatter contains only validated description, agent, model, and subagent metadata and whose remaining body is a non-empty prompt template.
+    verify: npm test
+    scenarios:
+      - when: a Markdown file contains valid optional frontmatter
+        then: metadata and the clean body are normalized into a custom command
+      - when: frontmatter has invalid types, aliases, tags, nested values, malformed delimiters, or an invalid model identifier
+        then: the source is rejected with a path-aware diagnostic
+      - when: a Markdown command exceeds the configured size limit
+        then: it is rejected before its entire content is accepted for parsing
+
+  - op: add
+    id: jsonc-command-parsing
+    title: JSON and JSONC custom command parsing
+    statement: The system SHALL parse size-limited JSON or JSONC configuration files with commands containing a required template and validated optional description, agent, model, and subagent properties without evaluating code.
+    verify: npm test
+    scenarios:
+      - when: a configuration contains comments, trailing commas, and valid commands
+        then: every command is normalized deterministically
+      - when: a command lacks a template, uses an invalid metadata type, or contains prototype-polluting keys
+        then: the configuration is rejected with a path-aware diagnostic
+
+  - op: add
+    id: deterministic-command-discovery
+    title: Deterministic command discovery and precedence
+    statement: The system SHALL asynchronously discover non-symlink Markdown and JSON/JSONC commands from project Koda, project OpenCode-compatible, global Koda, and global OpenCode-compatible sources using documented deterministic precedence and ordering.
+    verify: npm test
+    scenarios:
+      - when: .koda/commands/team/review.md is valid
+        then: it is registered as /team/review
+      - when: the same command exists in local Koda and lower-priority sources
+        then: the local Koda definition wins and its source remains visible
+      - when: duplicate names occur within the same precedence level
+        then: discovery reports a deterministic validation error
+      - when: a discovered entry is a symlink, non-Markdown command file, or outside an injected allowed root
+        then: the entry is ignored or rejected without reading an escaped target
+
+  - op: add
+    id: command-argument-expansion
+    title: Command argument expansion
+    statement: The system SHALL expand full and positional command arguments with quote-aware tokenization, highest-position remainder semantics, empty missing positions, deterministic repeated placeholders, fallback appending, and literal attachment text preservation.
+    verify: npm test
+    scenarios:
+      - when: a template contains $ARGUMENTS
+        then: it is replaced by the exact trimmed remainder after the command name
+      - when: a template contains positional placeholders
+        then: quoted words form one argument, lower positions consume one token, and the numerically highest position consumes its token and all remaining tokens
+      - when: a referenced position is missing or repeated
+        then: missing values become empty strings and repeated placeholders reuse the same expansion
+      - when: a template has no argument placeholders and arguments are non-empty
+        then: two line breaks and the full arguments are appended
+      - when: arguments or templates contain @path text
+        then: the text remains unchanged for downstream attachment handling
+      - when: argument quotes are unterminated
+        then: expansion fails before shell or provider execution
+
+  - op: add
+    id: approved-shell-expansion
+    title: Approved bounded shell expansion
+    statement: The system SHALL replace backtick-delimited shell blocks only after argument expansion and explicit policy approval, using the project working directory, filtered environment, timeout, output limits, no stdin, and structured failure handling.
+    verify: npm test
+    scenarios:
+      - when: an interactive custom command contains a shell block
+        then: the expanded command and source are displayed for approval before process creation
+      - when: approval is denied or non-interactive policy does not explicitly allow execution
+        then: no process starts and no prompt is submitted
+      - when: execution succeeds within limits
+        then: captured stdout replaces the shell block in the prompt
+      - when: execution times out, exceeds output limits, or exits non-zero
+        then: processing stops with an actionable error and no LLM request
+
+  - op: add
+    id: slash-command-routing
+    title: Slash command routing
+    statement: The interactive application SHALL intercept slash-prefixed input before LLM submission, execute built-in or registered commands, and submit only the successfully expanded final prompt.
+    verify: npm test
+    scenarios:
+      - when: input does not start with a slash
+        then: it is submitted unchanged to the agent
+      - when: /help, /commands, or /exit is entered
+        then: the corresponding built-in behavior occurs without an LLM request
+      - when: a registered command is entered
+        then: discovery metadata, argument expansion, shell policy, and model override are applied before agent execution
+      - when: an unknown command is entered
+        then: a useful error and deterministic suggestions are shown without an LLM request
+      - when: a command declares subagent true
+        then: execution is rejected as unsupported before shell or provider side effects
+
+  - op: add
+    id: interactive-resilience
+    title: Interactive session resilience
+    statement: The interactive session SHALL handle recoverable command and agent failures without terminating, close cleanly on exit or EOF, and treat Ctrl+C as active-request cancellation before idle-session exit.
+    verify: npm test
+    scenarios:
+      - when: parsing, discovery, shell, or provider execution fails
+        then: a concise error is rendered and the next prompt remains available
+      - when: EOF or /exit is received
+        then: terminal resources close and the process exits successfully
+      - when: Ctrl+C occurs during an active request
+        then: the request is aborted and the session remains available

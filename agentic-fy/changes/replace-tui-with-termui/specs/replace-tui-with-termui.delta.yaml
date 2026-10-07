@@ -1,0 +1,58 @@
+capability: replace-tui-with-termui
+purpose: Replace KODA's custom interactive terminal renderer with TermUI while preserving existing agent-session behavior and safety controls.
+
+operations:
+  - op: add
+    id: interactive-ui-uses-termui
+    title: Interactive sessions use TermUI
+    statement: The interactive KODA CLI SHALL initialize the pinned TermUI implementation instead of the custom Screen renderer.
+    verify: npm run check
+    scenarios:
+      - when: a user starts KODA without a prompt in an interactive TTY
+        then: the TermUI application starts and displays the KODA session interface
+      - when: a user runs KODA with a batch prompt or a non-TTY environment
+        then: the batch path runs without initializing the interactive TermUI application
+
+  - op: add
+    id: interactive-behavior-parity
+    title: Preserve interactive behavior
+    statement: The TermUI implementation SHALL preserve prompt input, streamed output, status updates, scrolling, model selection, custom command routing, and conversation clearing.
+    verify: npm test -- test/tui.test.ts
+    scenarios:
+      - when: the provider emits streamed text
+        then: the transcript updates incrementally without blocking the event loop
+      - when: the user changes the model or clears the conversation
+        then: the session state and displayed header update as they do today
+
+  - op: add
+    id: approval-and-cancellation-parity
+    title: Preserve approval and cancellation controls
+    statement: The TermUI implementation SHALL preserve explicit approval for writes and shell commands and SHALL propagate cancellation to the active request.
+    verify: npm test -- test/tui.test.ts test/shell.test.ts
+    scenarios:
+      - when: a write or shell approval is requested
+        then: the user can approve or reject it through a TermUI interaction
+      - when: the user cancels an active request
+        then: the AbortSignal is triggered and the terminal session remains usable
+
+  - op: add
+    id: terminal-lifecycle-safety
+    title: Restore terminal state safely
+    statement: The TermUI implementation SHALL restore terminal state and release listeners on normal exit, cancellation, provider failure, approval rejection, and startup failure.
+    verify: npm test -- test/screen.test.ts test/tui.test.ts
+    scenarios:
+      - when: an interactive session exits or fails
+        then: raw input state, listeners, timers, and TermUI resources are released
+      - when: terminal dimensions change during a session
+        then: the layout remains usable and no stale renderer is left active
+
+  - op: add
+    id: tui-migration-maintains-type-safety
+    title: Maintain package and type safety
+    statement: The TermUI migration SHALL use exact-pinned dependencies, pass strict TypeScript checks, and avoid exposing TermUI types through provider or core agent APIs.
+    verify: npm run check
+    scenarios:
+      - when: the project is built or type checked
+        then: compilation succeeds under the repository's strict TypeScript configuration
+      - when: core agent code is consumed without the CLI
+        then: it remains independent of TermUI runtime initialization

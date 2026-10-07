@@ -1,0 +1,25 @@
+# Tasks — interactive-tui-custom-commands
+
+- [x] 1. Add regression tests for existing batch CLI behavior and `CodeAgent.run()` compatibility.
+- [x] 2. Define normalized custom-command, source, diagnostics, structured agent result, provider identity, session status, pricing, and shell-policy types.
+- [x] 3. Implement `CodeAgent.runDetailed()` with tool-loop usage accumulation and model override forwarding; retain `run()` as a string-returning wrapper.
+- [x] 4. Expose normalized provider/model identity from provider construction and add tested estimated-cost calculation with unknown-model fallback.
+- [x] 5. Evaluate and install exact vetted YAML and JSONC parser dependencies, documenting bundle and startup impact.
+- [x] 6. Write failing tests for Markdown frontmatter/body parsing, strict metadata validation, size limits, and malformed input.
+- [x] 7. Implement the restricted Markdown command parser without YAML aliases, tags, nested metadata, or executable extensions.
+- [x] 8. Write failing tests for JSON/JSONC command parsing, comments, trailing commas, metadata validation, and prototype-polluting keys.
+- [x] 9. Implement JSON/JSONC command parsing into the normalized command model.
+- [x] 10. Write failing temporary-directory tests for project/global discovery, nested slash names, symlink exclusion, duplicate detection, precedence, and deterministic ordering.
+- [x] 11. Implement asynchronous command discovery and registry lookup/listing across `.koda`, `.opencode`, root config, and global sources.
+- [x] 12. Write failing unit tests for quote-aware tokenization, escapes, unterminated quotes, `$ARGUMENTS`, `$1`…`$N`, highest-position remainder, missing/repeated placeholders, fallback, and literal `@path` preservation.
+- [x] 13. Implement the pure argument tokenizer and template expansion pipeline.
+- [x] 14. Write failing tests for shell block detection, post-expansion approval, project cwd, environment filtering, timeout, output limits, denial, non-zero status, and no-side-effect failures.
+- [x] 15. Implement the policy-driven shell block executor and substitution pipeline with shell execution denied by default.
+- [x] 16. Implement slash input parsing and built-in `/help`, `/commands`, and `/exit`, including unknown-command suggestions and rejection of `subagent: true` before side effects.
+- [x] 17. Build pure header/status/cost rendering for color and plain terminals with stable-width behavior and the `❯` prompt.
+- [x] 18. Implement the readline-based interactive application with prompt/command routing, cumulative usage, Ctrl+C cancellation, EOF handling, and recoverable errors.
+- [x] 19. Refactor CLI mode selection to preserve positional batch execution, start interactive mode only on TTY, and fail fast without arguments in non-TTY environments.
+- [x] 20. Add integration tests using fake readline, provider, shell approval, and temporary command roots to prove slash interception and expanded prompt submission.
+- [x] 21. Export supported command, expansion, pricing, detailed-run, and interactive runtime APIs without exposing parser-library internals.
+- [x] 22. Add user-facing documentation for command locations, precedence, Markdown/JSONC schemas, argument semantics, shell trust warnings, model overrides, and current `agent`/`subagent` limitations.
+- [x] 23. Run formatting, linting, type checking, unit/integration tests, production build, startup checks, and `agentic-fy validate`; resolve all failures.

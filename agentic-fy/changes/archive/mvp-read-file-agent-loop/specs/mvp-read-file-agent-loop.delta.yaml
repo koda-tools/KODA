@@ -1,0 +1,90 @@
+capability: mvp-read-file-agent-loop
+purpose: Prove a secure end-to-end terminal agent cycle in which an LLM can request a local project file and answer using the resulting observation.
+
+operations:
+  - op: add
+    id: provider-neutral-completion
+    title: Provider-neutral completion contract
+    verify: npm test
+    statement: The system SHALL expose strictly typed provider-neutral contracts for messages, tool definitions, tool calls, and completion results, and the agent core SHALL depend only on those contracts.
+    scenarios:
+      - when: an OpenAI completion contains text or function calls
+        then: the adapter returns normalized content and tool calls without leaking OpenAI SDK types into the agent core
+
+  - op: add
+    id: openai-tool-completion
+    title: OpenAI tool-enabled completion
+    verify: npm test
+    statement: The system SHALL provide an OpenAI adapter that submits normalized conversation history and optional tool definitions using a configurable model.
+    scenarios:
+      - when: at least one tool definition is provided
+        then: the adapter enables automatic tool selection and preserves returned tool call identifiers, names, and arguments
+      - when: no tool definitions are provided
+        then: the adapter requests a normal completion without forcing tool use
+
+  - op: add
+    id: secure-project-file-read
+    title: Secure project file read
+    verify: npm test
+    statement: The system SHALL read UTF-8 files only when their real resolved paths remain within the configured project root, are not sensitive, and do not exceed the configured size limit.
+    scenarios:
+      - when: readFile receives a relative path to an allowed file inside the project root
+        then: the tool returns the file content asynchronously
+      - when: readFile receives parent traversal or an absolute path outside the project root
+        then: the tool rejects the request with a security failure
+      - when: readFile targets a symlink whose real path escapes the project root
+        then: the tool rejects the request with a security failure
+      - when: readFile targets .env, .git, .npmrc, SSH material, or a credential file
+        then: the tool rejects the request without exposing file content
+      - when: readFile targets a file larger than the configured limit
+        then: the tool rejects the request before loading the file content
+
+  - op: add
+    id: deterministic-tool-dispatch
+    title: Deterministic tool dispatch
+    verify: npm test
+    statement: The system SHALL publish the readFile tool schema and dispatch only registered tool names whose JSON arguments pass runtime validation.
+    scenarios:
+      - when: the model requests readFile with a non-empty string filePath
+        then: the registry executes the read-file tool and returns its observation
+      - when: tool arguments are malformed JSON or fail the readFile argument contract
+        then: the registry returns a sanitized failure observation and the process remains operational
+      - when: the model requests an unknown tool
+        then: the registry returns a sanitized unknown-tool observation and executes no file operation
+
+  - op: add
+    id: bounded-agent-loop
+    title: Bounded Think Act Observe loop
+    verify: npm test
+    statement: The system SHALL continue normalized assistant and tool messages until the provider returns a final answer without tool calls or the configured iteration limit is reached.
+    scenarios:
+      - when: the first completion requests readFile and the next completion returns text
+        then: the tool result is associated with the original tool call ID and the text is returned as the final answer
+      - when: one completion requests multiple tool calls
+        then: each call is executed sequentially and each observation is appended before the next completion
+      - when: the provider returns a direct answer without tool calls
+        then: the agent returns it without executing a tool
+      - when: tool requests continue through the configured iteration limit
+        then: the agent stops and reports a controlled iteration-limit failure
+
+  - op: add
+    id: non-interactive-mvp-cli
+    title: Non-interactive MVP CLI
+    verify: npm test
+    statement: The system SHALL provide a terminal entry point that accepts a prompt, obtains the API key from OPENAI_API_KEY, runs the agent, and prints the final answer with graceful failure behavior.
+    scenarios:
+      - when: a prompt and OPENAI_API_KEY are present
+        then: the CLI runs the agent without persisting or logging the key
+      - when: the prompt or OPENAI_API_KEY is missing
+        then: the CLI prints an actionable message and exits with a non-zero status
+      - when: the provider or agent fails
+        then: the CLI prints a concise user-facing error without an unhandled stack trace
+
+  - op: add
+    id: offline-agent-verification
+    title: Offline agent verification
+    verify: npm test
+    statement: The system SHALL verify sandbox and agent-loop behavior with automated tests that require neither network access nor provider credentials.
+    scenarios:
+      - when: the test suite exercises a fake provider requesting package.json
+        then: it proves the file observation is returned to the provider and a grounded final answer reaches the caller

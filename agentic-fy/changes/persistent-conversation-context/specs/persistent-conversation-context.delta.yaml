@@ -1,0 +1,50 @@
+# Spec delta for the "persistent-conversation-context" capability.
+capability: persistent-conversation-context
+purpose: Manter o contexto da conversa entre turnos na sessão interativa, com Ctrl+L limpando apenas o transcript visível e um comando explícito para descartar o histórico, mantendo o core neutro em relação a provedores.
+
+operations:
+  - op: add
+    id: agent-history-io
+    title: Histórico de entrada e saída no agente
+    statement: O sistema DEVE permitir que uma execução do agente receba um histórico opcional de mensagens anteriores e devolva as mensagens novas do turno (usuário, assistente e tool) na ordem, preservando o método run que retorna apenas a string final.
+    verify: npm test
+    scenarios:
+      - when: um histórico de mensagens anteriores é fornecido a uma execução
+        then: essas mensagens são incluídas no pedido após o system prompt e antes do novo prompt do usuário
+      - when: um turno é concluído
+        then: o resultado expõe as mensagens novas do turno na ordem em que foram produzidas
+      - when: um chamador existente usa run sem histórico
+        then: ele recebe apenas a string final, com comportamento compatível
+
+  - op: add
+    id: session-conversation-memory
+    title: Memória de conversa na sessão
+    statement: A sessão interativa DEVE acumular o histórico de conversa entre turnos, fornecê-lo à execução seguinte e limitar o histórico a um número máximo de mensagens sem descartar o system prompt nem deixar mensagens de tool órfãs.
+    verify: npm test
+    scenarios:
+      - when: dois prompts são enviados em sequência
+        then: o segundo turno recebe as mensagens do primeiro turno como histórico
+      - when: o histórico ultrapassa o limite máximo de mensagens
+        then: as mensagens mais antigas são descartadas em fronteira de turno, preservando o system prompt e sem deixar tool sem o assistant correspondente
+
+  - op: add
+    id: clear-screen-preserves-context
+    title: Ctrl+L preserva o contexto da conversa
+    statement: O sistema DEVE, ao receber Ctrl+L, limpar apenas o transcript visível mantendo o header e a entrada digitada, sem afetar o histórico de conversa usado pelo modelo.
+    verify: npm test
+    scenarios:
+      - when: o usuário pressiona Ctrl+L
+        then: o transcript visível é limpo e o header e a entrada digitada são mantidos
+      - when: um novo prompt é enviado após Ctrl+L
+        then: o turno ainda recebe o histórico de conversa anterior
+
+  - op: add
+    id: clear-context-command
+    title: Comando para descartar o contexto
+    statement: O sistema DEVE oferecer um comando built-in para descartar intencionalmente o histórico de conversa, confirmar a ação ao usuário e reexibir o header, sem enviar um pedido ao modelo.
+    verify: npm test
+    scenarios:
+      - when: o usuário executa /clear ou /reset
+        then: o histórico de conversa é descartado, uma confirmação é exibida e nenhum pedido é enviado ao modelo
+      - when: /help é exibido
+        then: o comando de descarte de contexto aparece na lista de built-ins

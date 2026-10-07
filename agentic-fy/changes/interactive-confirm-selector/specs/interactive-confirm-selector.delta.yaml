@@ -1,0 +1,41 @@
+# Spec delta for the "interactive-confirm-selector" capability.
+capability: interactive-confirm-selector
+purpose: Oferecer um seletor de confirmação interativo por teclado para a escrita de arquivos e a aprovação de shell, com um status de espera enquanto a decisão está pendente, mantendo o core neutro em relação a provedores e um fallback por linha onde a seleção não está disponível.
+
+operations:
+  - op: add
+    id: keyboard-selection-mode
+    title: Modo de seleção por teclado no terminal
+    statement: O terminal interativo DEVE oferecer um modo de seleção que apresenta um título, opções em formato radio e uma dica, navegável pelas setas e confirmado com Enter, resolvendo o índice escolhido ou um cancelamento com Ctrl+C, sem rolar o conteúdo enquanto a seleção está ativa.
+    verify: npm test
+    scenarios:
+      - when: um modo de seleção é aberto e o usuário move com as setas e pressiona Enter
+        then: o índice da opção destacada é resolvido
+      - when: o usuário pressiona Ctrl+C durante a seleção
+        then: a seleção é cancelada e resolvida como ausência de escolha
+      - when: as setas para cima e para baixo são usadas durante a seleção
+        then: a opção destacada muda em vez de rolar o transcript
+
+  - op: add
+    id: write-confirmation-selector
+    title: Seletor na confirmação de escrita e shell
+    statement: O sistema DEVE apresentar a confirmação de escrita de arquivo e a aprovação de comando de shell como uma seleção Allow ou Reject, após o preâmbulo (diff ou comando), tratando a escolha Reject e o cancelamento como negação, e DEVE recorrer a uma confirmação por linha quando o modo de seleção não estiver disponível.
+    verify: npm test
+    scenarios:
+      - when: a confirmação de escrita é exibida com o modo de seleção disponível
+        then: um seletor Allow/Reject é mostrado após o diff e a escolha governa a escrita
+      - when: Reject é escolhido ou a seleção é cancelada
+        then: o arquivo não é gravado
+      - when: o modo de seleção não está disponível
+        then: a confirmação recorre ao prompt por linha com o mesmo resultado booleano
+
+  - op: add
+    id: waiting-decision-status
+    title: Status de espera durante a confirmação
+    statement: O sistema DEVE exibir um status de espera enquanto a confirmação está pendente, em vez do status da ferramenta, e restaurar o fluxo normal após a decisão, sem que o núcleo neutro em relação a provedores participe da confirmação.
+    verify: npm test
+    scenarios:
+      - when: uma confirmação de escrita está aguardando a decisão do usuário
+        then: o status exibido indica espera pela decisão e não "Writing..."
+      - when: a decisão é tomada
+        then: o status de espera é limpo e o fluxo prossegue normalmente

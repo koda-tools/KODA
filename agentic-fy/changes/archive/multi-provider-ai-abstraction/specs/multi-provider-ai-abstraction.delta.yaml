@@ -1,0 +1,99 @@
+capability: multi-provider-ai-abstraction
+purpose: Allow Koda to select and consume OpenAI, Anthropic, Gemini, or Ollama through one strictly typed completion, streaming, tool-calling, and capability contract.
+
+operations:
+  - op: add
+    id: unified-provider-contract
+    title: Unified provider contract
+    statement: The system SHALL expose strictly typed provider-neutral contracts for text and image messages, tool definitions and calls, completion options and results, streaming events, cancellation, usage metadata, and provider capabilities, and core code SHALL depend only on those contracts.
+    verify: npm test
+    scenarios:
+      - when: any adapter returns completion or streaming data
+        then: callers receive only normalized types and no vendor SDK type outside the adapter directory
+      - when: a caller supplies an AbortSignal
+        then: the selected adapter forwards cancellation to supported vendor requests
+      - when: a caller queries tool support
+        then: the provider reports its capability without issuing a network request
+
+  - op: add
+    id: streaming-openai-adapter
+    title: Streaming OpenAI adapter
+    statement: The system SHALL provide an OpenAI adapter that maps normalized completion and streaming requests, multimodal content, and native function calls using a configurable model.
+    verify: npm test
+    scenarios:
+      - when: OpenAI returns text or native function calls
+        then: the adapter preserves normalized content, call identifiers, names, arguments, usage, and finish reason
+      - when: OpenAI streams text and function-call argument fragments
+        then: the adapter yields ordered normalized deltas and completed normalized tool calls
+
+  - op: add
+    id: anthropic-provider-adapter
+    title: Anthropic provider adapter
+    statement: The system SHALL provide an Anthropic adapter that maps normalized messages, system instructions, tools, tool results, completions, streams, usage, and failures to and from the Claude Messages API.
+    verify: npm test
+    scenarios:
+      - when: normalized history includes a system message and a readFile tool definition
+        then: the adapter separates the system instruction and sends the tool using Anthropic input schema without changing agent code
+      - when: Claude returns tool-use blocks
+        then: the adapter preserves call identifiers and yields normalized calls and events
+      - when: a tool observation is sent after a Claude tool call
+        then: the adapter maps it to the matching tool-result block
+
+  - op: add
+    id: gemini-provider-adapter
+    title: Gemini provider adapter
+    statement: The system SHALL provide a Gemini adapter that maps normalized text and image content, function declarations and calls, completions, streams, usage, and failures to and from the Google Gen AI API.
+    verify: npm test
+    scenarios:
+      - when: a normalized request contains text, image content, and tools
+        then: the adapter maps content parts and function declarations without exposing Gemini types
+      - when: Gemini omits a function-call identifier
+        then: the adapter assigns a deterministic identifier that remains usable for the corresponding tool result
+
+  - op: add
+    id: ollama-provider-adapter
+    title: Ollama provider adapter
+    statement: The system SHALL provide an Ollama adapter using the OpenAI-compatible local API with configurable model and base URL, no mandatory API key, normalized streaming, and explicit tool capability reporting.
+    verify: npm test
+    scenarios:
+      - when: Ollama is selected without a base URL
+        then: the adapter uses http://127.0.0.1:11434/v1 and performs no provider-discovery network call
+      - when: the configured local model does not support tools
+        then: the provider rejects a tool-enabled request with an actionable capability error before completion
+
+  - op: add
+    id: provider-factory
+    title: Provider factory and configuration
+    statement: The system SHALL create exactly one adapter from a discriminated explicit configuration or validated environment configuration for openai, anthropic, gemini, or ollama.
+    verify: npm test
+    scenarios:
+      - when: explicit configuration names a supported provider with valid required values
+        then: the factory returns the matching ILLMProvider implementation
+      - when: KODA_PROVIDER selects a hosted provider but its API key is absent
+        then: the factory reports the missing environment variable without exposing any secret value
+      - when: both KODA_PROVIDER and OPENCODE_PROVIDER are present
+        then: KODA_PROVIDER takes precedence
+      - when: no provider selector is present
+        then: the factory preserves compatibility by selecting OpenAI and validating OPENAI_API_KEY
+      - when: the provider name or Ollama URL is invalid
+        then: the factory fails before constructing or contacting a provider
+
+  - op: add
+    id: provider-agnostic-agent-integration
+    title: Provider-agnostic agent and CLI integration
+    statement: The system SHALL run the agent through an injected ILLMProvider and create the CLI provider through ProviderFactory without vendor-specific imports or branches in the core agent.
+    verify: npm test
+    scenarios:
+      - when: equivalent adapters request readFile
+        then: the same agent loop dispatches the tool and returns the final normalized answer without provider-specific logic
+      - when: KODA_PROVIDER selects anthropic, gemini, or ollama with valid configuration
+        then: the CLI constructs the selected adapter without changing CLI or agent source
+
+  - op: add
+    id: vendor-boundary-enforcement
+    title: Vendor dependency boundary
+    statement: The system SHALL confine vendor SDK imports and vendor payload types to src/providers/adapters and expose only provider-neutral types through public SDK exports.
+    verify: npm test
+    scenarios:
+      - when: static boundary tests inspect src/core, src/cli, tools, and public provider contracts
+        then: no OpenAI, Anthropic, Gemini, or Ollama SDK import or payload type is present

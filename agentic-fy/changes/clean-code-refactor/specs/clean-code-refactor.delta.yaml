@@ -1,0 +1,74 @@
+capability: clean-code-refactor
+purpose: Keep the Koda codebase maintainable by applying consistent Clean Code practices without changing user-visible behavior.
+
+operations:
+  - op: add
+    id: behavior-preservation
+    title: Behavior preservation
+    statement: The system SHALL keep all existing CLI, SDK, tool, and security behavior unchanged after the refactor, with the full existing automated test suite passing and no reduction in test count.
+    verify: npm test
+    scenarios:
+      - when: the refactor is complete
+        then: the type check, build, and every previously passing test succeed
+      - when: an SDK caller invokes CodeAgent.run or ProviderFactory
+        then: signatures and results are backward compatible
+
+  - op: add
+    id: consistent-formatting
+    title: Consistent formatting
+    statement: The system SHALL keep all source and test files formatted according to the project Prettier configuration.
+    verify: npm run format:check
+    scenarios:
+      - when: format:check runs after the refactor
+        then: it reports no unformatted files
+
+  - op: add
+    id: single-source-provider-defaults
+    title: Single source of provider defaults
+    statement: The system SHALL define provider identifiers and default model names in one module used by both the CLI and the provider factory.
+    verify: npm test -- test/factory.test.ts
+    scenarios:
+      - when: KODA_PROVIDER selects a provider without an explicit model variable
+        then: the CLI header and the created provider report the same default model
+      - when: a default model changes in the shared module
+        then: no other file needs to change
+
+  - op: add
+    id: shared-provider-error-description
+    title: Shared provider error description
+    statement: The system SHALL describe provider failures through a shared helper that includes the HTTP status and a short hint while never including API keys, headers, or request bodies.
+    verify: npm test -- test/provider-adapters.test.ts
+    scenarios:
+      - when: a provider API call fails with a known HTTP status
+        then: the error message includes the status and a hint
+      - when: a provider failure contains credentials in its cause
+        then: the user-facing message does not expose them
+
+  - op: add
+    id: small-focused-units
+    title: Small focused units
+    statement: The system SHALL separate agent execution, interactive session orchestration, model selection, spinner and output helpers, and screen buffer, key parsing, editing, and rendering into modules with a single responsibility each, and no function in the refactored modules SHALL exceed 60 lines.
+    verify: npm test
+    scenarios:
+      - when: runInteractive is read
+        then: it only orchestrates the input loop and delegates turns and commands
+      - when: a Screen key sequence is parsed
+        then: the parser module produces key events without touching rendering state
+
+  - op: add
+    id: architecture-boundaries-preserved
+    title: Architecture boundaries preserved
+    statement: The system SHALL keep vendor SDK imports confined to provider adapters and keep provider names out of the core agent after the refactor.
+    verify: npm test -- test/provider-boundary.test.ts
+    scenarios:
+      - when: the boundary test scans source files
+        then: no SDK import exists outside src/providers/adapters and no provider name exists in src/core
+
+  - op: add
+    id: safe-entry-point
+    title: Safe CLI entry point
+    statement: The system SHALL start the CLI from its entry points without a top-level await so cancellation does not produce an unsettled top-level await warning.
+    verify: npm run build
+    scenarios:
+      - when: the user cancels with Ctrl+C
+        then: the process exits without an unsettled top-level await warning

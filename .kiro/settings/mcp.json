@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "agentic-fy": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@agentic-fy/agentic-fy",
+        "mcp"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "explore",
+        "list",
+        "show",
+        "validate"
+      ]
+    }
+  }
+}
