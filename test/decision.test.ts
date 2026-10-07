@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { decide } from "../src/cli/tui/decision.js";
-import type { InteractiveIO, SelectRequest } from "../src/cli/tui/io.js";
+import {
+  decide,
+  type InteractiveIO,
+  type SelectRequest,
+} from "../src/cli/tui/index.js";
 
 function baseIO(overrides: Partial<InteractiveIO>): InteractiveIO {
   return {
@@ -12,16 +15,11 @@ function baseIO(overrides: Partial<InteractiveIO>): InteractiveIO {
   };
 }
 
-test("selector choice Allow resolves to true and holds the waiting status", async () => {
-  const held: string[] = [];
-  let released = 0;
+test("selector choice Autorizar resolves to true and shows the waiting status", async () => {
+  const statuses: (string | undefined)[] = [];
   let seen: SelectRequest | undefined;
   const io = baseIO({
-    holdStatus: (text) => held.push(text),
-    releaseStatus: () => {
-      released += 1;
-    },
-    setStatus: () => assert.fail("setStatus must not be used when hold exists"),
+    setStatus: (text) => statuses.push(text),
     select: async (request) => {
       seen = request;
       return 0;
@@ -29,14 +27,13 @@ test("selector choice Allow resolves to true and holds the waiting status", asyn
   });
   const result = await decide(io, "Write  a.ts", "fallback [y/N] ");
   assert.equal(result, true);
-  assert.deepEqual(seen?.options, ["Allow", "Reject"]);
+  assert.deepEqual(seen?.options, ["Autorizar", "Rejeitar"]);
   assert.equal(seen?.title, "Write  a.ts");
-  assert.match(seen?.hint ?? "", /enter confirm/);
-  assert.deepEqual(held, ["Waiting for decision..."]);
-  assert.equal(released, 1);
+  assert.match(seen?.hint ?? "", /Enter confirmar/);
+  assert.deepEqual(statuses, ["Waiting for decision...", undefined]);
 });
 
-test("falls back to setStatus when the hold API is unavailable", async () => {
+test("selector choice Rejeitar resolves to false and clears the status", async () => {
   const statuses: (string | undefined)[] = [];
   const io = baseIO({
     setStatus: (text) => statuses.push(text),

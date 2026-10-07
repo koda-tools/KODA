@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CodeAgent } from "../src/core/agent.js";
+import { CodeAgent } from "../src/core/index.js";
 import type {
   ChatMessage,
   ChatResponse,
   ILLMProvider,
   ProviderCapabilities,
   StreamEvent,
-} from "../src/providers/base.provider.js";
-import { contentToText } from "../src/providers/base.provider.js";
+} from "../src/providers/index.js";
+import { contentToText } from "../src/providers/index.js";
 import { ToolRegistry } from "../src/tools/registry.js";
 
 class PackageProvider implements ILLMProvider {
@@ -51,6 +51,7 @@ test("grounds a package name answer in a readFile observation", async () => {
   const answer = await new CodeAgent(
     provider,
     new ToolRegistry({ workspaceRoot: process.cwd() }),
+    { identity: { provider: "openai", model: "test-model" } },
   ).run("Read package.json and report the project name.");
   assert.match(provider.observed, /"name": "koda-agent"/);
   assert.equal(answer, "The project is koda-agent.");

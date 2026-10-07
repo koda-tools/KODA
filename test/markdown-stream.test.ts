@@ -1,15 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createLazyHighlighter } from "../src/cli/tui/highlight.js";
 import {
+  createLazyHighlighter,
   MarkdownStream,
-  type Segment,
-} from "../src/cli/tui/markdown-stream.js";
-import { Screen } from "../src/cli/tui/screen.js";
-import {
+  sanitize,
   sanitizeStyled,
-  TextBuffer,
-} from "../src/cli/tui/screen/text-buffer.js";
+  type Segment,
+} from "../src/cli/tui/index.js";
 
 async function render(
   chunks: readonly string[],
@@ -96,46 +93,6 @@ test("styled text keeps only SGR escapes", () => {
   );
 });
 
-test("wraps styled lines by visible width and carries colors over", () => {
-  const buffer = new TextBuffer();
-  buffer.append("\x1b[31mabcdef\x1b[0mgh\n", true);
-  assert.deepEqual(buffer.wrap(4), [
-    "\x1b[31mabcd\x1b[0m",
-    "\x1b[31mef\x1b[0mgh",
-    "",
-  ]);
-});
-
-test("screen renders trusted styled text but sanitizes plain appends", async () => {
-  let output = "";
-  let listener: ((chunk: string) => void) | undefined;
-  const screen = new Screen(
-    {
-      setRawMode: () => undefined,
-      setEncoding: () => undefined,
-      resume: () => undefined,
-      pause: () => undefined,
-      on: (_event, fn) => {
-        listener = fn;
-      },
-      off: () => undefined,
-    },
-    {
-      columns: 40,
-      rows: 12,
-      write: (text) => {
-        output += text;
-      },
-      on: () => undefined,
-      off: () => undefined,
-    },
-  );
-  screen.start();
-  screen.append("\x1b[31mevil\x1b[0m\n");
-  screen.append("\x1b[32mgood\x1b[0m\n", true);
-  await new Promise((resolve) => setTimeout(resolve, 40));
-  assert.doesNotMatch(output, /\x1b\[31m/);
-  assert.match(output, /\x1b\[32mgood/);
-  assert.equal(listener === undefined, false);
-  screen.stop();
+test("plain text loses every escape, including colors", () => {
+  assert.equal(sanitize("\x1b[31mevil\x1b[0m\tx\r\n"), "evil  x\n");
 });

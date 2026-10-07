@@ -1,59 +1,74 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { AnthropicProvider } from "../src/providers/adapters/anthropic.provider.js";
-import { GeminiProvider } from "../src/providers/adapters/gemini.provider.js";
-import { OllamaProvider } from "../src/providers/adapters/ollama.provider.js";
-import { OpenAIProvider } from "../src/providers/adapters/openai.provider.js";
-import { ProviderFactory } from "../src/providers/factory.js";
+import {
+  AnthropicProvider,
+  GeminiProvider,
+  OllamaProvider,
+  OpenAIProvider,
+  PROVIDERS,
+  ProviderFactory,
+  configFromEnvironment,
+  estimateCost,
+  resolveProviderIdentity,
+  type ILLMProvider,
+  type ProviderConfig,
+  type ProviderName,
+} from "../src/providers/index.js";
 import { ProviderError } from "../src/utils/errors.js";
 
+type ProviderClass = abstract new (...args: never[]) => ILLMProvider;
+
+interface ProviderCase {
+  readonly type: ProviderClass;
+  readonly config: ProviderConfig;
+  readonly env: NodeJS.ProcessEnv;
+}
+
+/** `satisfies Record<ProviderName, …>` forces a case for every provider. */
+const CASES = {
+  openai: {
+    type: OpenAIProvider,
+    config: { provider: "openai", apiKey: "test" },
+    env: { OPENAI_API_KEY: "test" },
+  },
+  anthropic: {
+    type: AnthropicProvider,
+    config: { provider: "anthropic", apiKey: "test" },
+    env: { KODA_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "test" },
+  },
+  gemini: {
+    type: GeminiProvider,
+    config: { provider: "gemini", apiKey: "test" },
+    env: { KODA_PROVIDER: "gemini", GEMINI_API_KEY: "test" },
+  },
+  ollama: {
+    type: OllamaProvider,
+    config: { provider: "ollama" },
+    env: { KODA_PROVIDER: "ollama", OPENCODE_PROVIDER: "openai" },
+  },
+} as const satisfies Record<ProviderName, ProviderCase>;
+
+const entries = Object.values(CASES);
+
+function isProviderError(pattern: RegExp) {
+  return (error: unknown): boolean =>
+    error instanceof ProviderError && pattern.test(error.message);
+}
+
 test("creates every supported provider from explicit configuration", () => {
-  assert.ok(
-    ProviderFactory.create({ provider: "openai", apiKey: "test" }) instanceof
-      OpenAIProvider,
-  );
-  assert.ok(
-    ProviderFactory.create({ provider: "anthropic", apiKey: "test" }) instanceof
-      AnthropicProvider,
-  );
-  assert.ok(
-    ProviderFactory.create({ provider: "gemini", apiKey: "test" }) instanceof
-      GeminiProvider,
-  );
-  assert.ok(
-    ProviderFactory.create({ provider: "ollama" }) instanceof OllamaProvider,
-  );
+  for (const { type, config } of entries)
+    assert.ok(ProviderFactory.create(config) instanceof type, config.provider);
 });
 
 test("selects providers from environment with canonical precedence", () => {
-  assert.ok(
-    ProviderFactory.fromEnvironment({ OPENAI_API_KEY: "test" }) instanceof
-      OpenAIProvider,
-  );
-  assert.ok(
-    ProviderFactory.fromEnvironment({
-      KODA_PROVIDER: "ollama",
-      OPENCODE_PROVIDER: "openai",
-    }) instanceof OllamaProvider,
-  );
-  assert.ok(
-    ProviderFactory.fromEnvironment({
-      KODA_PROVIDER: "anthropic",
-      ANTHROPIC_API_KEY: "test",
-    }) instanceof AnthropicProvider,
-  );
-  assert.ok(
-    ProviderFactory.fromEnvironment({
-      KODA_PROVIDER: "gemini",
-      GEMINI_API_KEY: "test",
-    }) instanceof GeminiProvider,
-  );
+  for (const { type, env } of entries)
+    assert.ok(ProviderFactory.fromEnvironment(env) instanceof type, type.name);
 });
 
 test("rejects missing secrets, unknown providers, and invalid Ollama URLs", () => {
   assert.throws(
     () => ProviderFactory.fromEnvironment({ KODA_PROVIDER: "anthropic" }),
-    /ANTHROPIC_API_KEY/,
+    isProviderError(/ANTHROPIC_API_KEY/),
   );
   assert.throws(
     () =>
@@ -71,31 +86,28 @@ test("rejects missing secrets, unknown providers, and invalid Ollama URLs", () =
         provider: "ollama",
         baseURL: "file:///tmp/model",
       }),
-    /HTTP/,
+    isProviderError(/HTTP/),
   );
 });
 
 test("reports provider capabilities without network requests", () => {
-  const providers = [
-    ProviderFactory.create({ provider: "openai", apiKey: "test" }),
-    ProviderFactory.create({ provider: "anthropic", apiKey: "test" }),
-    ProviderFactory.create({ provider: "gemini", apiKey: "test" }),
-    ProviderFactory.create({ provider: "ollama", toolSupport: false }),
-  ];
-  assert.deepEqual(
-    providers.map((provider) => provider.capabilities().streaming),
-    [true, true, true, true],
-  );
-  assert.equal(providers[3]?.supportsTools(), false);
+  for (const { config } of entries)
+    assert.equal(
+      ProviderFactory.create(config).capabilities().streaming,
+      true,
+      config.provider,
+    );
+  const local = ProviderFactory.create({
+    provider: "ollama",
+    toolSupport: false,
+  });
+  assert.equal(local.supportsTools(), false);
 });
 
-test("resolves provider identity from one shared defaults table", async () => {
-  const { resolveProviderIdentity, DEFAULT_MODELS } = await import(
-    "../src/providers/defaults.js"
-  );
+test("resolves provider identity from the shared catalog", () => {
   assert.deepEqual(resolveProviderIdentity({}), {
     provider: "openai",
-    model: DEFAULT_MODELS.openai,
+    model: PROVIDERS.openai.defaultModel,
   });
   assert.deepEqual(
     resolveProviderIdentity({
@@ -107,6 +119,47 @@ test("resolves provider identity from one shared defaults table", async () => {
   assert.equal(
     resolveProviderIdentity({ KODA_PROVIDER: "gemini", GEMINI_MODEL: "" })
       .model,
-    DEFAULT_MODELS.gemini,
+    PROVIDERS.gemini.defaultModel,
+  );
+});
+
+test("rejects unknown providers in identity resolution like the factory (bug 7)", () => {
+  assert.throws(
+    () => resolveProviderIdentity({ KODA_PROVIDER: "other" }),
+    isProviderError(/Unsupported provider 'other'/),
+  );
+  assert.equal(
+    resolveProviderIdentity({ KODA_PROVIDER: " anthropic " }).provider,
+    "anthropic",
+  );
+});
+
+test("derives environment variable names from the catalog", () => {
+  const anthropic = PROVIDERS.anthropic;
+  assert.deepEqual(
+    configFromEnvironment({
+      KODA_PROVIDER: "anthropic",
+      [anthropic.apiKeyEnv]: "key",
+      [anthropic.modelEnv]: "claude-x",
+    }),
+    { provider: "anthropic", apiKey: "key", model: "claude-x" },
+  );
+  const ollama = PROVIDERS.ollama;
+  assert.deepEqual(
+    configFromEnvironment({
+      KODA_PROVIDER: "ollama",
+      [ollama.baseURLEnv]: "http://host:1/v1",
+      [ollama.toolSupportEnv]: "TRUE",
+    }),
+    { provider: "ollama", baseURL: "http://host:1/v1", toolSupport: true },
+  );
+});
+
+test("estimates cost from catalog prices", () => {
+  const million = { inputTokens: 1_000_000, outputTokens: 1_000_000 };
+  assert.equal(estimateCost("openai", "gpt-4o-mini", million), 0.75);
+  assert.equal(
+    estimateCost("openai", "unknown", { inputTokens: 1 }),
+    undefined,
   );
 });

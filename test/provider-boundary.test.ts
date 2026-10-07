@@ -31,9 +31,12 @@ test("confines vendor SDK imports to provider adapters", async () => {
 });
 
 test("keeps provider names out of agent core", async () => {
-  const core = await readFile(
-    path.join(process.cwd(), "src", "core", "agent.ts"),
-    "utf8",
-  );
-  assert.doesNotMatch(core, /OpenAI|Anthropic|Gemini|Ollama/);
+  for (const file of await TypeScriptFiles(
+    path.join(process.cwd(), "src", "core"),
+  ))
+    assert.doesNotMatch(
+      await readFile(file, "utf8"),
+      /OpenAI|Anthropic|Gemini|Ollama/,
+      file,
+    );
 });

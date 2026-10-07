@@ -1,0 +1,82 @@
+capability: providers-structure-refactor
+purpose: Keep the LLM provider layer organized by purpose, with shared SDK-free helpers, a single catalog, real streaming on every provider, and a single public entry point.
+
+operations:
+  - op: add
+    id: providers-folders-by-purpose
+    title: Providers are organized in purpose folders
+    statement: Every TypeScript file under src/providers SHALL live inside a purpose folder (contracts, catalog, config, factory, shared, adapters/<vendor>), except the barrel src/providers/index.ts, and exported interfaces and type aliases SHALL be declared only in types.ts files.
+    verify: npm test -- test/providers-structure.test.ts
+    scenarios:
+      - when: the providers source tree is listed
+        then: the only file directly under src/providers is index.ts
+      - when: a provider module exports an interface or type alias
+        then: it is declared in that folder's types.ts
+
+  - op: add
+    id: providers-shared-helpers
+    title: Adapters reuse SDK-free shared helpers
+    statement: Error wrapping, system extraction, tool-call argument parsing, optional request fields, usage mapping, and stream accumulation SHALL be implemented once in src/providers/shared, which SHALL NOT import vendor SDKs or adapters.
+    verify: npm test -- test/providers-structure.test.ts
+    scenarios:
+      - when: shared, contracts, catalog or config modules are inspected
+        then: they import no vendor SDK and nothing from adapters
+      - when: an adapter needs to wrap a failure
+        then: it uses wrapProviderError and an existing ProviderError is rethrown unchanged
+
+  - op: add
+    id: providers-single-catalog
+    title: Single provider catalog with pricing
+    statement: Provider names, default models, model and API key environment variables, default max tokens, and model prices SHALL be defined once in src/providers/catalog, and the factory, identity resolution, and TUI cost estimation SHALL derive from it.
+    verify: npm test -- test/factory.test.ts
+    scenarios:
+      - when: the provider is selected from the environment
+        then: the API key and model variables come from the catalog entry
+      - when: an unknown provider is configured
+        then: both the factory and resolveProviderIdentity throw ProviderError
+
+  - op: add
+    id: providers-real-streaming
+    title: Real streaming on every provider
+    statement: Anthropic and Gemini adapters SHALL stream incrementally from their SDKs, emitting text-delta events as chunks arrive, followed by tool-call, usage and done events, and SHALL honor options.signal.
+    verify: npm test -- test/provider-adapters.test.ts
+    scenarios:
+      - when: the vendor stream yields several text chunks
+        then: the adapter emits one text-delta per chunk before done
+      - when: the stream contains a tool call
+        then: a complete tool-call event with parsed id, name and JSON arguments is emitted and included in done
+
+  - op: add
+    id: providers-bug-fixes
+    title: Known adapter bugs are fixed
+    statement: Gemini SHALL send the function name in functionResponse, forward the abort signal and report finishReason; Anthropic SHALL send image parts and SHALL NOT send empty text blocks; adapters SHALL NOT re-wrap ProviderError.
+    verify: npm test -- test/provider-adapters.test.ts
+    scenarios:
+      - when: a Gemini tool message answers a previous call
+        then: functionResponse.name is the called function name
+      - when: an Anthropic user message contains an image
+        then: the request contains a base64 image block
+      - when: an Anthropic assistant message has only tool calls
+        then: the request contains no empty text block
+
+  - op: add
+    id: providers-public-barrel
+    title: Single public entry point
+    statement: Code outside src/providers SHALL import provider modules only through src/providers/index.ts, legacy shims SHALL be removed, and src/index.ts SHALL keep exporting the same public symbols.
+    verify: npm run check
+    scenarios:
+      - when: core, cli, tui, tools or src/index.ts import provider code
+        then: they use the providers/index.js barrel
+      - when: an SDK consumer imports the provider classes, ProviderFactory, ProviderConfig or contracts
+        then: the imports still resolve with the same types
+
+  - op: add
+    id: providers-refactor-behavior-parity
+    title: Refactor keeps behavior
+    statement: The restructured provider layer SHALL keep the agent, TUI and batch behavior and strict type safety.
+    verify: npm test
+    scenarios:
+      - when: the full test suite runs after the refactor
+        then: all tests pass
+      - when: the project is type checked
+        then: npm run check succeeds with no new suppressions

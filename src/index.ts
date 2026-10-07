@@ -1,9 +1,14 @@
 export {
   CodeAgent,
+  parseModelRef,
+  sumUsage,
+  type AgentObserver,
   type AgentRunOptions,
   type AgentRunResult,
   type CodeAgentOptions,
-} from "./core/agent.js";
+  type ToolExecutor,
+  type ToolObservation,
+} from "./core/index.js";
 export {
   contentToText,
   type ChatMessage,
@@ -20,28 +25,18 @@ export {
   type ToolCall,
   type ToolDefinition,
   type Usage,
-} from "./providers/base.provider.js";
-export {
   AnthropicProvider,
   type AnthropicProviderOptions,
-} from "./providers/adapters/anthropic.provider.js";
-export {
   GeminiProvider,
   type GeminiProviderOptions,
-} from "./providers/adapters/gemini.provider.js";
-export {
   OllamaProvider,
   type OllamaProviderOptions,
-} from "./providers/adapters/ollama.provider.js";
-export {
   OpenAIProvider,
   type OpenAIProviderOptions,
-} from "./providers/adapters/openai.provider.js";
-export {
   ProviderFactory,
   type ProviderConfig,
   type ProviderName,
-} from "./providers/factory.js";
+} from "./providers/index.js";
 export {
   expandArguments,
   parseSlashInput,
@@ -62,14 +57,15 @@ export type {
   CustomCommand,
   ShellPolicy,
 } from "./cli/commands/types.js";
-export { renderHeader, type SessionStatus } from "./cli/tui/header.js";
-export { estimateCost } from "./cli/tui/pricing.js";
 export {
+  estimateCost,
+  renderHeader,
   runInteractive,
   type InteractiveIO,
   type InteractiveOptions,
   type InteractiveRuntime,
-} from "./cli/tui/application.js";
+  type SessionStatus,
+} from "./cli/tui/index.js";
 export {
   readFileTool,
   type ReadFileArgs,
@@ -78,7 +74,6 @@ export {
 export {
   READ_FILE_DEFINITION,
   ToolRegistry,
-  type ToolObservation,
   type ToolRegistryOptions,
 } from "./tools/registry.js";
 export {

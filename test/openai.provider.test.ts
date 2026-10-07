@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import OpenAI from "openai";
-import { OpenAIProvider } from "../src/providers/openai.provider.js";
+import { OpenAIProvider } from "../src/providers/index.js";
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {

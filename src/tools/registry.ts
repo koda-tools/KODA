@@ -1,4 +1,5 @@
-import type { ToolDefinition } from "../providers/base.provider.js";
+import type { ToolExecutor, ToolObservation } from "../core/index.js";
+import type { ToolDefinition } from "../providers/index.js";
 import {
   readFileTool,
   type ReadFileArgs,
@@ -25,11 +26,6 @@ export interface ToolRegistryOptions {
   readonly workspaceRoot: string;
   readonly maxFileBytes?: number;
   readonly writePolicy?: WritePolicy;
-}
-
-export interface ToolObservation {
-  readonly ok: boolean;
-  readonly content: string;
 }
 
 export const READ_FILE_DEFINITION: ToolDefinition = {
@@ -106,13 +102,23 @@ function parseWriteFileArgs(serialized: string): WriteFileArgs {
   return { filePath: value.filePath, content: value.content };
 }
 
-export class ToolRegistry {
+/** Progress label each tool shows while it runs. */
+const STATUS_LABELS: Readonly<Record<string, string>> = {
+  [READ_FILE_DEFINITION.name]: "Reading...",
+  [WRITE_FILE_DEFINITION.name]: "Writing...",
+};
+
+export class ToolRegistry implements ToolExecutor {
   public readonly definitions: readonly ToolDefinition[] = [
     READ_FILE_DEFINITION,
     WRITE_FILE_DEFINITION,
   ];
 
   public constructor(private readonly options: ToolRegistryOptions) {}
+
+  public statusLabel(name: string): string | undefined {
+    return STATUS_LABELS[name];
+  }
 
   public async execute(
     name: string,

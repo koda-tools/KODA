@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { computeFileDiff } from "../src/utils/diff.js";
-import { diffSegments } from "../src/cli/tui/diff-view.js";
 import {
   createLineWriter,
+  diffSegments,
   parseWriteSummary,
   renderDiff,
-} from "../src/cli/tui/output.js";
-import type { InteractiveIO } from "../src/cli/tui/io.js";
+  type InteractiveIO,
+} from "../src/cli/tui/index.js";
 
 function styledIO(sink: string[]): InteractiveIO {
   return {

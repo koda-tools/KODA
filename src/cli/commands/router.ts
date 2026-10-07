@@ -1,4 +1,3 @@
-import type { AgentRunResult } from "../../core/agent.js";
 import { expandArguments, parseSlashInput } from "./arguments.js";
 import type { CommandRegistry } from "./discovery.js";
 import { expandShellBlocks } from "./shell.js";
@@ -147,15 +146,4 @@ function promptResult(prompt: string, model?: string): RouteResult {
   return model === undefined
     ? { type: "prompt", prompt }
     : { type: "prompt", prompt, model };
-}
-
-export function accumulateUsage(
-  current: AgentRunResult["usage"],
-  next: AgentRunResult["usage"],
-): AgentRunResult["usage"] {
-  return {
-    inputTokens: (current.inputTokens ?? 0) + (next.inputTokens ?? 0),
-
-    outputTokens: (current.outputTokens ?? 0) + (next.outputTokens ?? 0),
-  };
 }

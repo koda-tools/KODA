@@ -1,26 +1,29 @@
 #!/usr/bin/env node
 import os from "node:os";
 import path from "node:path";
-import { CodeAgent } from "../core/agent.js";
-import { resolveProviderIdentity } from "../providers/defaults.js";
-import { ProviderFactory } from "../providers/factory.js";
+import { CodeAgent } from "../core/index.js";
+import {
+  ProviderFactory,
+  resolveProviderIdentity,
+} from "../providers/index.js";
 import {
   ToolRegistry,
   type WritePolicy,
 } from "../tools/registry.js";
 import { computeFileDiff } from "../utils/diff.js";
 import { ProviderError } from "../utils/errors.js";
-import type {
-  InteractiveIO,
-  InteractiveRuntime,
-} from "./tui/application.js";
-import { runInteractive } from "./tui/application.js";
 import {
   createLazyHighlighter,
+  createLineWriter,
+  decide,
+  loadTermUIRuntime,
+  renderDiff,
+  runInteractive,
+  toDiffViewLines,
   type CodeHighlighter,
-} from "./tui/highlight.js";
-import { toDiffViewLines } from "./tui/diff-view.js";
-import { createLineWriter, renderDiff } from "./tui/output.js";
+  type InteractiveIO,
+  type InteractiveRuntime,
+} from "./tui/index.js";
 
 export interface CliEnvironment {
   readonly argv: readonly string[];
@@ -42,35 +45,6 @@ function isInteractive(runtime: CliEnvironment, prompt: string): boolean {
     runtime.stdin?.isTTY === true &&
     runtime.stdout.isTTY === true
   );
-}
-
-const WAITING_STATUS = "Waiting for decision...";
-const SELECT_HINT = "↑/↓ escolher · Enter confirmar · Esc rejeitar";
-// Index 0 approves; `decide` relies on that order.
-const DECISION_OPTIONS = ["Autorizar", "Rejeitar"] as const;
-
-async function confirm(io: InteractiveIO, question: string): Promise<boolean> {
-  const answer = await io.question(question);
-  return answer?.trim().toLowerCase() === "y";
-}
-
-async function decide(
-  io: InteractiveIO,
-  title: string,
-  fallbackPrompt: string,
-): Promise<boolean> {
-  io.setStatus?.(WAITING_STATUS);
-  try {
-    if (io.select === undefined) return await confirm(io, fallbackPrompt);
-    const choice = await io.select({
-      title,
-      options: [...DECISION_OPTIONS],
-      hint: SELECT_HINT,
-    });
-    return choice === 0;
-  } finally {
-    io.setStatus?.(undefined);
-  }
 }
 
 const SKIP_NOTICE: Readonly<Record<string, string>> = {
@@ -140,7 +114,7 @@ function createAgent(
       workspaceRoot: runtime.cwd,
       ...(writePolicy === undefined ? {} : { writePolicy }),
     }),
-    resolveProviderIdentity(runtime.env),
+    { identity: resolveProviderIdentity(runtime.env) },
   );
 }
 
@@ -189,9 +163,7 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
     return USAGE_EXIT_CODE;
   }
   try {
-    const termUI = interactive
-      ? new (await import("./tui/termui.js")).TermUIRuntime()
-      : undefined;
+    const termUI = interactive ? await loadTermUIRuntime() : undefined;
     const highlighter = createLazyHighlighter();
     const agent = createAgent(
       runtime,

@@ -1,0 +1,49 @@
+capability: prompt-command-autocomplete
+purpose: Suggest slash commands while typing in the interactive prompt, using TermUI's Autocomplete, without changing how the prompt edits text.
+
+operations:
+  - op: add
+    id: command-suggestion-source
+    title: Suggestions list built-in and custom commands
+    statement: The suggestion source SHALL combine the built-in commands (help, commands, model, clear, exit) with the custom commands from the CommandRegistry, without duplicates, and SHALL match them by case-insensitive prefix of the text after "/".
+    verify: npm test -- test/command-suggestions.test.ts
+    scenarios:
+      - when: the prompt text is "/co"
+        then: commands and every custom command starting with "co" are suggested
+      - when: the prompt text has a space, several lines, or does not start with "/"
+        then: no suggestions are shown
+
+  - op: add
+    id: command-suggestion-widget
+    title: Suggestions render with TermUI Autocomplete above the prompt
+    statement: While suggestions match, the TUI SHALL show them in a TermUI Autocomplete slot placed directly above the prompt, and SHALL collapse the slot to zero rows when nothing matches.
+    verify: npm test -- test/command-suggestions.test.ts
+    scenarios:
+      - when: the user types "/" in an empty prompt
+        then: the suggestion slot expands and lists the commands
+      - when: the typed text no longer matches any command
+        then: the suggestion slot collapses
+
+  - op: add
+    id: command-suggestion-keys
+    title: Keyboard completes commands without breaking prompt editing
+    statement: While suggestions are open, up/down SHALL move the selection, Tab or Enter on a selected item SHALL replace the prompt with "/<name> ", Escape SHALL close the list without cancelling a request, and Enter without a selection SHALL submit the prompt; choice lists keep priority over suggestions.
+    verify: npm test -- test/command-suggestions.test.ts
+    scenarios:
+      - when: the user types "/mo", presses down and then Tab
+        then: the prompt becomes "/model " and the list closes
+      - when: the user presses Escape with suggestions open
+        then: the list closes and no request is cancelled
+      - when: the user presses Enter with no selected suggestion
+        then: the prompt is submitted unchanged
+
+  - op: add
+    id: command-suggestion-parity
+    title: Autocomplete keeps existing behavior
+    statement: Adding command suggestions SHALL keep batch mode free of TermUI, the TUI structure rules, and the existing prompt behavior.
+    verify: npm test
+    scenarios:
+      - when: the full test suite runs
+        then: all tests pass
+      - when: the project is type checked
+        then: npm run check succeeds

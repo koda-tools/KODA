@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { CodeAgent } from "../src/core/agent.js";
+import { CodeAgent } from "../src/core/index.js";
 import type {
   ChatMessage,
   ChatResponse,
@@ -11,11 +11,13 @@ import type {
   ILLMProvider,
   ProviderCapabilities,
   StreamEvent,
-} from "../src/providers/base.provider.js";
+} from "../src/providers/index.js";
 import { ToolRegistry } from "../src/tools/registry.js";
-import { runInteractive } from "../src/cli/tui/application.js";
-import { Session } from "../src/cli/tui/session.js";
-import type { LineWriter } from "../src/cli/tui/output.js";
+import {
+  runInteractive,
+  Session,
+  type LineWriter,
+} from "../src/cli/tui/index.js";
 
 function silentWriter(): LineWriter {
   return {
@@ -73,10 +75,7 @@ async function drive(
       agent: new CodeAgent(
         provider,
         new ToolRegistry({ workspaceRoot: root }),
-        {
-          provider: "test",
-          model: "model",
-        },
+        { identity: { provider: "test", model: "model" } },
       ),
       provider: "test",
       model: "model",

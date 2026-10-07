@@ -1,0 +1,69 @@
+capability: core-structure-refactor
+purpose: Keep the agent core small, organized by purpose, decoupled from concrete tools, and exposed through a single entry point.
+
+operations:
+  - op: add
+    id: core-folders-by-purpose
+    title: Core is organized in purpose folders
+    statement: Every TypeScript file under src/core SHALL live inside a purpose folder (agent, model, usage), except the barrel src/core/index.ts, and exported interfaces and type aliases SHALL be declared only in types.ts files.
+    verify: npm test -- test/core-structure.test.ts
+    scenarios:
+      - when: the core source tree is listed
+        then: the only file directly under src/core is index.ts
+      - when: a core module exports an interface or type alias
+        then: it is declared in that folder's types.ts
+
+  - op: add
+    id: core-public-barrel
+    title: Single core entry point
+    statement: Code outside src/core SHALL import the core only through src/core/index.ts.
+    verify: npm test -- test/core-structure.test.ts
+    scenarios:
+      - when: cli, tui, tools, src/index.ts or tests import the agent
+        then: they use the core/index.js barrel
+
+  - op: add
+    id: core-decoupled-from-tools
+    title: Core does not know concrete tools
+    statement: CodeAgent SHALL depend on a ToolExecutor interface, tool status labels SHALL be declared by each tool in src/tools, and src/core SHALL NOT reference concrete tool names.
+    verify: npm test -- test/core-structure.test.ts
+    scenarios:
+      - when: the core sources are inspected
+        then: they contain no readFile or writeFile references and no ToolRegistry import
+      - when: a tool declares no status label
+        then: the agent reports the default "Using tool..." status
+
+  - op: add
+    id: core-model-and-usage
+    title: Pure model reference and usage helpers
+    statement: Model references SHALL be parsed by a pure parseModelRef/resolveModel pair and token usage SHALL be summed by a single sumUsage function shared by the agent and the TUI session.
+    verify: npm test -- test/core-model.test.ts
+    scenarios:
+      - when: "the model is 'openai/gpt-4o#variant' and the identity provider is openai"
+        then: "the resolved model is 'gpt-4o'"
+      - when: the model prefix names a different provider
+        then: resolveModel throws AgentError
+      - when: usages with missing fields are summed
+        then: missing counts are treated as zero
+
+  - op: add
+    id: core-required-identity
+    title: Agent identity is required
+    statement: CodeAgent SHALL require a ProviderIdentity, and AgentRunResult SHALL always report the real provider and resolved model.
+    verify: npm test -- test/agent.test.ts
+    scenarios:
+      - when: a run completes without a model override
+        then: the result model equals the identity model
+      - when: a run completes with a model override
+        then: the result model equals the override without provider prefix
+
+  - op: add
+    id: core-refactor-behavior-parity
+    title: Refactor keeps agent behavior
+    statement: The restructured core SHALL keep the loop behavior, status sequence, streaming callbacks, tool execution order and error messages, with strict type safety.
+    verify: npm test
+    scenarios:
+      - when: the full test suite runs after the refactor
+        then: all tests pass
+      - when: the project is type checked
+        then: npm run check succeeds with no new suppressions

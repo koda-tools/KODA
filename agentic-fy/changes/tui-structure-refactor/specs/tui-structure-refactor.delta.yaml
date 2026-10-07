@@ -1,0 +1,58 @@
+capability: tui-structure-refactor
+purpose: Keep the interactive TUI organized by purpose, with types separated from implementation, shared code isolated, and no dead code.
+
+operations:
+  - op: add
+    id: tui-folders-by-purpose
+    title: TUI is organized in purpose folders
+    statement: Every TypeScript file under src/cli/tui SHALL live inside a purpose folder, except the public barrel src/cli/tui/index.ts.
+    verify: npm test -- test/tui-structure.test.ts
+    scenarios:
+      - when: the TUI source tree is listed
+        then: the only file directly under src/cli/tui is index.ts
+      - when: a purpose folder declares exported types used by other modules
+        then: those types are defined in that folder's types.ts
+
+  - op: add
+    id: tui-shared-boundary
+    title: Shared code is isolated
+    statement: Code used by two or more TUI purpose folders SHALL live in src/cli/tui/shared, and shared SHALL NOT import from any other TUI folder.
+    verify: npm test -- test/tui-structure.test.ts
+    scenarios:
+      - when: a module in shared is inspected
+        then: it imports nothing from sibling TUI folders
+      - when: a helper is used by a single folder only
+        then: it lives in that folder, not in shared
+
+  - op: add
+    id: tui-public-barrel
+    title: Single public entry point
+    statement: Code outside src/cli/tui SHALL import TUI modules only through src/cli/tui/index.ts, and src/index.ts SHALL keep exporting the same public symbols.
+    verify: npm run check
+    scenarios:
+      - when: src/cli/index.ts or src/index.ts import TUI code
+        then: they use the tui/index.js barrel
+      - when: an SDK consumer imports runInteractive, InteractiveIO, InteractiveOptions, InteractiveRuntime, renderHeader, SessionStatus or estimateCost
+        then: the import still resolves with the same types
+
+  - op: add
+    id: tui-no-dead-code
+    title: No unused TUI code
+    statement: The TUI SHALL NOT contain the legacy Screen renderer, a duplicated approval flow, or exported symbols, interface members, or store fields that nothing reads.
+    verify: npm test -- test/tui-structure.test.ts
+    scenarios:
+      - when: the TUI tree is searched
+        then: screen.ts, screen/, showApproval, holdStatus and releaseStatus are absent
+      - when: approval prompts are needed
+        then: one decide implementation is used by both write and shell approvals
+
+  - op: add
+    id: tui-refactor-behavior-parity
+    title: Refactor keeps behavior
+    statement: The restructured TUI SHALL keep the current interactive behavior, approvals, cancellation, syntax highlighting, and strict type safety.
+    verify: npm test
+    scenarios:
+      - when: the full test suite runs after the refactor
+        then: all tests pass, including the migrated TUI tests
+      - when: the project is type checked
+        then: npm run check succeeds with no new suppressions

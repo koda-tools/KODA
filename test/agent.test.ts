@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { CodeAgent } from "../src/core/agent.js";
+import { CodeAgent, type ToolExecutor } from "../src/core/index.js";
 import type {
   ChatMessage,
   ChatResponse,
@@ -11,7 +11,7 @@ import type {
   ILLMProvider,
   ProviderCapabilities,
   StreamEvent,
-} from "../src/providers/base.provider.js";
+} from "../src/providers/index.js";
 import { ToolRegistry } from "../src/tools/registry.js";
 import { AgentError } from "../src/utils/errors.js";
 
@@ -43,6 +43,7 @@ test("returns direct answers without tools", async () => {
   const answer = await new CodeAgent(
     provider,
     new ToolRegistry({ workspaceRoot: process.cwd() }),
+    { identity: { provider: "openai", model: "test-model" } },
   ).run("Hi");
   assert.equal(answer, "hello");
   assert.equal(provider.calls.length, 1);
@@ -64,10 +65,9 @@ test("feeds multiple tool observations back with their IDs", async () => {
       direct("A and B"),
     ]);
     assert.equal(
-      await new CodeAgent(
-        provider,
-        new ToolRegistry({ workspaceRoot: root }),
-      ).run("Read both"),
+      await new CodeAgent(provider, new ToolRegistry({ workspaceRoot: root }), {
+        identity: { provider: "openai", model: "test-model" },
+      }).run("Read both"),
       "A and B",
     );
     assert.deepEqual(provider.calls[1]?.slice(-2), [
@@ -88,6 +88,7 @@ test("includes prior history and returns the turn's new messages", async () => {
   const result = await new CodeAgent(
     provider,
     new ToolRegistry({ workspaceRoot: process.cwd() }),
+    { identity: { provider: "openai", model: "test-model" } },
   ).runDetailed("again", { history });
   assert.deepEqual(provider.calls[0], [
     { role: "system", content: provider.calls[0]?.[0]?.content },
@@ -117,6 +118,7 @@ test("the turn's new messages include tool exchanges in order", async () => {
     const result = await new CodeAgent(
       provider,
       new ToolRegistry({ workspaceRoot: root }),
+      { identity: { provider: "openai", model: "test-model" } },
     ).runDetailed("read it");
     assert.deepEqual(result.messages, [
       { role: "user", content: "read it" },
@@ -135,6 +137,56 @@ test("the turn's new messages include tool exchanges in order", async () => {
   }
 });
 
+test("reports the identity model or the resolved override", async () => {
+  const identity = { provider: "openai", model: "base-model" };
+  const agent = (provider: ILLMProvider) =>
+    new CodeAgent(
+      provider,
+      new ToolRegistry({ workspaceRoot: process.cwd() }),
+      {
+        identity,
+      },
+    );
+  const defaulted = await agent(new FakeProvider([direct("a")])).runDetailed(
+    "x",
+  );
+  assert.equal(defaulted.model, "base-model");
+  assert.equal(defaulted.provider, "openai");
+  const overridden = await agent(new FakeProvider([direct("b")])).runDetailed(
+    "y",
+    { model: "openai/other-model#fast" },
+  );
+  assert.equal(overridden.model, "other-model");
+});
+
+test("uses the default tool status when a tool declares none", async () => {
+  const statuses: (string | undefined)[] = [];
+  const tools: ToolExecutor = {
+    definitions: [],
+    execute: async () => ({ ok: true, content: "ok" }),
+    statusLabel: () => undefined,
+  };
+  await new CodeAgent(
+    new FakeProvider([
+      {
+        content: "",
+        toolCalls: [{ id: "t", name: "custom", arguments: "{}" }],
+      },
+      direct("done"),
+    ]),
+    tools,
+    { identity: { provider: "openai", model: "m" } },
+  ).runDetailed("go", {
+    observer: { onStatus: (label) => statuses.push(label) },
+  });
+  assert.deepEqual(statuses, [
+    "Thinking...",
+    "Using tool...",
+    "Thinking...",
+    undefined,
+  ]);
+});
+
 test("stops at the iteration limit", async () => {
   const request: ChatResponse = {
     content: "",
@@ -143,7 +195,7 @@ test("stops at the iteration limit", async () => {
   const agent = new CodeAgent(
     new FakeProvider([request, request]),
     new ToolRegistry({ workspaceRoot: process.cwd() }),
-    { maxIterations: 2 },
+    { identity: { provider: "openai", model: "test-model" }, maxIterations: 2 },
   );
   await assert.rejects(agent.run("Loop"), AgentError);
 });
@@ -168,10 +220,11 @@ test("reports status labels in execution order and clears them at the end", asyn
       direct("done"),
     ]);
     const statuses: (string | undefined)[] = [];
-    await new CodeAgent(
-      provider,
-      new ToolRegistry({ workspaceRoot: root }),
-    ).runDetailed("go", { onStatus: (label) => statuses.push(label) });
+    await new CodeAgent(provider, new ToolRegistry({ workspaceRoot: root }), {
+      identity: { provider: "openai", model: "test-model" },
+    }).runDetailed("go", {
+      observer: { onStatus: (label) => statuses.push(label) },
+    });
     assert.deepEqual(statuses, [
       "Thinking...",
       "Reading...",

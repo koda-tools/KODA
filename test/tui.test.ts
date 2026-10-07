@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { CodeAgent } from "../src/core/agent.js";
+import { CodeAgent } from "../src/core/index.js";
 import type {
   ChatMessage,
   ChatResponse,
@@ -11,10 +11,9 @@ import type {
   ILLMProvider,
   ProviderCapabilities,
   StreamEvent,
-} from "../src/providers/base.provider.js";
+} from "../src/providers/index.js";
 import { ToolRegistry } from "../src/tools/registry.js";
-import { runInteractive } from "../src/cli/tui/application.js";
-import { renderHeader } from "../src/cli/tui/header.js";
+import { renderHeader, runInteractive } from "../src/cli/tui/index.js";
 
 class Provider implements ILLMProvider {
   public async complete(
@@ -70,7 +69,7 @@ test("runs an interactive prompt and exits", async () => {
       agent: new CodeAgent(
         new Provider(),
         new ToolRegistry({ workspaceRoot: root }),
-        { provider: "test", model: "model" },
+        { identity: { provider: "test", model: "model" } },
       ),
       provider: "test",
       model: "model",
@@ -115,7 +114,7 @@ test("/model lists models, switches by number, and rejects unknown names", async
       agent: new CodeAgent(
         new ModelProvider(),
         new ToolRegistry({ workspaceRoot: root }),
-        { provider: "test", model: "alpha" },
+        { identity: { provider: "test", model: "alpha" } },
       ),
       provider: "test",
       model: "alpha",
@@ -151,7 +150,7 @@ async function runModelSession(
       agent: new CodeAgent(
         new EdgeProvider(),
         new ToolRegistry({ workspaceRoot: root }),
-        { provider: "test", model: "alpha" },
+        { identity: { provider: "test", model: "alpha" } },
       ),
       provider: "test",
       model: "alpha",
@@ -213,7 +212,7 @@ test("renders fenced code with line numbers in the transcript", async () => {
       agent: new CodeAgent(
         new CodeProvider(),
         new ToolRegistry({ workspaceRoot: root }),
-        { provider: "test", model: "model" },
+        { identity: { provider: "test", model: "model" } },
       ),
       provider: "test",
       model: "model",

@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createLazyHighlighter } from "../src/cli/tui/highlight.js";
-import { parseAnsiLine } from "../src/cli/tui/ansi-log-view.js";
+import { createLazyHighlighter, parseAnsiLine } from "../src/cli/tui/index.js";
 
 test("turns truecolor SGR into TermUI fg styles", () => {
   const spans = parseAnsiLine("\x1b[38;2;255;0;10mconst\x1b[0m x");
