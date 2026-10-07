@@ -3,6 +3,7 @@ import {
   discoverCommands,
 } from "../../commands/discovery.js";
 import { routeInput, type RouteResult } from "../../commands/router.js";
+import { decide } from "../commands/decision.js";
 import { runModelCommand } from "../commands/model-command.js";
 import { commandSuggestions } from "../commands/suggestions.js";
 import { createLineWriter } from "../output/line-writer.js";
@@ -21,6 +22,8 @@ interface Dependencies {
   readonly writer: LineWriter;
   readonly spinner: Spinner;
 }
+
+const CLEAR_TITLE = "Clear the conversation context?";
 
 type Outcome = "continue" | "exit";
 type Route<T extends RouteResult["type"]> = Extract<RouteResult, { type: T }>;
@@ -77,6 +80,27 @@ async function runModel(deps: Dependencies, route: Route<"model">): Promise<void
   writer.write(result.text);
 }
 
+/**
+ * `/clear` throws away the conversation, so it asks first. On approval it
+ * also wipes the visible output: clearing only the history looks like
+ * nothing happened, since the old turns stay on screen.
+ */
+async function runClear(deps: Dependencies): Promise<void> {
+  const { io, session, writer } = deps;
+  const approved = await decide(
+    io,
+    CLEAR_TITLE,
+    "Clear the conversation context? [y/N] ",
+  );
+  if (!approved) {
+    writer.write("Conversation context kept.\n");
+    return;
+  }
+  io.clearTranscript?.();
+  session.clearConversation();
+  writer.write("Conversation context cleared.\n");
+}
+
 function reportFailure(deps: Dependencies, error: unknown): void {
   const cancelled = deps.session.finishRequest();
   deps.spinner.stop();
@@ -97,8 +121,7 @@ async function handleRoute(
       deps.writer.write(`${route.content}\n`);
       break;
     case "clear":
-      deps.session.clearConversation();
-      deps.writer.write("Conversation context cleared.\n");
+      await runClear(deps);
       break;
     case "model":
       await runModel(deps, route);

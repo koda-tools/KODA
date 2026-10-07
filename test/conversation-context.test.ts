@@ -16,6 +16,7 @@ import { ToolRegistry } from "../src/tools/registry.js";
 import {
   runInteractive,
   Session,
+  type InteractiveIO,
   type LineWriter,
 } from "../src/cli/tui/index.js";
 
@@ -66,6 +67,7 @@ class RecordingProvider implements ILLMProvider {
 async function drive(
   provider: RecordingProvider,
   inputs: string[],
+  io: Partial<InteractiveIO> = {},
 ): Promise<string> {
   const root = await mkdtemp(path.join(os.tmpdir(), "koda-ctx-"));
   let output = "";
@@ -86,6 +88,7 @@ async function drive(
           output += text;
         },
         close: () => undefined,
+        ...io,
       },
     });
     return output;
@@ -111,9 +114,16 @@ test("conversation context persists across turns", async () => {
   assert.equal(secondRequest.at(-1)?.content, "second");
 });
 
-test("/clear discards the conversation context", async () => {
+test("/clear discards the conversation context once confirmed", async () => {
   const provider = new RecordingProvider();
-  const output = await drive(provider, ["first", "/clear", "second", "/exit"]);
+  // "y" answers the confirmation prompt.
+  const output = await drive(provider, [
+    "first",
+    "/clear",
+    "y",
+    "second",
+    "/exit",
+  ]);
   assert.match(output, /Conversation context cleared\./);
   const afterClear = provider.seen[1] ?? [];
   assert.ok(
@@ -124,12 +134,49 @@ test("/clear discards the conversation context", async () => {
   assert.equal(afterClear[0]?.role, "system");
 });
 
+test("/clear keeps the context when the confirmation is refused", async () => {
+  const provider = new RecordingProvider();
+  const output = await drive(provider, [
+    "first",
+    "/clear",
+    "n",
+    "second",
+    "/exit",
+  ]);
+  assert.match(output, /Conversation context kept\./);
+  const afterRefusal = provider.seen[1] ?? [];
+  assert.ok(
+    afterRefusal.some((message) => message.content === "first"),
+    "a refused /clear must preserve the history",
+  );
+});
+
 test("/reset is an alias that discards the context", async () => {
   const provider = new RecordingProvider();
-  const output = await drive(provider, ["first", "/reset", "second", "/exit"]);
+  const output = await drive(provider, [
+    "first",
+    "/reset",
+    "y",
+    "second",
+    "/exit",
+  ]);
   assert.match(output, /Conversation context cleared\./);
   const afterReset = provider.seen[1] ?? [];
   assert.ok(!afterReset.some((message) => message.content === "first"));
+});
+
+test("/clear wipes the visible output and resets the usage totals", async () => {
+  const provider = new RecordingProvider();
+  let cleared = 0;
+  const headers: string[] = [];
+  await drive(provider, ["first", "/clear", "y", "/exit"], {
+    clearTranscript: () => {
+      cleared += 1;
+    },
+    setHeader: (text) => headers.push(text),
+  });
+  assert.equal(cleared, 1, "the output area must be wiped once");
+  assert.match(headers.at(-1) ?? "", /0 tokens/);
 });
 
 test("session memory survives screen activity until explicitly cleared", () => {

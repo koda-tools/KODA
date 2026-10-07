@@ -78,8 +78,14 @@ export class Session {
     this.history = trimHistory([...this.history, ...messages]);
   }
 
+  /**
+   * Drops the history and the usage totals: both describe the context that
+   * is being discarded, so the header would otherwise report tokens the
+   * model no longer receives.
+   */
   public clearConversation(): void {
     this.history = [];
+    this.usage = {};
     this.showHeader();
   }
 

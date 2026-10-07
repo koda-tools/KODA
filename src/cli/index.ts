@@ -10,6 +10,7 @@ import {
   ToolRegistry,
   type WritePolicy,
 } from "../tools/registry.js";
+import type { CommandPolicy } from "../tools/command/types.js";
 import { computeFileDiff } from "../utils/diff.js";
 import { ProviderError } from "../utils/errors.js";
 import {
@@ -104,15 +105,35 @@ function createWritePolicy(
   };
 }
 
+/** Approves commands through the same Autorizar/Rejeitar list as writes. */
+function createCommandPolicy(
+  io: InteractiveIO | undefined,
+): CommandPolicy | undefined {
+  if (io === undefined) return undefined;
+  return {
+    confirm: async (request) => {
+      // Echo before asking, so a hung process still shows what ran.
+      io.write(`$ ${request.command}\n`);
+      return decide(
+        io,
+        `Run  ${request.command}`,
+        `Run command '${request.command}'? [y/N] `,
+      );
+    },
+  };
+}
+
 function createAgent(
   runtime: CliEnvironment,
   writePolicy: WritePolicy | undefined,
+  commandPolicy: CommandPolicy | undefined,
 ): CodeAgent {
   return new CodeAgent(
     ProviderFactory.fromEnvironment(runtime.env),
     new ToolRegistry({
       workspaceRoot: runtime.cwd,
       ...(writePolicy === undefined ? {} : { writePolicy }),
+      ...(commandPolicy === undefined ? {} : { commandPolicy }),
     }),
     { identity: resolveProviderIdentity(runtime.env) },
   );
@@ -168,6 +189,7 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
     const agent = createAgent(
       runtime,
       createWritePolicy(termUI?.io, highlighter),
+      createCommandPolicy(termUI?.io),
     );
     if (termUI === undefined) await runBatch(runtime, agent, prompt);
     else await runInteractiveSession(runtime, termUI, agent, highlighter);

@@ -60,6 +60,7 @@ export class TermUIRuntime implements InteractiveRuntime {
     isTTY: true,
     setHeader: (header) => this.store.setState({ header }),
     setStatus: (status) => this.setStatus(status),
+    clearTranscript: () => this.clearTranscript(),
     select: (request) => this.select(request),
     showDiff: (request) => this.showDiff(request),
     showModelPicker: (request) => this.showModelPicker(request),
@@ -91,7 +92,7 @@ export class TermUIRuntime implements InteractiveRuntime {
         transcript: this.transcript,
         isBusy: () => this.store.getState().status !== undefined,
         cancel: () => this.cancel(),
-        clearTranscript: () => this.store.setState({ transcript: [""] }),
+        clearTranscript: () => this.clearTranscript(),
         submit: (value) => this.submit(value),
         requestRender: () => this.mounted?.requestRender(),
       }),
@@ -126,6 +127,11 @@ export class TermUIRuntime implements InteractiveRuntime {
   private write(text: string): void {
     const { transcript } = this.store.getState();
     this.store.setState({ transcript: appendToTranscript(transcript, text) });
+  }
+
+  /** Used by both Ctrl+L and `/clear`. */
+  private clearTranscript(): void {
+    this.store.setState({ transcript: [""] });
   }
 
   private setStatus(status: string | undefined): void {

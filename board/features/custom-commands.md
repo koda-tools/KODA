@@ -1,6 +1,6 @@
 # Koda custom commands
 
-Koda discovers project commands from `.koda/commands/**/*.md`, `.koda/koda.jsonc`, and root `koda.jsonc`. Equivalent `.opencode` and `opencode.jsonc` locations are supported after Koda sources. User-global commands are loaded from `~/.config/koda` and then `~/.config/opencode`. Project sources override global sources, and nested Markdown paths become slash commands.
+Koda discovers project commands from `.koda/commands/**/*.md`, `.koda/koda.jsonc`, and root `koda.jsonc`. Equivalent `.koda` and `koda.jsonc` locations are supported after Koda sources. User-global commands are loaded from `~/.config/koda` and then `~/.config/koda`. Project sources override global sources, and nested Markdown paths become slash commands.
 
 Markdown files may start with YAML frontmatter containing `description`, `agent`, `model`, and `subagent`. The body is the prompt template. JSONC files define the same fields under `commands`, with a required `template`.
 

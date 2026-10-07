@@ -72,8 +72,42 @@ export {
   type ReadFileOptions,
 } from "./tools/file-system/read-file.tool.js";
 export {
+  listDirectoryTool,
+  type ListDirectoryArgs,
+  type ListDirectoryOptions,
+} from "./tools/file-system/list-directory.tool.js";
+export {
+  searchFilesTool,
+  type SearchFilesArgs,
+  type SearchFilesOptions,
+} from "./tools/file-system/search-files.tool.js";
+export {
+  getFileInfoTool,
+  type GetFileInfoArgs,
+  type GetFileInfoOptions,
+} from "./tools/file-system/get-file-info.tool.js";
+export {
+  runCommandTool,
+} from "./tools/command/run-command.tool.js";
+export type {
+  CommandConfirmation,
+  CommandPolicy,
+  CommandResult,
+  RiskLevel,
+  RunCommandArgs,
+  RunCommandOptions,
+} from "./tools/command/types.js";
+export { classify } from "./tools/command/risk.js";
+export {
+  GET_FILE_INFO_DEFINITION,
+  LIST_DIRECTORY_DEFINITION,
   READ_FILE_DEFINITION,
+  RUN_COMMAND_DEFINITION,
+  SEARCH_FILES_DEFINITION,
   ToolRegistry,
+  WRITE_FILE_DEFINITION,
+  type ListDirectoryLimits,
+  type SearchFilesLimits,
   type ToolRegistryOptions,
 } from "./tools/registry.js";
 export {

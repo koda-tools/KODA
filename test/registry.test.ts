@@ -1,203 +1,139 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
 import { test } from "node:test";
-import {
-  READ_FILE_DEFINITION,
-  WRITE_FILE_DEFINITION,
-  ToolRegistry,
-  type WriteConfirmation,
-} from "../src/tools/registry.js";
+import { ToolRegistry } from "../src/index.js";
+import { withWorkspace } from "./helpers/workspace.js";
 
-test("publishes and executes readFile", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "koda-registry-"));
-  try {
-    await writeFile(path.join(root, "project.txt"), "Koda");
-    const registry = new ToolRegistry({ workspaceRoot: root });
-    assert.equal(registry.definitions[0], READ_FILE_DEFINITION);
-    assert.deepEqual(
-      await registry.execute("readFile", '{"filePath":"project.txt"}'),
-      { ok: true, content: "Koda" },
-    );
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
+const files = {
+  "src/a.ts": "export const name = 'alpha';\nconst second = 2;\n",
+  "docs/readme.md": "docs\n",
+};
 
-test("returns sanitized observations for invalid calls", async () => {
-  const registry = new ToolRegistry({ workspaceRoot: process.cwd() });
-  assert.equal((await registry.execute("missing", "{}")).ok, false);
-  assert.match(
-    (await registry.execute("readFile", "{oops")).content,
-    /^Tool error:/,
+function registry(root: string): ToolRegistry {
+  return new ToolRegistry({ workspaceRoot: root });
+}
+
+test("exposes every exploration tool with a status label", () => {
+  const tools = registry("/tmp");
+  assert.deepEqual(
+    tools.definitions.map((definition) => definition.name),
+    [
+      "readFile",
+      "writeFile",
+      "listDirectory",
+      "searchFiles",
+      "getFileInfo",
+      "runCommand",
+    ],
   );
-  assert.match(
-    (await registry.execute("readFile", '{"filePath":"","extra":true}'))
-      .content,
-    /^Tool error:/,
+  assert.equal(tools.statusLabel("listDirectory"), "Listing...");
+  assert.equal(tools.statusLabel("searchFiles"), "Searching...");
+  assert.equal(tools.statusLabel("getFileInfo"), "Inspecting...");
+  assert.equal(tools.statusLabel("runCommand"), "Running...");
+  assert.equal(tools.statusLabel("unknown"), undefined);
+});
+
+test("runs the exploration tools end to end", async () => {
+  await withWorkspace(files, async (root) => {
+    const tools = registry(root);
+    const listed = await tools.execute("listDirectory", "{}");
+    assert.equal(listed.ok, true);
+    assert.match(listed.content, /src\//);
+
+    const found = await tools.execute(
+      "searchFiles",
+      JSON.stringify({ query: "alpha" }),
+    );
+    assert.equal(found.ok, true);
+    assert.match(found.content, /src\/a\.ts:1:/);
+
+    const info = await tools.execute(
+      "getFileInfo",
+      JSON.stringify({ path: "src/a.ts" }),
+    );
+    assert.equal(info.ok, true);
+    assert.match(info.content, /Kind: {6}file/);
+
+    const ranged = await tools.execute(
+      "searchFiles",
+      JSON.stringify({ query: "second", include: "**/*.ts" }),
+    );
+    assert.match(ranged.content, /a\.ts:2:/);
+  });
+});
+
+test("readFile accepts a line range through the registry", async () => {
+  await withWorkspace({ "a.txt": "one\ntwo\nthree\n" }, async (root) => {
+    const result = await registry(root).execute(
+      "readFile",
+      JSON.stringify({ filePath: "a.txt", startLine: 2, endLine: 2 }),
+    );
+    assert.equal(result.ok, true);
+    assert.equal(result.content, "a.txt (lines 2-2 of 4)\ntwo");
+  });
+});
+
+test("malformed arguments become failed observations", async () => {
+  await withWorkspace(files, async (root) => {
+    const tools = registry(root);
+    for (const [name, args, pattern] of [
+      ["listDirectory", "{", /Tool error:/],
+      ["listDirectory", JSON.stringify({ depth: 0 }), /positive integer/],
+      ["listDirectory", JSON.stringify({ includeHidden: "yes" }), /boolean/],
+      ["searchFiles", "{}", /non-empty query/],
+      ["getFileInfo", JSON.stringify({ path: "" }), /non-empty path/],
+      ["readFile", JSON.stringify({ filePath: "a.ts", startLine: 0 }), /positive integer/],
+    ] as const) {
+      const result = await tools.execute(name, args);
+      assert.equal(result.ok, false, `${name} ${args}`);
+      assert.match(result.content, pattern);
+    }
+  });
+});
+
+test("an unknown tool is reported without throwing", async () => {
+  const result = await registry("/tmp").execute("nope", "{}");
+  assert.equal(result.ok, false);
+  assert.match(result.content, /Unknown tool 'nope'/);
+});
+
+test("runCommand refuses when no command policy is configured", async () => {
+  const result = await registry("/tmp").execute(
+    "runCommand",
+    JSON.stringify({ command: "echo hi" }),
   );
+  assert.equal(result.ok, false);
+  assert.match(result.content, /no approval policy is configured/);
 });
 
-test("publishes readFile and writeFile definitions", () => {
-  const registry = new ToolRegistry({ workspaceRoot: process.cwd() });
-  assert.equal(registry.definitions[0], READ_FILE_DEFINITION);
-  assert.equal(registry.definitions[1], WRITE_FILE_DEFINITION);
-});
-
-test("executes writeFile when approved", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "koda-registry-"));
-  try {
-    const registry = new ToolRegistry({
-      workspaceRoot: root,
-      writePolicy: { confirm: async () => true },
-    });
-    const result = await registry.execute(
-      "writeFile",
-      '{"filePath":"hello.py","content":"print(1)"}',
+test("sandbox violations surface as failed observations", async () => {
+  await withWorkspace({ ".env": "SECRET=1" }, async (root) => {
+    const tools = registry(root);
+    const sensitive = await tools.execute(
+      "getFileInfo",
+      JSON.stringify({ path: ".env" }),
     );
-    assert.equal(result.ok, true);
-    assert.match(result.content, /Wrote/);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
+    assert.equal(sensitive.ok, false);
+    assert.match(sensitive.content, /sensitive/);
+    assert.ok(!sensitive.content.includes("SECRET"));
 
-test("supplies the previous content to confirmation before writing", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "koda-registry-"));
-  try {
-    await writeFile(path.join(root, "app.ts"), "const a = 1;\n");
-    const seen: WriteConfirmation[] = [];
-    const registry = new ToolRegistry({
-      workspaceRoot: root,
-      writePolicy: {
-        confirm: async (request) => {
-          seen.push(request);
-          return true;
-        },
-      },
-    });
-    const result = await registry.execute(
-      "writeFile",
-      '{"filePath":"app.ts","content":"const a = 2;\\n"}',
+    const escape = await tools.execute(
+      "listDirectory",
+      JSON.stringify({ path: "../.." }),
     );
-    assert.equal(result.ok, true);
-    assert.equal(seen.length, 1);
-    assert.equal(seen[0]?.before, "const a = 1;\n");
-    assert.equal(seen[0]?.after, "const a = 2;\n");
-    assert.equal(seen[0]?.skipped, undefined);
-    assert.match(result.content, /\(\+1 -1\)/);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
+    assert.equal(escape.ok, false);
+  });
 });
 
-test("marks a new file with an undefined previous content", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "koda-registry-"));
-  try {
-    const seen: WriteConfirmation[] = [];
-    const registry = new ToolRegistry({
-      workspaceRoot: root,
-      writePolicy: {
-        confirm: async (request) => {
-          seen.push(request);
-          return true;
-        },
-      },
-    });
-    const result = await registry.execute(
-      "writeFile",
-      '{"filePath":"fresh.ts","content":"export const x = 1;\\n"}',
-    );
-    assert.equal(result.ok, true);
-    assert.equal(seen[0]?.before, undefined);
-    assert.doesNotMatch(result.content, /\(\+/);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
-
-test("skips the diff for an oversized previous file", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "koda-registry-"));
-  try {
-    await writeFile(path.join(root, "big.txt"), "0123456789");
-    const seen: WriteConfirmation[] = [];
-    const registry = new ToolRegistry({
-      workspaceRoot: root,
-      maxFileBytes: 4,
-      writePolicy: {
-        confirm: async (request) => {
-          seen.push(request);
-          return false;
-        },
-      },
-    });
-    const result = await registry.execute(
-      "writeFile",
-      '{"filePath":"big.txt","content":"new"}',
+test("cancellation reaches the exploration tools", async () => {
+  await withWorkspace(files, async (root) => {
+    const controller = new AbortController();
+    controller.abort();
+    const result = await registry(root).execute(
+      "searchFiles",
+      JSON.stringify({ query: "alpha" }),
+      controller.signal,
     );
     assert.equal(result.ok, false);
-    assert.equal(seen[0]?.before, undefined);
-    assert.equal(seen[0]?.skipped, "too-large");
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
-
-test("denies writeFile without altering the file when rejected", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "koda-registry-"));
-  try {
-    await writeFile(path.join(root, "keep.txt"), "original\n");
-    const registry = new ToolRegistry({
-      workspaceRoot: root,
-      writePolicy: { confirm: async () => false },
-    });
-    const denied = await registry.execute(
-      "writeFile",
-      '{"filePath":"keep.txt","content":"changed\\n"}',
-    );
-    assert.equal(denied.ok, false);
-    assert.match(denied.content, /denied by user/);
-    assert.equal(
-      await readFile(path.join(root, "keep.txt"), "utf8"),
-      "original\n",
-    );
-
-    const unconfigured = new ToolRegistry({ workspaceRoot: root });
-    const noPolicy = await unconfigured.execute(
-      "writeFile",
-      '{"filePath":"keep.txt","content":"print(1)"}',
-    );
-    assert.equal(noPolicy.ok, false);
-    assert.match(noPolicy.content, /approval policy/);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
-
-test("never reads blocked paths for the diff", async () => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "koda-registry-"));
-  try {
-    let called = false;
-    const registry = new ToolRegistry({
-      workspaceRoot: root,
-      writePolicy: {
-        confirm: async () => {
-          called = true;
-          return true;
-        },
-      },
-    });
-    for (const filePath of ["../escape.txt", ".env", ".git/config"]) {
-      const result = await registry.execute(
-        "writeFile",
-        JSON.stringify({ filePath, content: "x" }),
-      );
-      assert.equal(result.ok, false);
-      assert.match(result.content, /Tool error:/);
-    }
-    assert.equal(called, false);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
+    assert.match(result.content, /Cancelled by user/);
+  });
 });

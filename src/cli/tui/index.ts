@@ -5,6 +5,7 @@
  */
 import type { InteractiveRuntime } from "./application/types.js";
 import type { CommandSuggestions } from "./runtime/command-suggestions.js";
+import type { Prompt } from "./runtime/prompt.js";
 
 export { runInteractive } from "./application/application.js";
 export type {
@@ -35,6 +36,8 @@ export {
   parseWriteSummary,
 } from "./output/write-arguments.js";
 export { parseAnsiLine } from "./runtime/ansi-parser.js";
+export { PROMPT_TITLE } from "./runtime/constants.js";
+export type { Prompt } from "./runtime/prompt.js";
 export { renderHeader } from "./session/header.js";
 export { estimateCost } from "../../providers/index.js";
 export { Session } from "./session/session.js";
@@ -65,4 +68,10 @@ export async function loadTermUIRuntime(): Promise<InteractiveRuntime> {
 export async function createCommandSuggestions(): Promise<CommandSuggestions> {
   const module = await import("./runtime/command-suggestions.js");
   return new module.CommandSuggestions();
+}
+
+/** Create the prompt widget on demand (loads TermUI). */
+export async function createPrompt(): Promise<Prompt> {
+  const module = await import("./runtime/prompt.js");
+  return new module.Prompt();
 }

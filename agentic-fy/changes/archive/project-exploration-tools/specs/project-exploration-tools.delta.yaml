@@ -1,0 +1,77 @@
+capability: project-exploration-tools
+purpose: Let the KODA agent discover a workspace through bounded listing, search, inspection and line-range reads, without exposing sensitive paths or flooding the context.
+
+operations:
+  - op: add
+    id: list-directory-tool
+    title: listDirectory lists a bounded tree
+    statement: A `listDirectory` tool SHALL return the entries of a workspace directory up to a configurable depth and entry limit, respect `.gitignore`, skip sensitive and build directories, and never leave the workspace sandbox.
+    verify: npm test -- test/list-directory.test.ts
+    scenarios:
+      - when: a directory contains a .gitignore that excludes build output
+        then: the listing omits the ignored entries
+      - when: the limit is reached while walking
+        then: the output stops and reports a truncation notice
+      - when: a symlink points outside the workspace
+        then: the entry is skipped
+
+  - op: add
+    id: search-files-tool
+    title: searchFiles finds text and regex matches
+    statement: A `searchFiles` tool SHALL search workspace files for literal text or a regular expression, honor case sensitivity, include and exclude globs, enforce file, total match and per-file limits, skip binary files, and support cancellation.
+    verify: npm test -- test/search-files.test.ts
+    scenarios:
+      - when: a regular expression matches lines in several files
+        then: results include path, line, column and a truncated line
+      - when: the maxMatches limit is reached
+        then: the output stops with a truncation notice listing scanned files
+      - when: a binary file is encountered
+        then: the file is skipped and its matches are not reported
+
+  - op: add
+    id: get-file-info-tool
+    title: getFileInfo returns safe metadata
+    statement: A `getFileInfo` tool SHALL return path, kind, size, modified time and text-or-binary classification for an existing workspace entry, without reading the whole file.
+    verify: npm test -- test/get-file-info.test.ts
+    scenarios:
+      - when: the path points to a UTF-8 text file
+        then: the content kind is reported as text and the size matches the file
+      - when: the path does not exist
+        then: the tool reports a path-not-found error
+
+  - op: add
+    id: read-file-line-range
+    title: readFile supports a line range
+    statement: readFile SHALL accept optional 1-indexed inclusive startLine and endLine arguments, return only the requested range with a header listing the file path and the range, and keep the whole-file behavior when the range is omitted.
+    verify: npm test -- test/read-file-range.test.ts
+    scenarios:
+      - when: a valid line range is requested
+        then: the output contains only those lines prefixed by the range header
+      - when: no range is given
+        then: the output equals the file content exactly
+      - when: the range is invalid (startLine < 1 or endLine < startLine)
+        then: the tool reports a validation error
+
+  - op: add
+    id: tools-ignore-and-binary-helpers
+    title: Shared ignore and binary helpers
+    statement: Exploration tools SHALL share a `.gitignore` matcher and a text-or-binary heuristic in `src/utils`, with no external dependency and documented limitations.
+    verify: npm test -- test/gitignore.test.ts test/binary.test.ts
+    scenarios:
+      - when: a nested .gitignore reintroduces a path with `!`
+        then: the matcher reports the path as not ignored
+      - when: a buffer contains a NUL byte in the first 8 KB
+        then: it is classified as binary
+
+  - op: add
+    id: exploration-tools-sandbox
+    title: Exploration tools stay in the sandbox
+    statement: Every new tool SHALL resolve requested paths through the existing workspace sandbox, deny access to sensitive files and directories, and accept an `AbortSignal` to cancel long operations.
+    verify: npm test -- test/registry.test.ts
+    scenarios:
+      - when: an absolute path or a path containing `..` is requested
+        then: the tool returns a sandbox error
+      - when: a sensitive file is requested
+        then: the tool returns an access-denied error
+      - when: the operation is cancelled mid-walk
+        then: the tool stops and reports a cancellation observation

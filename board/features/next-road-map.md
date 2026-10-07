@@ -14,6 +14,7 @@ This directory contains one document per major KODA capability. Each feature doc
 | P1 | Automatic validation | Planned | [automatic-validation.md](./automatic-validation.md) |
 | P1 | Operation modes | Planned | [operation-modes.md](./operation-modes.md) |
 | P1 | Project rules | Planned | [project-rules.md](./project-rules.md) |
+| P1 | Multiple sessions and session switching | Planned | [multiple-session-and-change-session.md](./multiple-session-and-change-session.md) |
 | P2 | LSP integration | Planned | [lsp-integration.md](./lsp-integration.md) |
 | P2 | Session persistence | Planned | [session-persistence.md](./session-persistence.md) |
 | P2 | Observability and cost | Planned | [observability-and-cost.md](./observability-and-cost.md) |

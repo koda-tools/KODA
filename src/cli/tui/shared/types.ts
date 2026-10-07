@@ -66,6 +66,8 @@ export interface InteractiveIO {
   readonly writeStyled?: (text: string) => void;
   readonly setHeader?: (text: string) => void;
   readonly setStatus?: (text: string | undefined) => void;
+  /** Wipe the visible output area (same effect as Ctrl+L). */
+  readonly clearTranscript?: () => void;
   readonly select?: (request: SelectRequest) => Promise<number | undefined>;
   /** Returns false when the caller should render the diff as text. */
   readonly showDiff?: (request: DiffViewRequest) => boolean;

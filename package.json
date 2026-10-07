@@ -17,6 +17,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "koda": "tsc -p tsconfig.json && node ./bin/koda.js",
+    "start": "node ./bin/koda.js",
     "check": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
     "format:check": "prettier --check package.json tsconfig.json \"src/**/*.ts\" \"test/**/*.ts\"",

@@ -20,6 +20,8 @@ export const SCROLL_SYNC_INTERVAL_MS = 200;
 export const REFRESH_INTERVAL = "80ms";
 
 export const PROMPT_PLACEHOLDER = "Write prompt here";
+/** Label drawn inside the prompt's top border. */
+export const PROMPT_TITLE = "Message";
 export const PROMPT_HINT =
   "Enter to send · Alt+Enter to new line · PgUp/PgDn scroll · Esc to cancel";
 export const MODEL_PICKER_TITLE =

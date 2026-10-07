@@ -1,15 +1,17 @@
 import type { KeyEvent } from "@termuijs/core";
-import { TextArea } from "@termuijs/ui";
-import { LAYOUT, PROMPT_PLACEHOLDER } from "./constants.js";
+import { LAYOUT, PROMPT_PLACEHOLDER, PROMPT_TITLE } from "./constants.js";
+import { TitledTextArea } from "./titled-text-area.js";
 
 /**
  * Multi-line prompt on TermUI's `TextArea`
- * (https://www.termui.io/components/text-area) that grows with its content.
- * `AppBuilder` only routes keys to List/TextInput, so the runtime forwards
- * keys here, and focus (which draws the cursor) is managed manually.
+ * (https://www.termui.io/components/text-area) that grows with its content,
+ * labeled in its top border. `AppBuilder` only routes keys to List/TextInput,
+ * so the runtime forwards keys here, and focus (which draws the cursor) is
+ * managed manually.
  */
 export class Prompt {
-  public readonly widget = new TextArea(
+  public readonly widget = new TitledTextArea(
+    PROMPT_TITLE,
     {
       flexGrow: 0,
       flexShrink: 0,

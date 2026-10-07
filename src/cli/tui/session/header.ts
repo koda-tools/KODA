@@ -18,13 +18,12 @@ function formatCost(cost: number | undefined): string {
 export function renderHeader(status: SessionStatus): string {
   const cost = estimateCost(status.provider, status.model, status.usage);
   return [
-    `  ▄▖██▗▄   KODA`,
-    `  █▀██▀█   AI Coding Agent`,
-    `  ▝▀██▀▘   ${"─".repeat(52)}`,
-    `  Model      ${status.model}`,
-    `  Provider   ${status.provider}`,
-    `  Usage      ${formatTokens(status.usage)}`,
-    `  Cost       ${formatCost(cost)}`,
-    "─".repeat(63),
+    `   ▀ ▀   KODA`,
+    `  █▀█▀█   AI Coding Agent`,
+    `  ▀▀▀▀▀     ${"─".repeat(52)}`,
+    `  Model:    ${status.model}`,
+    `  Provider: ${status.provider}`,
+    `  Usage:    ${formatTokens(status.usage)}`,
+    `  Cost:     ${formatCost(cost)}`
   ].join("\n");
 }

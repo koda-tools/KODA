@@ -100,9 +100,17 @@ Support `KODA.md` and compatible `AGENTS.md` files with parent-directory inherit
 
 Specification: [`project-rules.md`](./features/project-rules.md)
 
+#### 8. Multiple sessions and session switching
+
+**Goal:** Let a single KODA run hold more than one conversation context and switch between them.
+
+Manage several `Session` instances, each with isolated model, usage, history, and abort controller. Support creating a new context window, switching the active session, listing open sessions, and closing one while cancelling its in-flight request. The header must always reflect the active session only.
+
+Specification: [`multiple-session-and-change-session.md`](./features/multiple-session-and-change-session.md)
+
 ### P2 — Structural code intelligence and operational visibility
 
-#### 8. LSP integration
+#### 9. LSP integration
 
 **Goal:** Provide definitions, references, symbols, and diagnostics instead of relying only on text search.
 
@@ -110,7 +118,7 @@ Start with TypeScript diagnostics, definitions, and references, then expand to a
 
 Specification: [`lsp-integration.md`](./features/lsp-integration.md)
 
-#### 9. Observability and cost tracking
+#### 10. Observability and cost tracking
 
 **Goal:** Make usage, latency, failures, retries, tool activity, and estimated model cost measurable.
 
@@ -118,7 +126,7 @@ Expose human-readable summaries and stable JSON output for CI while keeping tele
 
 Specification: [`observability-and-cost.md`](./features/observability-and-cost.md)
 
-#### 10. Session persistence
+#### 11. Session persistence
 
 **Goal:** Resume interrupted work and inspect prior agent runs.
 
@@ -128,7 +136,7 @@ Specification: [`session-persistence.md`](./features/session-persistence.md)
 
 ### P3 — Extensibility and parallelization
 
-#### 11. Subagents
+#### 12. Subagents
 
 **Goal:** Delegate exploration, implementation, and review to bounded specialized agents.
 
@@ -136,7 +144,7 @@ Read-only delegation should be the default. Child limits and permissions must ne
 
 Specification: [`subagents.md`](./features/subagents.md)
 
-#### 12. MCP integration
+#### 13. MCP integration
 
 **Goal:** Connect KODA to external tools and data sources through explicit, permissioned MCP servers.
 
