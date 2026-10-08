@@ -225,7 +225,10 @@ test("renders fenced code with line numbers in the transcript", async () => {
         close: () => undefined,
       },
     });
-    assert.match(output, /Sure:\n {2}1 \| print\(1\)\n {2}2 \| print\(2\)\n/);
+    assert.match(output, / {2}1 \| print\(1\)\n {2}2 \| print\(2\)\n/);
+    // The block is wrapped in a Card-style frame with a copy hint.
+    assert.match(output, /┌─ py .*Copy/);
+    assert.match(output, /└─+┘/);
     assert.doesNotMatch(output, /```/);
   } finally {
     await rm(root, { recursive: true, force: true });

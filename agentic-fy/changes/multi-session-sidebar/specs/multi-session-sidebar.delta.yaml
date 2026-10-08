@@ -1,0 +1,76 @@
+# Spec delta for the "multi-session-sidebar" capability.
+# Reference requirements by their stable id. Operations: add | modify | remove.
+capability: multi-session-sidebar
+purpose: Permitir várias sessões vivas no TUI do KODA, cada uma com histórico, model, usage e transcript próprios, com uma sessão ativa por vez; exibir uma sidebar com a lista de sessões e o estado da sessão atual (model, provider, tokens, custo); e navegar entre sessões por teclado, sem introduzir execução concorrente nem relaxar segurança.
+
+operations:
+  - op: add
+    id: session-manager
+    title: Gerenciador de múltiplas sessões
+    statement: O sistema DEVE manter várias sessões simultaneamente por meio de um SessionManager, cada sessão com histórico, model selecionado, usage e buffer de transcript próprios, com exatamente uma sessão ativa por vez.
+    verify: npm test
+    scenarios:
+      - when: o CLI inicia
+        then: existe uma sessão ativa e o comportamento é equivalente ao single-session atual
+      - when: uma nova sessão é criada
+        then: ela passa a ser a sessão ativa e as demais mantêm seu histórico, usage e transcript intactos
+      - when: a sessão ativa é trocada
+        then: o histórico, usage e model da sessão que sai não são alterados
+
+  - op: add
+    id: per-session-transcript
+    title: Transcript isolado por sessão
+    statement: O sistema DEVE isolar o buffer de transcript por sessão, exibindo no store apenas o transcript da sessão ativa e preservando o conteúdo das demais ao alternar.
+    verify: npm test
+    scenarios:
+      - when: o usuário troca da sessão A para a B
+        then: o transcript visível passa a ser o da B e o da A é preservado sem perder nem duplicar linhas
+      - when: o usuário retorna à sessão A
+        then: o transcript exibido é exatamente o que a A tinha antes da troca
+      - when: um novo output é escrito
+        then: ele é anexado somente ao transcript da sessão ativa
+
+  - op: add
+    id: session-switch-navigation
+    title: Navegação e criação de sessão por teclado
+    statement: O sistema DEVE permitir criar uma nova sessão com Ctrl+N, alternar a visibilidade da sidebar com Ctrl+B, e abrir um modal seletor de sessão (reusando o componente de lista existente) quando Tab é pressionado com o prompt vazio, sem quebrar a inserção normal de Tab quando o prompt tem conteúdo.
+    verify: node --test --import tsx test/keyboard.test.ts
+    scenarios:
+      - when: o usuário pressiona Ctrl+N
+        then: uma nova sessão é criada e torna-se ativa
+      - when: o usuário pressiona Tab com o prompt vazio
+        then: o modal seletor de sessão é aberto para escolher a sessão com as setas e Enter
+      - when: o usuário pressiona Tab com texto no prompt
+        then: o Tab é tratado como inserção normal no prompt e o modal não abre
+      - when: o usuário pressiona Ctrl+B
+        then: a sidebar alterna entre visível e oculta
+      - when: um modal já está aberto
+        then: os atalhos de sessão não disparam até o modal fechar
+
+  - op: add
+    id: session-sidebar
+    title: Sidebar de sessões e estado atual
+    statement: O sistema DEVE exibir, quando visível, uma sidebar com a lista de sessões marcando a ativa e um bloco "CURRENT" com model, provider, tokens e custo da sessão ativa, reutilizando o cálculo de custo e a formatação de tokens já existentes.
+    verify: npm test
+    scenarios:
+      - when: a sidebar está visível
+        then: cada sessão aparece com um marcador distinto para a ativa e as inativas, além de uma entrada para nova sessão
+      - when: a sessão ativa acumula uso após um turno
+        then: o bloco "CURRENT" reflete os tokens e o custo atualizados da sessão ativa
+      - when: o usuário troca de sessão
+        then: o bloco "CURRENT" passa a mostrar model, provider, tokens e custo da nova sessão ativa
+      - when: a sidebar está oculta
+        then: a área de chat ocupa toda a largura e nenhuma coluna lateral é desenhada
+
+  - op: add
+    id: chat-layout-two-columns
+    title: Layout de duas colunas para o chat
+    statement: O sistema DEVE renderizar a área de chat (header compacto, transcript, prompt e modais) numa coluna à direita da sidebar, mantendo o scroll do transcript, os prompts de aprovação, o seletor de model e o fluxo de ferramentas funcionando como antes, e exibindo um rodapé com as dicas dos atalhos de sessão.
+    verify: npm test
+    scenarios:
+      - when: o TUI é montado com a sidebar visível
+        then: a sidebar fica à esquerda e a área de chat à direita, com o rodapé mostrando Ctrl+N, Tab e Ctrl+B
+      - when: um prompt de aprovação ou o seletor de model é aberto
+        then: ele aparece na coluna de chat e funciona como no comportamento atual
+      - when: a sidebar é ocultada
+        then: a área de chat passa a ocupar toda a largura sem erro de layout

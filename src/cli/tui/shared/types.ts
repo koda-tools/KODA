@@ -9,6 +9,9 @@ export interface LineWriter {
   readonly writeSegment: (segment: Segment) => void;
 }
 
+/** Called with the raw text of a code block once its closing fence lands. */
+export type CodeBlockListener = (code: string) => void;
+
 export interface SelectRequest {
   readonly title: string;
   readonly options: readonly string[];
@@ -38,6 +41,34 @@ export interface ModelPickerItem {
 
 export interface ModelPickerRequest {
   readonly items: readonly ModelPickerItem[];
+}
+
+export interface SessionPickerItem {
+  readonly label: string;
+  readonly active: boolean;
+}
+
+export interface SessionPickerRequest {
+  readonly items: readonly SessionPickerItem[];
+}
+
+/**
+ * What the session picker resolved to: switch to an existing session by
+ * index, create a new one, or cancel (`undefined`).
+ */
+export type SessionPickerResult =
+  | { readonly kind: "switch"; readonly index: number }
+  | { readonly kind: "new" };
+
+/** Session info the sidebar/summary needs, independent of any widget. */
+export interface SessionSummaryView {
+  readonly id: string;
+  readonly title: string;
+  readonly active: boolean;
+  readonly model: string;
+  readonly provider: string;
+  readonly tokens: number;
+  readonly cost: number | undefined;
 }
 
 export type ToolCallStatus = "pending" | "running" | "done" | "error";
@@ -82,6 +113,26 @@ export interface InteractiveIO {
   readonly setCommandSuggestions?: (
     items: readonly CommandSuggestion[],
   ) => void;
+  /** Open the session switcher modal; resolves to the chosen action. */
+  readonly showSessionPicker?: (
+    request: SessionPickerRequest,
+  ) => Promise<SessionPickerResult | undefined>;
+  /** Push the current list of sessions for the sidebar to render. */
+  readonly setSessions?: (sessions: readonly SessionSummaryView[]) => void;
+  /** Toggle or set the sidebar's visibility. */
+  readonly setSidebarVisible?: (visible: boolean) => void;
+  /**
+   * Register a handler for session navigation intents raised from the UI
+   * (e.g. a keybind): `"new"` creates a session, `"picker"` opens the
+   * switcher. Returns an unsubscribe function.
+   */
+  readonly onSessionIntent?: (
+    handler: (intent: "new" | "picker") => void,
+  ) => () => void;
+  /** Read the visible transcript so it can be saved before a session switch. */
+  readonly getTranscript?: () => readonly string[];
+  /** Replace the visible transcript when switching to another session. */
+  readonly setTranscript?: (lines: readonly string[]) => void;
 }
 
 export interface CommandSuggestion {

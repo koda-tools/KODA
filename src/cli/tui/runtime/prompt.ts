@@ -50,6 +50,10 @@ export class Prompt {
     return !this.widget.value.includes("\n");
   }
 
+  public get isEmpty(): boolean {
+    return this.widget.value === "";
+  }
+
   public handleKey(event: KeyEvent): void {
     this.widget.handleKey(event);
   }

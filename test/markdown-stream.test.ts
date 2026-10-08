@@ -31,9 +31,7 @@ const bottom = (): string => `${frameBottom()}\n`;
 const codeOnly = (segments: readonly Segment[]): Segment[] =>
   segments.filter(
     (s) =>
-      s.kind === "code" &&
-      !s.plain.startsWith("┌") &&
-      !s.plain.startsWith("└"),
+      s.kind === "code" && !s.plain.startsWith("┌") && !s.plain.startsWith("└"),
   );
 
 test("frames fenced code, numbers lines, and keeps prose untouched", async () => {

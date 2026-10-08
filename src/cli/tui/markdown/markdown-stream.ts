@@ -2,7 +2,7 @@ import type { BundledLanguage, GrammarState } from "shiki";
 import type { CodeHighlighter } from "../highlight/types.js";
 import { DIM, RESET } from "../shared/ansi.js";
 import { sanitize } from "../shared/sanitize.js";
-import type { Segment } from "../shared/types.js";
+import type { CodeBlockListener, Segment } from "../shared/types.js";
 
 interface Fence {
   readonly language: BundledLanguage | undefined;
@@ -20,16 +20,13 @@ const GUTTER_WIDTH = 3;
 
 /** Width of the Card-style frame drawn around code blocks. */
 const FRAME_WIDTH = 72;
-const COPY_HINT = "Ctrl+Y copiar";
-
-/** Called with the raw text of a code block once its closing fence lands. */
-export type CodeBlockListener = (code: string) => void;
+const COPY_HINT = "Ctrl+Y Copy";
 
 function gutter(lineNumber: number): string {
   return `${String(lineNumber).padStart(GUTTER_WIDTH)} | `;
 }
 
-/** Top border of the frame: `┌─ <label> ─────── ⎘ Ctrl+Y copiar ─┐`. */
+/** Top border of the frame: `┌─ <label> ─────── ⎘ Ctrl+Y Copy ─┐`. */
 export function frameTop(label: string): string {
   const title = label === "" ? "code" : label;
   const left = `┌─ ${title} `;

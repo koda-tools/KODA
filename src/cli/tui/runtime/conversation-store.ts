@@ -11,6 +11,8 @@ export function createConversationStore(): ConversationStore {
     header: "",
     status: undefined,
     transcript: [""],
+    sessions: [],
+    sidebarVisible: true,
   });
 }
 

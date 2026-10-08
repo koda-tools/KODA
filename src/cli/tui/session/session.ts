@@ -2,7 +2,7 @@ import type { ChatMessage, Usage } from "../../../providers/index.js";
 import { sumUsage } from "../../../core/index.js";
 import type { InteractiveIO, LineWriter } from "../shared/types.js";
 import { renderHeader } from "./header.js";
-import type { SessionIdentity } from "./types.js";
+import type { SessionIdentity, SessionStatus } from "./types.js";
 
 const MAX_HISTORY_MESSAGES = 40;
 
@@ -30,6 +30,19 @@ export class Session {
 
   public get model(): string {
     return this.selectedModel;
+  }
+
+  public get provider(): string {
+    return this.identity.provider;
+  }
+
+  /** Snapshot for the sidebar/summary: provider, model and running usage. */
+  public status(): SessionStatus {
+    return {
+      provider: this.identity.provider,
+      model: this.selectedModel,
+      usage: this.usage,
+    };
   }
 
   public selectModel(model: string): void {

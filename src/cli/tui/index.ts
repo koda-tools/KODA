@@ -22,7 +22,10 @@ export {
   slashQuery,
 } from "./commands/suggestions.js";
 export type { CommandSuggestions } from "./runtime/command-suggestions.js";
-export type { ModelCommandInput, ModelCommandResult } from "./commands/types.js";
+export type {
+  ModelCommandInput,
+  ModelCommandResult,
+} from "./commands/types.js";
 export { toDiffViewLines } from "./diff/diff-lines.js";
 export { diffSegments } from "./diff/diff-segments.js";
 export { createLazyHighlighter } from "./highlight/highlighter.js";
@@ -40,14 +43,24 @@ export {
   parseWriteSummary,
 } from "./output/write-arguments.js";
 export { parseAnsiLine } from "./runtime/ansi-parser.js";
+// Type-only imports inside: safe to load without TermUI (batch mode).
+export { createKeyHandler } from "./runtime/keyboard.js";
 export { PROMPT_TITLE } from "./runtime/constants.js";
 export type { Prompt } from "./runtime/prompt.js";
 export { renderHeader } from "./session/header.js";
 export { estimateCost } from "../../providers/index.js";
 export { Session } from "./session/session.js";
-export type { SessionIdentity, SessionStatus } from "./session/types.js";
+export { SessionController } from "./session/session-controller.js";
+export { SessionManager } from "./session/session-manager.js";
+export type {
+  ManagedSession,
+  SessionFactory,
+  SessionIdentity,
+  SessionStatus,
+} from "./session/types.js";
 export { sanitize, sanitizeStyled } from "./shared/sanitize.js";
 export type {
+  CodeBlockListener,
   CommandSuggestion,
   DiffViewLine,
   DiffViewRequest,
@@ -57,6 +70,10 @@ export type {
   ModelPickerRequest,
   Segment,
   SelectRequest,
+  SessionPickerItem,
+  SessionPickerRequest,
+  SessionPickerResult,
+  SessionSummaryView,
   ToolCallHandle,
   ToolCallStatus,
   ToolCallView,

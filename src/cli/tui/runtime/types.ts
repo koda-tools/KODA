@@ -5,6 +5,7 @@ import type { ChoiceList } from "./choice-list.js";
 import type { CommandSuggestions } from "./command-suggestions.js";
 import type { DiffPanel } from "./diff-panel.js";
 import type { Prompt } from "./prompt.js";
+import type { SessionSidebar } from "./session-sidebar.js";
 import type { ToolSlot } from "./tool-slot.js";
 import type { Transcript } from "./transcript.js";
 
@@ -28,12 +29,16 @@ export interface KeyboardTargets {
   readonly cancel: () => void;
   readonly clearTranscript: () => void;
   readonly copyLastCodeBlock: () => void;
+  readonly newSession: () => void;
+  readonly openSessionPicker: () => void;
+  readonly toggleSidebar: () => void;
   readonly submit: (value: string) => void;
   readonly requestRender: () => void;
 }
 
 export interface LayoutParts {
   readonly store: ConversationStore;
+  readonly sidebar: SessionSidebar;
   readonly transcript: Transcript;
   readonly toolSlot: ToolSlot;
   readonly diffPanel: DiffPanel;
@@ -61,11 +66,25 @@ export interface PendingAnswer {
   readonly resolve: (value: string | undefined) => void;
 }
 
+/** A lightweight per-session summary the sidebar renders from. */
+export interface SessionSummary {
+  readonly id: string;
+  readonly title: string;
+  readonly active: boolean;
+  readonly model: string;
+  readonly provider: string;
+  readonly tokens: number;
+  readonly cost: number | undefined;
+}
+
 /** Observable TUI state (see conversation-store.ts). */
 export interface ConversationState {
   readonly header: string;
   readonly status: string | undefined;
   readonly transcript: readonly string[];
+  /** Summary of every live session; drives the sidebar list. */
+  readonly sessions: readonly SessionSummary[];
+  readonly sidebarVisible: boolean;
 }
 
 export type ConversationStore = UseStore<ConversationState>;

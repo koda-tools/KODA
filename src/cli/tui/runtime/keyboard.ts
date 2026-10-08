@@ -5,10 +5,7 @@ const isEnter = (event: KeyEvent): boolean =>
   event.key === "enter" || event.key === "return";
 
 /** PgUp/PgDn always scroll; ↑/↓ only while the prompt is one line. */
-function scrollStep(
-  key: string,
-  targets: KeyboardTargets,
-): number | undefined {
+function scrollStep(key: string, targets: KeyboardTargets): number | undefined {
   const singleLine = targets.prompt.isSingleLine;
   switch (key) {
     case "up":
@@ -22,6 +19,20 @@ function scrollStep(
     default:
       return undefined;
   }
+}
+
+/**
+ * Session shortcuts: Ctrl+N new, Ctrl+B sidebar, Tab (empty prompt) opens
+ * the switcher. Only reached when no choice list is open, so a modal never
+ * gets reopened or bypassed. Returns true when the key was handled.
+ */
+function handleSessionKey(event: KeyEvent, targets: KeyboardTargets): boolean {
+  if (event.ctrl && event.key === "n") targets.newSession();
+  else if (event.ctrl && event.key === "b") targets.toggleSidebar();
+  else if (event.key === "tab" && !event.ctrl && targets.prompt.isEmpty)
+    targets.openSessionPicker();
+  else return false;
+  return true;
 }
 
 /**
@@ -50,6 +61,8 @@ export function createKeyHandler(
       targets.copyLastCodeBlock();
     } else if (choices.isOpen) {
       return; // The builder routes keys to the List.
+    } else if (handleSessionKey(event, targets)) {
+      // Handled; Tab with text in the prompt falls through to the prompt.
     } else {
       const step = scrollStep(event.key, targets);
       if (step !== undefined) targets.transcript.scrollBy(step);

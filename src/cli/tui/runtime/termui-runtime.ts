@@ -7,10 +7,13 @@ import type {
   InteractiveIO,
   ModelPickerRequest,
   SelectRequest,
+  SessionPickerRequest,
+  SessionPickerResult,
+  SessionSummaryView,
 } from "../shared/types.js";
 import { ChoiceList } from "./choice-list.js";
 import { CommandSuggestions } from "./command-suggestions.js";
-import { MODEL_PICKER_TITLE } from "./constants.js";
+import { MODEL_PICKER_TITLE, SESSION_PICKER_TITLE } from "./constants.js";
 import {
   appendToTranscript,
   createConversationStore,
@@ -19,13 +22,18 @@ import { DiffPanel } from "./diff-panel.js";
 import { createKeyHandler } from "./keyboard.js";
 import { buildApp } from "./layout.js";
 import { Prompt } from "./prompt.js";
+import { SessionSidebar } from "./session-sidebar.js";
 import { ToolSlot } from "./tool-slot.js";
 import { Transcript } from "./transcript.js";
 import type { AppInternals, MountedApp, PendingAnswer } from "./types.js";
 
+/** The "+ New session" row appended to the session switcher list. */
+const NEW_SESSION_LABEL = "+ New session";
+
 /** The TermUI front end: owns the widgets and implements `InteractiveIO`. */
 export class TermUIRuntime implements InteractiveRuntime {
   private readonly store = createConversationStore();
+  private readonly sidebar = new SessionSidebar(this.store);
   private readonly transcript = new Transcript(this.store);
   private readonly toolSlot = new ToolSlot();
   private readonly diffPanel = new DiffPanel();
@@ -39,8 +47,9 @@ export class TermUIRuntime implements InteractiveRuntime {
   });
   // https://www.termui.io/components/spinner — `arc` is visibly distinct
   // from the braille frames the old hand-rolled spinner used.
+  // Collapsed (height 0) while idle so it leaves no gap above the prompt.
   private readonly spinner = new Spinner(
-    { height: 1 },
+    { height: 0 },
     { preset: "arc", color: { type: "named", name: "cyan" }, active: false },
   );
   private mounted: MountedApp | undefined;
@@ -70,13 +79,33 @@ export class TermUIRuntime implements InteractiveRuntime {
     select: (request) => this.select(request),
     showDiff: (request) => this.showDiff(request),
     showModelPicker: (request) => this.showModelPicker(request),
-    showToolCall: (call) => (this.closed ? undefined : this.toolSlot.show(call)),
+    showToolCall: (call) =>
+      this.closed ? undefined : this.toolSlot.show(call),
     setCommandSuggestions: (items) => this.suggestions.setItems(items),
+    showSessionPicker: (request) => this.showSessionPicker(request),
+    setSessions: (sessions) => this.setSessions(sessions),
+    setSidebarVisible: (visible) => this.setSidebarVisible(visible),
+    getTranscript: () => this.getTranscript(),
+    setTranscript: (lines) => this.setTranscript(lines),
+    onSessionIntent: (handler) => {
+      this.sessionIntentHandlers.add(handler);
+      return () => this.sessionIntentHandlers.delete(handler);
+    },
   };
+
+  /** Application-registered handlers for session navigation intents. */
+  private readonly sessionIntentHandlers = new Set<
+    (intent: "new" | "picker") => void
+  >();
+
+  private emitSessionIntent(intent: "new" | "picker"): void {
+    for (const handler of [...this.sessionIntentHandlers]) handler(intent);
+  }
 
   public async run(task: () => Promise<void>): Promise<void> {
     const builder = buildApp({
       store: this.store,
+      sidebar: this.sidebar,
       transcript: this.transcript,
       toolSlot: this.toolSlot,
       diffPanel: this.diffPanel,
@@ -100,12 +129,16 @@ export class TermUIRuntime implements InteractiveRuntime {
         cancel: () => this.cancel(),
         clearTranscript: () => this.clearTranscript(),
         copyLastCodeBlock: () => this.copyLastCodeBlock(),
+        newSession: () => this.emitSessionIntent("new"),
+        openSessionPicker: () => this.emitSessionIntent("picker"),
+        toggleSidebar: () => this.toggleSidebar(),
         submit: (value) => this.submit(value),
         requestRender: () => this.mounted?.requestRender(),
       }),
     );
     this.prompt.focused = true;
     this.transcript.start();
+    this.sidebar.start();
     try {
       await Promise.race([application, task()]);
     } finally {
@@ -141,11 +174,52 @@ export class TermUIRuntime implements InteractiveRuntime {
     this.store.setState({ transcript: [""] });
   }
 
+  /** The currently visible transcript lines (saved per session on switch). */
+  private getTranscript(): readonly string[] {
+    return this.store.getState().transcript;
+  }
+
+  /** Replace the visible transcript (used when switching sessions). */
+  private setTranscript(lines: readonly string[]): void {
+    this.store.setState({ transcript: lines.length === 0 ? [""] : [...lines] });
+  }
+
+  /** Push the session summaries that drive the sidebar list. */
+  private setSessions(sessions: readonly SessionSummaryView[]): void {
+    this.store.setState({ sessions: sessions.map((s) => ({ ...s })) });
+  }
+
+  private setSidebarVisible(visible: boolean): void {
+    this.store.setState({ sidebarVisible: visible });
+    this.sidebar.applyVisible(visible);
+    this.mounted?.requestRender();
+  }
+
+  private toggleSidebar(): void {
+    this.setSidebarVisible(!this.store.getState().sidebarVisible);
+  }
+
+  /** Session switcher modal; resolves to the chosen action or cancel. */
+  private async showSessionPicker(
+    request: SessionPickerRequest,
+  ): Promise<SessionPickerResult | undefined> {
+    const labels = [
+      ...request.items.map(
+        (item) => `${item.active ? "●" : " "} ${item.label}`,
+      ),
+      NEW_SESSION_LABEL,
+    ];
+    const index = await this.choose(SESSION_PICKER_TITLE, labels);
+    if (index === undefined) return undefined;
+    if (index >= request.items.length) return { kind: "new" };
+    return { kind: "switch", index };
+  }
+
   /** Copy the most recent code block to the clipboard (Ctrl+Y, OSC 52). */
   private copyLastCodeBlock(): void {
     const code = this.lastCodeBlock;
     if (code === undefined || code === "") {
-      this.write("Nenhum bloco de código para copiar.\n");
+      this.write("Nenhum bloco de código para Copy.\n");
       return;
     }
     try {
@@ -153,7 +227,7 @@ export class TermUIRuntime implements InteractiveRuntime {
       const lines = code.split("\n").length;
       this.write(`Bloco de código copiado (${lines} linhas).\n`);
     } catch {
-      this.write("Não foi possível copiar o bloco de código.\n");
+      this.write("Não foi possível Copy o bloco de código.\n");
     }
   }
 
@@ -161,6 +235,7 @@ export class TermUIRuntime implements InteractiveRuntime {
     this.store.setState({ status });
     this.spinner.setLabel(status ?? "");
     this.spinner.setActive(status !== undefined);
+    this.spinner.setStyle({ height: status === undefined ? 0 : 1 });
   }
 
   private showDiff(request: DiffViewRequest): boolean {
@@ -187,7 +262,8 @@ export class TermUIRuntime implements InteractiveRuntime {
         : `${request.title}  (${request.hint})`;
     const choice = await this.choose(title, request.options);
     this.diffPanel.hide();
-    if (choice !== undefined) this.write(`→ ${request.options[choice] ?? ""}\n`);
+    if (choice !== undefined)
+      this.write(`→ ${request.options[choice] ?? ""}\n`);
     return choice;
   }
 
@@ -217,6 +293,7 @@ export class TermUIRuntime implements InteractiveRuntime {
     if (this.closed) return;
     this.closed = true;
     this.transcript.stop();
+    this.sidebar.stop();
     this.resolvePending();
     this.mounted?.exit();
     this.cancelHandlers.clear();

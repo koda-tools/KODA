@@ -2,6 +2,8 @@
 export const LAYOUT = {
   // renderHeader() emits 8 lines; the box adds border (2) and padding (2).
   headerHeight: 12,
+  // Fixed sidebar column width in terminal columns.
+  sidebarWidth: 28,
   diffExpandedHeight: 16,
   toolSlotExpandedHeight: 6,
   choiceMaxRows: 8,
@@ -23,6 +25,8 @@ export const PROMPT_PLACEHOLDER = "Write prompt here";
 /** Label drawn inside the prompt's top border. */
 export const PROMPT_TITLE = "Message";
 export const PROMPT_HINT =
-  "Enter to send · Alt+Enter new line · PgUp/PgDn scroll · Ctrl+Y copy code · Esc cancel";
+  "Ctrl+N New session · Tab Switch · Ctrl+B Sidebar · Ctrl+Y Copy · Esc cancel";
 export const MODEL_PICKER_TITLE =
   "Swtich Model (↑/↓, Enter confirm, Esc cancel):";
+export const SESSION_PICKER_TITLE =
+  "Switch session (↑/↓, Enter confirm, Esc cancel):";
