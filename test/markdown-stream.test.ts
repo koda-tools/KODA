@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   createLazyHighlighter,
+  frameBottom,
+  frameTop,
   MarkdownStream,
   sanitize,
   sanitizeStyled,
@@ -21,13 +23,26 @@ async function render(
 const plain = (segments: readonly Segment[]): string =>
   segments.map((s) => (s.kind === "text" ? s.text : s.plain)).join("");
 
-test("numbers fenced code lines and keeps prose untouched", async () => {
+/** The frame drawn around a code block, as it appears in `plain(...)`. */
+const top = (label: string): string => `${frameTop(label)}\n`;
+const bottom = (): string => `${frameBottom()}\n`;
+
+/** Code segments only (drops the frame borders, which are also `code`). */
+const codeOnly = (segments: readonly Segment[]): Segment[] =>
+  segments.filter(
+    (s) =>
+      s.kind === "code" &&
+      !s.plain.startsWith("┌") &&
+      !s.plain.startsWith("└"),
+  );
+
+test("frames fenced code, numbers lines, and keeps prose untouched", async () => {
   const segments = await render([
     "Here:\n```ts\nconst a = 1;\n\nconsole.log(a);\n```\nDone.\n",
   ]);
   assert.equal(
     plain(segments),
-    "Here:\n  1 | const a = 1;\n  2 | \n  3 | console.log(a);\nDone.\n",
+    `Here:\n${top("ts")}  1 | const a = 1;\n  2 | \n  3 | console.log(a);\n${bottom()}Done.\n`,
   );
 });
 
@@ -36,25 +51,34 @@ test("handles fences and lines split across arbitrary stream deltas", async () =
   const whole = plain(await render([text]));
   const split = plain(await render(Array.from(text)));
   assert.equal(split, whole);
-  assert.equal(whole, "Intro `x` text\n  1 | print('hi')\nEnd");
+  assert.equal(
+    whole,
+    `Intro \`x\` text\n${top("python")}  1 | print('hi')\n${bottom()}End`,
+  );
 });
 
 test("streams prose immediately but holds a possible fence line", async () => {
   const stream = new MarkdownStream();
   assert.equal(plain(await stream.push("Hello wor")), "Hello wor");
   assert.equal(plain(await stream.push("ld\n``")), "ld\n");
-  assert.equal(plain(await stream.push("`js\nlet a;\n")), "  1 | let a;\n");
-  assert.equal(plain(await stream.push("```\n")), "");
+  assert.equal(
+    plain(await stream.push("`js\nlet a;\n")),
+    `${top("js")}  1 | let a;\n`,
+  );
+  assert.equal(plain(await stream.push("```\n")), bottom());
 });
 
 test("flushes an unterminated block and restarts numbering per block", async () => {
   const segments = await render(["```\na\n```\n```\nb\nc"]);
-  assert.equal(plain(segments), "  1 | a\n  1 | b\n  2 | c\n");
+  assert.equal(
+    plain(segments),
+    `${top("")}  1 | a\n${bottom()}${top("")}  1 | b\n  2 | c\n${bottom()}`,
+  );
 });
 
 test("strips terminal escapes from model code", async () => {
   const segments = await render(["```\n\x1b[31mred\x1b]0;x\x07\n```\n"]);
-  const code = segments[0];
+  const [code] = codeOnly(segments);
   assert.equal(code?.kind, "code");
   assert.doesNotMatch(
     code?.kind === "code" ? code.ansi : "",
@@ -68,11 +92,12 @@ test("highlights code with Shiki using ANSI colors across lines", async () => {
     ["```ts\nconst a = 1;\n/* open\ncomment */\n```\n"],
     stream,
   );
-  assert.equal(segments.length, 3);
-  const [first, , third] = segments;
+  const code = codeOnly(segments);
+  assert.equal(code.length, 3);
+  const [first, , third] = code;
   assert.match(first?.kind === "code" ? first.ansi : "", /\x1b\[38;2;/);
   assert.equal(
-    plain(segments),
+    plain(code),
     "  1 | const a = 1;\n  2 | /* open\n  3 | comment */\n",
   );
   assert.match(third?.kind === "code" ? third.ansi : "", /\x1b\[38;2;/);
@@ -81,9 +106,17 @@ test("highlights code with Shiki using ANSI colors across lines", async () => {
 test("falls back to plain numbered code for unknown languages", async () => {
   const stream = new MarkdownStream(createLazyHighlighter());
   const segments = await render(["```notalanguage\nx\n```\n"], stream);
-  assert.equal(plain(segments), "  1 | x\n");
-  const [code] = segments;
-  assert.doesNotMatch(code?.kind === "code" ? code.ansi : "", /\x1b\[38;2;/);
+  const code = codeOnly(segments);
+  assert.equal(plain(code), "  1 | x\n");
+  const [first] = code;
+  assert.doesNotMatch(first?.kind === "code" ? first.ansi : "", /\x1b\[38;2;/);
+});
+
+test("reports the raw text of each code block for copying", async () => {
+  const blocks: string[] = [];
+  const stream = new MarkdownStream(undefined, (code) => blocks.push(code));
+  await render(["```ts\nconst a = 1;\nconst b = 2;\n```\n"], stream);
+  assert.deepEqual(blocks, ["const a = 1;\nconst b = 2;"]);
 });
 
 test("styled text keeps only SGR escapes", () => {

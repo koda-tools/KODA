@@ -23,6 +23,6 @@ export const PROMPT_PLACEHOLDER = "Write prompt here";
 /** Label drawn inside the prompt's top border. */
 export const PROMPT_TITLE = "Message";
 export const PROMPT_HINT =
-  "Enter to send · Alt+Enter to new line · PgUp/PgDn scroll · Esc to cancel";
+  "Enter to send · Alt+Enter new line · PgUp/PgDn scroll · Ctrl+Y copy code · Esc cancel";
 export const MODEL_PICKER_TITLE =
   "Swtich Model (↑/↓, Enter confirm, Esc cancel):";

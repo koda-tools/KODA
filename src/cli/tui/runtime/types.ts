@@ -27,6 +27,7 @@ export interface KeyboardTargets {
   readonly isBusy: () => boolean;
   readonly cancel: () => void;
   readonly clearTranscript: () => void;
+  readonly copyLastCodeBlock: () => void;
   readonly submit: (value: string) => void;
   readonly requestRender: () => void;
 }

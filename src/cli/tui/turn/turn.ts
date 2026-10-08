@@ -44,7 +44,7 @@ export async function runAgentTurn(
   request: TurnRequest,
 ): Promise<AgentRunResult> {
   const { agent, writer, spinner, io } = request;
-  const markdown = new MarkdownStream(request.highlighter);
+  const markdown = new MarkdownStream(request.highlighter, io.onCodeBlock);
   const toolWidgets = new Map<string, ToolCallHandle>();
   let rendering: Promise<void> = Promise.resolve();
   let textStarted = false;
@@ -79,6 +79,7 @@ export async function runAgentTurn(
     await renderFile(writer, file, {
       highlighter: request.highlighter,
       animate: io.isTTY ?? false,
+      onCodeBlock: io.onCodeBlock,
     });
   };
 

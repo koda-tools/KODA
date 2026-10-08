@@ -64,6 +64,8 @@ export interface InteractiveIO {
   readonly onCancel?: (handler: () => void) => () => void;
   readonly isTTY?: boolean;
   readonly writeStyled?: (text: string) => void;
+  /** Remember a rendered code block so the user can copy it (Ctrl+Y). */
+  readonly onCodeBlock?: (code: string) => void;
   readonly setHeader?: (text: string) => void;
   readonly setStatus?: (text: string | undefined) => void;
   /** Wipe the visible output area (same effect as Ctrl+L). */

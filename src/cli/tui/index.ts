@@ -27,7 +27,11 @@ export { toDiffViewLines } from "./diff/diff-lines.js";
 export { diffSegments } from "./diff/diff-segments.js";
 export { createLazyHighlighter } from "./highlight/highlighter.js";
 export type { CodeHighlighter, HighlightedLine } from "./highlight/types.js";
-export { MarkdownStream } from "./markdown/markdown-stream.js";
+export {
+  frameBottom,
+  frameTop,
+  MarkdownStream,
+} from "./markdown/markdown-stream.js";
 export { createLineWriter } from "./output/line-writer.js";
 export { renderDiff, renderFile } from "./output/render.js";
 export type { RenderOptions, WriteArguments } from "./output/types.js";

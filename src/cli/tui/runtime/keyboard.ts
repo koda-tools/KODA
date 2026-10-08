@@ -46,6 +46,8 @@ export function createKeyHandler(
       else if (targets.isBusy()) targets.cancel();
     } else if (event.ctrl && event.key === "l") {
       targets.clearTranscript();
+    } else if (event.ctrl && event.key === "y") {
+      targets.copyLastCodeBlock();
     } else if (choices.isOpen) {
       return; // The builder routes keys to the List.
     } else {

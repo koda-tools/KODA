@@ -32,7 +32,7 @@ export async function renderFile(
   options: RenderOptions,
 ): Promise<void> {
   const fence = "```";
-  const stream = new MarkdownStream(options.highlighter);
+  const stream = new MarkdownStream(options.highlighter, options.onCodeBlock);
   const segments = [
     ...(await stream.push(
       `${fence}${extensionOf(file.filePath)}\n${file.content}\n${fence}\n`,

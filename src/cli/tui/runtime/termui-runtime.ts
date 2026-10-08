@@ -1,3 +1,4 @@
+import { writeClipboard } from "@termuijs/core";
 import { Spinner } from "@termuijs/widgets";
 import type { InteractiveRuntime } from "../application/types.js";
 import { sanitize, sanitizeStyled } from "../shared/sanitize.js";
@@ -46,6 +47,8 @@ export class TermUIRuntime implements InteractiveRuntime {
   private pendingAnswer: PendingAnswer | undefined;
   private readonly cancelHandlers = new Set<() => void>();
   private closed = false;
+  /** Text of the most recent code block, copied by Ctrl+Y. */
+  private lastCodeBlock: string | undefined;
 
   public readonly io: InteractiveIO = {
     question: (prompt) => this.question(prompt),
@@ -58,6 +61,9 @@ export class TermUIRuntime implements InteractiveRuntime {
       return () => this.cancelHandlers.delete(handler);
     },
     isTTY: true,
+    onCodeBlock: (code) => {
+      this.lastCodeBlock = code;
+    },
     setHeader: (header) => this.store.setState({ header }),
     setStatus: (status) => this.setStatus(status),
     clearTranscript: () => this.clearTranscript(),
@@ -93,6 +99,7 @@ export class TermUIRuntime implements InteractiveRuntime {
         isBusy: () => this.store.getState().status !== undefined,
         cancel: () => this.cancel(),
         clearTranscript: () => this.clearTranscript(),
+        copyLastCodeBlock: () => this.copyLastCodeBlock(),
         submit: (value) => this.submit(value),
         requestRender: () => this.mounted?.requestRender(),
       }),
@@ -132,6 +139,22 @@ export class TermUIRuntime implements InteractiveRuntime {
   /** Used by both Ctrl+L and `/clear`. */
   private clearTranscript(): void {
     this.store.setState({ transcript: [""] });
+  }
+
+  /** Copy the most recent code block to the clipboard (Ctrl+Y, OSC 52). */
+  private copyLastCodeBlock(): void {
+    const code = this.lastCodeBlock;
+    if (code === undefined || code === "") {
+      this.write("Nenhum bloco de código para copiar.\n");
+      return;
+    }
+    try {
+      writeClipboard(code);
+      const lines = code.split("\n").length;
+      this.write(`Bloco de código copiado (${lines} linhas).\n`);
+    } catch {
+      this.write("Não foi possível copiar o bloco de código.\n");
+    }
   }
 
   private setStatus(status: string | undefined): void {
