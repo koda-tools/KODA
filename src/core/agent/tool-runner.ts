@@ -7,12 +7,13 @@ export async function runToolCalls(
   calls: readonly ToolCall[],
   tools: ToolExecutor,
   observer: AgentObserver,
+  signal?: AbortSignal,
 ): Promise<ChatMessage[]> {
   const results: ChatMessage[] = [];
   for (const call of calls) {
     observer.onStatus?.(tools.statusLabel(call.name) ?? DEFAULT_TOOL_STATUS);
     await observer.onToolStart?.(call);
-    const observation = await tools.execute(call.name, call.arguments);
+    const observation = await tools.execute(call.name, call.arguments, signal);
     await observer.onToolResult?.(call, observation);
     results.push({
       role: "tool",

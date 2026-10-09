@@ -31,6 +31,8 @@ export interface KeyboardTargets {
   readonly copyLastCodeBlock: () => void;
   readonly newSession: () => void;
   readonly openSessionPicker: () => void;
+  /** Next (`1`) or previous (`-1`) primary agent. */
+  readonly cycleAgent: (step: 1 | -1) => void;
   readonly toggleSidebar: () => void;
   readonly submit: (value: string) => void;
   readonly requestRender: () => void;
@@ -75,6 +77,7 @@ export interface SessionSummary {
   readonly provider: string;
   readonly tokens: number;
   readonly cost: number | undefined;
+  readonly agent?: string;
 }
 
 /** Observable TUI state (see conversation-store.ts). */
@@ -101,5 +104,26 @@ export interface SpanStyle {
 
 export interface StyledSpan {
   readonly text: string;
+  readonly style: Readonly<SpanStyle>;
+}
+
+/** How a transcript line wraps and fills, decided from its visible text. */
+export interface LineLayout {
+  /** Columns of the leading prefix that wrapped rows should repeat. */
+  readonly indent: (visible: string) => number;
+  /** Whether the line's background extends to the end of every row. */
+  readonly fill: (visible: string) => boolean;
+}
+
+/** One visual row of a wrapped line, plus its row-wide background. */
+export interface VisualRow {
+  readonly spans: readonly StyledSpan[];
+  readonly fill: Color | undefined;
+}
+
+/** One grapheme with its terminal width and style (input to wrapping). */
+export interface StyledCell {
+  readonly text: string;
+  readonly width: number;
   readonly style: Readonly<SpanStyle>;
 }

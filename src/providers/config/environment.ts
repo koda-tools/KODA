@@ -63,9 +63,15 @@ function toolSupport(value: string | undefined): boolean | undefined {
   return value === undefined ? undefined : value.toLowerCase() === "true";
 }
 
-/** Builds a ProviderConfig from environment variables declared in the catalog. */
-export function configFromEnvironment(env: NodeJS.ProcessEnv): ProviderConfig {
-  const provider = providerFromEnvironment(env);
+/**
+ * Builds a ProviderConfig from environment variables declared in the catalog.
+ * `provider` picks a specific provider (e.g. an agent's `model`) instead of
+ * the one selected by KODA_PROVIDER; its key still comes from the environment.
+ */
+export function configFromEnvironment(
+  env: NodeJS.ProcessEnv,
+  provider: ProviderName = providerFromEnvironment(env),
+): ProviderConfig {
   const spec = providerSpec(provider);
   const model = optional("model", modelFromEnvironment(env, provider));
   if (provider === "ollama")

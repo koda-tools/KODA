@@ -24,7 +24,13 @@ function clip(text: string, width: number): string {
 }
 
 /** The logo lines, mirroring the header art. */
-const LOGO = [" ▀ ▀   KODA", "█▀█▀█  AI Coding Agent", "▀▀▀▀▀"];
+const LOGO = [
+  "                     ",
+  " ▀ ▀   KODA",
+  "█▀█▀█  AI Coding Agent",
+  "▀▀▀▀▀",
+  "                      ",
+];
 /** Left + right border of the sidebar box. */
 const BORDER_COLUMNS = 2;
 
@@ -72,6 +78,9 @@ function currentLines(sessions: readonly SessionSummary[]): string[] {
     "",
     " CURRENT",
     "",
+    ...(current.agent === undefined
+      ? []
+      : [`  Agent     ${clip(current.agent, WIDTH - 12)}`]),
     `  Model     ${clip(current.model, WIDTH - 12)}`,
     `  Provider  ${clip(current.provider, WIDTH - 12)}`,
     `  Tokens    ${compactTokens(current.tokens)}`,

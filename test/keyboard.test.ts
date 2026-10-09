@@ -44,6 +44,7 @@ function setup(options: { promptText?: string; modalOpen?: boolean } = {}) {
     copyLastCodeBlock: () => calls.push("copy"),
     newSession: () => calls.push("newSession"),
     openSessionPicker: () => calls.push("openSessionPicker"),
+    cycleAgent: (step: number) => calls.push(`agent:${step}`),
     toggleSidebar: () => calls.push("toggleSidebar"),
     submit: () => calls.push("submit"),
     requestRender: () => undefined,
@@ -57,16 +58,24 @@ test("Ctrl+N creates a new session", () => {
   assert.deepEqual(calls, ["newSession"]);
 });
 
-test("Tab with an empty prompt opens the session picker", () => {
+test("Tab and Shift+Tab cycle the primary agent", () => {
   const { calls, handle } = setup();
   handle(key("tab"));
-  assert.deepEqual(calls, ["openSessionPicker"]);
+  handle(key("tab", { shift: true }));
+  assert.deepEqual(calls, ["agent:1", "agent:-1"]);
 });
 
-test("Tab with text in the prompt is a normal insert, not the picker", () => {
+test("Tab cycles the agent even with text in the prompt", () => {
   const { calls, handle } = setup({ promptText: "hello" });
   handle(key("tab"));
-  assert.deepEqual(calls, ["prompt:tab"]);
+  assert.deepEqual(calls, ["agent:1"]);
+});
+
+test("Alt+S opens the session picker; Ctrl+S still submits", () => {
+  const { calls, handle } = setup();
+  handle(key("s", { alt: true }));
+  handle(key("s", { ctrl: true }));
+  assert.deepEqual(calls, ["openSessionPicker", "submit"]);
 });
 
 test("Ctrl+B toggles the sidebar", () => {
@@ -78,8 +87,10 @@ test("Ctrl+B toggles the sidebar", () => {
 test("session shortcuts do not fire while a modal is open", () => {
   const { calls, handle } = setup({ modalOpen: true });
   handle(key("tab"));
+  handle(key("tab", { shift: true }));
+  handle(key("s", { alt: true }));
   handle(key("n", { ctrl: true }));
   handle(key("b", { ctrl: true }));
-  // Tab must not reopen the picker (it used to discard the pending choice).
+  // No shortcut may reopen the picker or switch agents behind a modal.
   assert.deepEqual(calls, []);
 });

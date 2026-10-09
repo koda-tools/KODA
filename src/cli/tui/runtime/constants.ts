@@ -25,7 +25,7 @@ export const PROMPT_PLACEHOLDER = "Write prompt here";
 /** Label drawn inside the prompt's top border. */
 export const PROMPT_TITLE = "Message";
 export const PROMPT_HINT =
-  "Ctrl+N New session · Tab Switch · Ctrl+B Sidebar · Ctrl+Y Copy · Esc cancel";
+  "Tab Agent · Alt+S Sessions · Ctrl+N New session · Ctrl+B Sidebar · Ctrl+Y Copy · Esc cancel";
 export const MODEL_PICKER_TITLE =
   "Swtich Model (↑/↓, Enter confirm, Esc cancel):";
 export const SESSION_PICKER_TITLE =

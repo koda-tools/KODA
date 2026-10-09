@@ -1,8 +1,14 @@
 import { estimateCost } from "../../../providers/index.js";
+import { createLineWriter } from "../output/line-writer.js";
 import type { InteractiveIO, SessionSummaryView } from "../shared/types.js";
 import type { Session } from "./session.js";
+import { createSessionIO } from "./session-io.js";
 import { SessionManager } from "./session-manager.js";
-import type { ManagedSession } from "./types.js";
+import type {
+  BoundSessionFactory,
+  ManagedSession,
+  SessionBinding,
+} from "./types.js";
 import { totalTokens } from "./usage-format.js";
 
 /** Build the sidebar summary for one managed session. */
@@ -16,6 +22,7 @@ function summarize(entry: ManagedSession, active: boolean): SessionSummaryView {
     provider: status.provider,
     tokens: totalTokens(status.usage),
     cost: estimateCost(status.provider, status.model, status.usage),
+    ...(status.agent === undefined ? {} : { agent: status.agent }),
   };
 }
 
@@ -23,20 +30,44 @@ function summarize(entry: ManagedSession, active: boolean): SessionSummaryView {
  * Owns the `SessionManager` and keeps the TUI in sync: pushes session
  * summaries to the sidebar and swaps the visible transcript when switching.
  * One session is active at a time; the manager is the source of truth.
+ * Each session writes through its own binding, so output of a session that
+ * is not on screen (a subagent's child session) lands in its buffer.
  */
 export class SessionController {
   private readonly manager: SessionManager;
+  private readonly bindings = new Map<string, SessionBinding>();
 
   public constructor(
     private readonly io: InteractiveIO,
-    createSession: (id: string) => Session,
+    createSession: BoundSessionFactory,
   ) {
-    this.manager = new SessionManager(createSession);
+    this.manager = new SessionManager((id) => {
+      const binding = this.bind(id);
+      return createSession(id, binding.io, binding.writer);
+    });
     this.pushSummaries();
   }
 
   public active(): Session {
     return this.manager.activeSession().session;
+  }
+
+  public activeEntry(): ManagedSession {
+    return this.manager.activeSession();
+  }
+
+  /**
+   * Abort the running request, even when the user is looking at another
+   * session (e.g. a subagent's child session) while it runs.
+   */
+  public abortRunning(): boolean {
+    if (this.active().abortRequest()) return true;
+    return this.manager.list().some((entry) => entry.session.abortRequest());
+  }
+
+  /** The IO and writer of `entry` (screen when active, buffer otherwise). */
+  public bindingFor(entry: ManagedSession): SessionBinding {
+    return this.bindings.get(entry.id) ?? this.bind(entry.id);
   }
 
   /** Create a new session, show its (empty) transcript, and refresh header. */
@@ -46,6 +77,19 @@ export class SessionController {
     this.io.setTranscript?.(entry.transcript);
     entry.session.showHeader();
     this.pushSummaries();
+  }
+
+  /**
+   * A child session for a subagent run. It is not activated: its output
+   * fills its own buffer, and the user can open it from the switcher.
+   */
+  public createChild(title: string, parent: ManagedSession): ManagedSession {
+    const entry = this.manager.create(title, {
+      activate: false,
+      parentId: parent.id,
+    });
+    this.pushSummaries();
+    return entry;
   }
 
   /** Switch to the session at `index`, restoring its transcript. */
@@ -75,6 +119,27 @@ export class SessionController {
       .list()
       .map((entry, index) => summarize(entry, index === activeIndex));
     this.io.setSessions?.(summaries);
+  }
+
+  private find(id: string): ManagedSession | undefined {
+    return this.manager.list().find((entry) => entry.id === id);
+  }
+
+  private bind(id: string): SessionBinding {
+    const io = createSessionIO(this.io, {
+      // During construction the manager doesn't exist yet; the first
+      // session is the active one.
+      isActive: () =>
+        this.manager === undefined || this.manager.activeSession().id === id,
+      read: () => this.find(id)?.transcript ?? [""],
+      store: (lines) => {
+        const entry = this.find(id);
+        if (entry !== undefined) entry.transcript = lines;
+      },
+    });
+    const binding = { io, writer: createLineWriter(io) };
+    this.bindings.set(id, binding);
+    return binding;
   }
 
   /** Save what is on screen into the active session's own buffer. */

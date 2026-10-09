@@ -10,6 +10,19 @@ export {
   type ToolObservation,
 } from "./core/index.js";
 export {
+  AgentRuntime,
+  BUILTIN_AGENTS,
+  loadCatalog,
+  resolvePermission,
+  type AgentCatalog,
+  type AgentDefinition,
+  type CatalogOptions,
+  type Permissions,
+  type PreparedAgent,
+  type RuntimeOptions,
+  type SkillDefinition,
+} from "./agents/index.js";
+export {
   contentToText,
   type ChatMessage,
   type ChatResponse,
@@ -86,9 +99,7 @@ export {
   type GetFileInfoArgs,
   type GetFileInfoOptions,
 } from "./tools/file-system/get-file-info.tool.js";
-export {
-  runCommandTool,
-} from "./tools/command/run-command.tool.js";
+export { runCommandTool } from "./tools/command/run-command.tool.js";
 export type {
   CommandConfirmation,
   CommandPolicy,

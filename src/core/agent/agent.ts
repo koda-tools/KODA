@@ -11,6 +11,7 @@ import { EMPTY_USAGE, sumUsage } from "../usage/usage.js";
 import {
   DEFAULT_MAX_ITERATIONS,
   DEFAULT_SYSTEM_PROMPT,
+  STEP_LIMIT_PROMPT,
   THINKING_STATUS,
 } from "./constants.js";
 import { requestResponse } from "./response.js";
@@ -21,6 +22,7 @@ import type {
   AgentRunOptions,
   AgentRunResult,
   CodeAgentOptions,
+  StepLimitBehavior,
   ToolExecutor,
 } from "./types.js";
 
@@ -38,6 +40,8 @@ export class CodeAgent {
   private readonly identity: AgentIdentity;
   private readonly maxIterations: number;
   private readonly systemPrompt: string;
+  private readonly temperature: number | undefined;
+  private readonly onStepLimit: StepLimitBehavior;
 
   public constructor(
     private readonly provider: ILLMProvider,
@@ -47,6 +51,8 @@ export class CodeAgent {
     this.identity = options.identity;
     this.maxIterations = options.maxIterations ?? DEFAULT_MAX_ITERATIONS;
     this.systemPrompt = options.systemPrompt ?? DEFAULT_SYSTEM_PROMPT;
+    this.temperature = options.temperature;
+    this.onStepLimit = options.onStepLimit ?? "error";
     if (!Number.isInteger(this.maxIterations) || this.maxIterations < 1)
       throw new AgentError("maxIterations must be a positive integer.");
   }
@@ -102,23 +108,69 @@ export class CodeAgent {
       if (response.toolCalls.length === 0)
         return this.result(response, usage, model, messages.slice(turnStart));
       messages.push(
-        ...(await runToolCalls(response.toolCalls, this.tools, observer)),
+        ...(await runToolCalls(
+          response.toolCalls,
+          this.tools,
+          observer,
+          options.signal,
+        )),
       );
     }
+    if (this.onStepLimit === "summarize")
+      return this.summarize(
+        messages,
+        turnStart,
+        model,
+        options,
+        observer,
+        usage,
+      );
     throw new AgentError(
       `Agent stopped after reaching the ${this.maxIterations} iteration limit.`,
+    );
+  }
+
+  /**
+   * Out of steps: one last call without tools asking for a summary. The
+   * instruction is sent but not kept in the turn's history.
+   */
+  private async summarize(
+    messages: ChatMessage[],
+    turnStart: number,
+    model: string,
+    options: AgentRunOptions,
+    observer: AgentObserver,
+    usage: Usage,
+  ): Promise<AgentRunResult> {
+    observer.onStatus?.(THINKING_STATUS);
+    const response = await requestResponse(
+      this.provider,
+      [...messages, { role: "user", content: STEP_LIMIT_PROMPT }],
+      this.completionOptions(model, options.signal, false),
+      observer.onTextDelta?.bind(observer),
+    );
+    messages.push({ role: "assistant", content: response.content });
+    return this.result(
+      { ...response, toolCalls: [] },
+      sumUsage(usage, response.usage),
+      model,
+      messages.slice(turnStart),
     );
   }
 
   private completionOptions(
     model: string,
     signal: AbortSignal | undefined,
+    withTools = true,
   ): CompletionOptions {
     return {
       model,
-      ...(this.provider.supportsTools()
+      ...(withTools && this.provider.supportsTools()
         ? { tools: this.tools.definitions }
         : {}),
+      ...(this.temperature === undefined
+        ? {}
+        : { temperature: this.temperature }),
       ...(signal === undefined ? {} : { signal }),
     };
   }

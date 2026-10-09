@@ -1,15 +1,19 @@
 #!/usr/bin/env node
 import os from "node:os";
 import path from "node:path";
+import {
+  AgentRuntime,
+  loadCatalog,
+  runQuietly,
+  type AgentCatalog,
+} from "../agents/index.js";
 import { CodeAgent } from "../core/index.js";
 import {
   ProviderFactory,
   resolveProviderIdentity,
+  type ILLMProvider,
 } from "../providers/index.js";
-import {
-  ToolRegistry,
-  type WritePolicy,
-} from "../tools/registry.js";
+import { ToolRegistry, type WritePolicy } from "../tools/registry.js";
 import type { CommandPolicy } from "../tools/command/types.js";
 import { computeFileDiff } from "../utils/diff.js";
 import { ProviderError } from "../utils/errors.js";
@@ -21,6 +25,7 @@ import {
   renderDiff,
   runInteractive,
   toDiffViewLines,
+  writeStatus,
   type CodeHighlighter,
   type InteractiveIO,
   type InteractiveRuntime,
@@ -67,11 +72,11 @@ async function previewWrite(
   const writer = createLineWriter(io);
   writer.ensureNewLine();
   if (request.before === undefined) {
-    writer.write(`new file ${request.filePath}\n`);
+    writeStatus(writer, `new file ${request.filePath}`);
     return;
   }
   if (request.skipped !== undefined) {
-    writer.write(`${SKIP_NOTICE[request.skipped] ?? "Diff unavailable."}\n`);
+    writeStatus(writer, SKIP_NOTICE[request.skipped] ?? "Diff unavailable.");
     return;
   }
   const diff = computeFileDiff({
@@ -113,7 +118,7 @@ function createCommandPolicy(
   return {
     confirm: async (request) => {
       // Echo before asking, so a hung process still shows what ran.
-      io.write(`$ ${request.command}\n`);
+      writeStatus(createLineWriter(io), `$ ${request.command}`);
       return decide(
         io,
         `Run  ${request.command}`,
@@ -125,11 +130,12 @@ function createCommandPolicy(
 
 function createAgent(
   runtime: CliEnvironment,
+  provider: ILLMProvider,
   writePolicy: WritePolicy | undefined,
   commandPolicy: CommandPolicy | undefined,
 ): CodeAgent {
   return new CodeAgent(
-    ProviderFactory.fromEnvironment(runtime.env),
+    provider,
     new ToolRegistry({
       workspaceRoot: runtime.cwd,
       ...(writePolicy === undefined ? {} : { writePolicy }),
@@ -139,18 +145,51 @@ function createAgent(
   );
 }
 
+const globalRoots = () => ({
+  globalKodaRoot: path.join(os.homedir(), ".config", "koda"),
+  globalOpenCodeRoot: path.join(os.homedir(), ".config", "opencode"),
+});
+
+/**
+ * Agents run with the same write/command approvals as before; `ask` on
+ * other tools (read, skill, task…) uses the same Autorizar/Rejeitar list.
+ */
+function createAgentRuntime(
+  runtime: CliEnvironment,
+  catalog: AgentCatalog,
+  provider: ILLMProvider,
+  io: InteractiveIO | undefined,
+  writePolicy: WritePolicy | undefined,
+  commandPolicy: CommandPolicy | undefined,
+): AgentRuntime {
+  return new AgentRuntime({
+    catalog,
+    workspaceRoot: runtime.cwd,
+    env: runtime.env,
+    identity: resolveProviderIdentity(runtime.env),
+    defaultProvider: provider,
+    writePolicy,
+    commandPolicy,
+    approve:
+      io === undefined
+        ? undefined
+        : (title, fallbackPrompt) => decide(io, title, fallbackPrompt),
+  });
+}
+
 async function runInteractiveSession(
   runtime: CliEnvironment,
   termUI: InteractiveRuntime,
   agent: CodeAgent,
+  agents: AgentRuntime,
   highlighter: CodeHighlighter,
 ): Promise<void> {
   await runInteractive({
     agent,
+    agents,
     ...resolveProviderIdentity(runtime.env),
     workspaceRoot: runtime.cwd,
-    globalKodaRoot: path.join(os.homedir(), ".config", "koda"),
-    globalOpenCodeRoot: path.join(os.homedir(), ".config", "opencode"),
+    ...globalRoots(),
     io: termUI.io,
     runtime: termUI,
     highlighter,
@@ -167,13 +206,19 @@ async function runInteractiveSession(
   });
 }
 
+/** Batch mode: the default agent, subagents run without output. */
 async function runBatch(
   runtime: CliEnvironment,
-  agent: CodeAgent,
+  agents: AgentRuntime,
   prompt: string,
 ): Promise<void> {
+  for (const issue of agents.catalog.diagnostics)
+    runtime.stderr.write(`Warning: ${issue}\n`);
+  const prepared = agents.prepare(agents.defaultAgent().name, {
+    runSubagent: runQuietly,
+  });
   runtime.stdout.write("[Think] Analyzing request...\n");
-  runtime.stdout.write(`${await agent.run(prompt)}\n`);
+  runtime.stdout.write(`${await prepared.agent.run(prompt)}\n`);
 }
 
 export async function runCli(runtime: CliEnvironment): Promise<number> {
@@ -184,15 +229,33 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
     return USAGE_EXIT_CODE;
   }
   try {
+    // The provider first: a missing key fails before anything is loaded.
+    const provider = ProviderFactory.fromEnvironment(runtime.env);
     const termUI = interactive ? await loadTermUIRuntime() : undefined;
     const highlighter = createLazyHighlighter();
-    const agent = createAgent(
+    const writePolicy = createWritePolicy(termUI?.io, highlighter);
+    const commandPolicy = createCommandPolicy(termUI?.io);
+    const catalog = await loadCatalog({
+      workspaceRoot: runtime.cwd,
+      ...globalRoots(),
+    });
+    const agents = createAgentRuntime(
       runtime,
-      createWritePolicy(termUI?.io, highlighter),
-      createCommandPolicy(termUI?.io),
+      catalog,
+      provider,
+      termUI?.io,
+      writePolicy,
+      commandPolicy,
     );
-    if (termUI === undefined) await runBatch(runtime, agent, prompt);
-    else await runInteractiveSession(runtime, termUI, agent, highlighter);
+    if (termUI === undefined) await runBatch(runtime, agents, prompt);
+    else
+      await runInteractiveSession(
+        runtime,
+        termUI,
+        createAgent(runtime, provider, writePolicy, commandPolicy),
+        agents,
+        highlighter,
+      );
     return 0;
   } catch (error: unknown) {
     const message =

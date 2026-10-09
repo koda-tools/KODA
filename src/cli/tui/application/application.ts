@@ -3,23 +3,26 @@ import { routeInput, type RouteResult } from "../../commands/router.js";
 import { decide } from "../commands/decision.js";
 import { runModelCommand } from "../commands/model-command.js";
 import { commandSuggestions } from "../commands/suggestions.js";
-import { createLineWriter } from "../output/line-writer.js";
 import { Session } from "../session/session.js";
 import { SessionController } from "../session/session-controller.js";
-import type { InteractiveIO, LineWriter } from "../shared/types.js";
+import type {
+  InteractiveIO,
+  LineWriter,
+  SessionIntent,
+} from "../shared/types.js";
 import { createSpinner } from "../turn/spinner.js";
 import { runAgentTurn } from "../turn/turn.js";
-import type { Spinner } from "../turn/types.js";
-import type { InteractiveOptions } from "./types.js";
+import {
+  cycleAgent,
+  formatAgents,
+  formatSkills,
+  reportCatalogIssues,
+  runAgentCommand,
+  runAgentPrompt,
+} from "./agents.js";
+import type { Dependencies, InteractiveOptions } from "./types.js";
 
-interface Dependencies {
-  readonly options: InteractiveOptions;
-  readonly io: InteractiveIO;
-  readonly registry: CommandRegistry;
-  readonly sessions: SessionController;
-  readonly writer: LineWriter;
-  readonly spinner: Spinner;
-}
+const NO_AGENTS = "Agents are not available in this session.";
 
 /** The session currently receiving input. */
 function active(deps: Dependencies): Session {
@@ -35,8 +38,12 @@ async function runPrompt(
   deps: Dependencies,
   route: Route<"prompt">,
 ): Promise<void> {
-  const { options, io, writer, spinner } = deps;
-  const session = active(deps);
+  const agents = deps.options.agents;
+  if (agents !== undefined) return runAgentPrompt(deps, agents, route);
+  const { options, spinner } = deps;
+  const entry = deps.sessions.activeEntry();
+  const { io, writer } = deps.sessions.bindingFor(entry);
+  const session = entry.session;
   const result = await runAgentTurn({
     agent: options.agent,
     prompt: route.prompt,
@@ -147,8 +154,63 @@ async function handleRoute(
     case "prompt":
       await runPrompt(deps, route);
       break;
+    case "agents":
+    case "skills":
+    case "agent":
+      await runAgentRoute(deps, route);
+      break;
   }
   return "continue";
+}
+
+/** `/agents`, `/skills` and `/agent [name]`. */
+async function runAgentRoute(
+  deps: Dependencies,
+  route: Route<"agents" | "skills" | "agent">,
+): Promise<void> {
+  const agents = deps.options.agents;
+  if (agents === undefined) {
+    deps.writer.write(`${NO_AGENTS}\n`);
+    return;
+  }
+  if (route.type === "agent") {
+    await runAgentCommand(deps, agents, route.name);
+    return;
+  }
+  const text =
+    route.type === "agents"
+      ? formatAgents(agents, active(deps).agent)
+      : formatSkills(agents);
+  deps.writer.write(`${text}\n`);
+}
+
+/** Keybind intents: sessions (Ctrl+N, Alt+S) and agents (Tab/Shift+Tab). */
+function handleIntent(deps: Dependencies, intent: SessionIntent): void {
+  const agents = deps.options.agents;
+  switch (intent) {
+    case "new":
+      deps.sessions.newSession();
+      return;
+    case "picker":
+      void handleSessionPicker(deps);
+      return;
+    case "agent-next":
+    case "agent-prev":
+      if (agents !== undefined)
+        cycleAgent(deps, agents, intent === "agent-next" ? 1 : -1);
+      return;
+  }
+}
+
+/** Writes to whichever session is active (messages, errors). */
+function activeWriter(sessions: SessionController): LineWriter {
+  const current = (): LineWriter =>
+    sessions.bindingFor(sessions.activeEntry()).writer;
+  return {
+    ensureNewLine: () => current().ensureNewLine(),
+    write: (text) => current().write(text),
+    writeSegment: (segment) => current().writeSegment(segment),
+  };
 }
 
 async function processInput(
@@ -187,32 +249,33 @@ async function runSession(
   options: InteractiveOptions,
   io: InteractiveIO,
 ): Promise<void> {
-  const writer = createLineWriter(io);
-  const sessions = new SessionController(
-    io,
-    () => new Session(options, io, writer),
-  );
+  const agents = options.agents;
+  const sessions = new SessionController(io, (_id, sessionIO, writer) => {
+    const session = new Session(options, sessionIO, writer);
+    if (agents !== undefined) session.selectAgent(agents.defaultAgent().name);
+    return session;
+  });
   const deps: Dependencies = {
     options,
     io,
-    writer,
+    writer: activeWriter(sessions),
     sessions,
     spinner: createSpinner(io),
     registry: new CommandRegistry(await discoverCommands(options)),
   };
   io.setCommandSuggestions?.(commandSuggestions(deps.registry));
+  if (agents !== undefined) reportCatalogIssues(deps, agents);
   let exitRequested = false;
   // First cancel aborts the active request; a second one (idle) exits.
   const unsubscribe = io.onCancel?.(() => {
-    if (active(deps).abortRequest()) return;
+    if (sessions.abortRunning()) return;
     exitRequested = true;
     io.close();
   });
-  // Session navigation raised from the UI (Ctrl+N / Tab).
-  const unsubIntent = io.onSessionIntent?.((intent) => {
-    if (intent === "new") sessions.newSession();
-    else void handleSessionPicker(deps);
-  });
+  // Navigation raised from the UI (Ctrl+N, Alt+S, Tab / Shift+Tab).
+  const unsubIntent = io.onSessionIntent?.((intent) =>
+    handleIntent(deps, intent),
+  );
   active(deps).showHeader();
   try {
     while (!exitRequested) {

@@ -33,15 +33,15 @@ operations:
   - op: add
     id: session-switch-navigation
     title: Navegação e criação de sessão por teclado
-    statement: O sistema DEVE permitir criar uma nova sessão com Ctrl+N, alternar a visibilidade da sidebar com Ctrl+B, e abrir um modal seletor de sessão (reusando o componente de lista existente) quando Tab é pressionado com o prompt vazio, sem quebrar a inserção normal de Tab quando o prompt tem conteúdo.
+    statement: O sistema DEVE permitir criar uma nova sessão com Ctrl+N, alternar a visibilidade da sidebar com Ctrl+B e abrir um modal seletor de sessão (reusando o componente de lista existente) com Alt+S; o Tab fica reservado para alternar o agente primário (change agents-and-skills).
     verify: node --test --import tsx test/keyboard.test.ts
     scenarios:
       - when: o usuário pressiona Ctrl+N
         then: uma nova sessão é criada e torna-se ativa
-      - when: o usuário pressiona Tab com o prompt vazio
+      - when: o usuário pressiona Alt+S
         then: o modal seletor de sessão é aberto para escolher a sessão com as setas e Enter
-      - when: o usuário pressiona Tab com texto no prompt
-        then: o Tab é tratado como inserção normal no prompt e o modal não abre
+      - when: o usuário pressiona Ctrl+S
+        then: o prompt é enviado e o modal não abre
       - when: o usuário pressiona Ctrl+B
         then: a sidebar alterna entre visível e oculta
       - when: um modal já está aberto

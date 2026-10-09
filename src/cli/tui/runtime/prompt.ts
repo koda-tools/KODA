@@ -42,6 +42,11 @@ export class Prompt {
     for (const char of text) this.widget.insertChar(char);
   }
 
+  /** Label in the top border, e.g. `Message · build`. */
+  public setTitle(title: string): void {
+    this.widget.setTitle(title);
+  }
+
   public set focused(focused: boolean) {
     this.widget.isFocused = focused;
   }

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KODA Docs</title>
+<script>
+  (function () {
+    var saved = localStorage.getItem("koda-theme");
+    var theme = saved || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    document.documentElement.dataset.theme = theme;
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root, [data-theme="dark"] {
+    --bg: #0a0a0a;
+    --panel: #141414;
+    --line: #2e2e2e;
+    --strong: #f2f2f2;
+    --ink: #d4d4d4;
+    --dim: #808080;
+    --accent: #ffffff;
+    --accent-ink: #000000;
+    --code-bg: #000000;
+    --code-ink: #e6e6e6;
+    --shadow: #3a3a3a;
+    --grid: rgba(255,255,255,.035);
+  }
+  [data-theme="light"] {
+    --bg: #fafafa;
+    --panel: #ffffff;
+    --line: #d4d4d4;
+    --strong: #0a0a0a;
+    --ink: #2b2b2b;
+    --dim: #777777;
+    --accent: #000000;
+    --accent-ink: #ffffff;
+    --code-bg: #111111;
+    --code-ink: #f0f0f0;
+    --shadow: #c8c8c8;
+    --grid: rgba(0,0,0,.045);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 15px; line-height: 1.75;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 16px 16px;
+    transition: background-color .15s steps(2), color .15s steps(2);
+  }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+  a { color: var(--strong); text-underline-offset: 4px; }
+  a:hover { background: var(--accent); color: var(--accent-ink); }
+  h1, h2, h3, .px { font-family: "Press Start 2P", monospace; font-weight: normal; line-height: 1.6; color: var(--strong); }
+
+  .layout { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+  aside {
+    position: sticky; top: 0; height: 100vh; overflow: auto; background: var(--panel);
+    border-right: 3px solid var(--strong); padding: 24px 20px;
+  }
+  .art { font-family: "DejaVu Sans Mono", Consolas, Menlo, monospace; white-space: pre; line-height: 1; color: var(--strong); margin: 0; letter-spacing: 0; }
+  aside .art { font-size: 22px; margin-bottom: 10px; }
+  .hero .art { font-size: 56px; margin-bottom: 18px; text-shadow: 4px 4px 0 var(--shadow); }
+  .logo { font-size: 18px; margin: 0 0 6px; text-shadow: 3px 3px 0 var(--shadow); }
+  .ver { color: var(--dim); font-size: 13px; margin-bottom: 18px; }
+  .toggle {
+    width: 100%; font: inherit; font-size: 13px; cursor: pointer; margin-bottom: 20px;
+    background: var(--bg); color: var(--strong); border: 2px solid var(--strong); padding: 6px 10px;
+    box-shadow: 3px 3px 0 var(--shadow); text-align: left;
+  }
+  .toggle:hover { background: var(--accent); color: var(--accent-ink); }
+  .toggle:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
+  nav .grp { font-family: "Press Start 2P"; font-size: 9px; color: var(--dim); margin: 20px 0 6px; }
+  nav a { display: block; padding: 2px 8px; margin: 1px 0; text-decoration: none; color: var(--ink); border-left: 3px solid transparent; }
+  nav a::before { content: "> "; color: var(--dim); }
+  nav a:hover { background: var(--accent); color: var(--accent-ink); border-left-color: var(--accent); }
+  nav a:hover::before { color: var(--accent-ink); }
+
+  main { padding: 56px 56px 110px; max-width: 920px; }
+  .hero h1 { font-size: 40px; margin: 0 0 18px; text-shadow: 4px 4px 0 var(--shadow); }
+  .hero p { font-size: 17px; margin: 0 0 22px; color: var(--strong); max-width: 600px; }
+  .blink { animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  section { margin-top: 64px; }
+  h2 { font-size: 16px; margin: 0 0 20px; padding-bottom: 12px; border-bottom: 3px dashed var(--line); }
+  h2::before { content: "■ "; }
+  h3 { font-size: 11px; color: var(--dim); margin: 26px 0 10px; }
+  p { margin: 10px 0; }
+  code { background: var(--accent); color: var(--accent-ink); padding: 0 6px; font-size: 13.5px; }
+  pre {
+    background: var(--code-bg); color: var(--code-ink); border: 3px solid var(--strong);
+    box-shadow: 6px 6px 0 var(--shadow); padding: 16px 18px; overflow: auto; margin: 16px 6px 24px 0;
+    font-size: 13.5px; line-height: 1.65;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  pre .c { color: #7d7d7d; }
+
+  .box { background: var(--panel); border: 3px solid var(--strong); box-shadow: 6px 6px 0 var(--shadow); padding: 12px 18px; margin: 16px 6px 24px 0; }
+  .box b { color: var(--strong); }
+
+  table { width: calc(100% - 6px); border-collapse: collapse; background: var(--panel); border: 3px solid var(--strong); margin: 16px 0 24px; }
+  th, td { text-align: left; padding: 8px 12px; border: 1px solid var(--line); vertical-align: top; }
+  th { font-family: "Press Start 2P"; font-size: 9px; font-weight: normal; background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  td:first-child { white-space: nowrap; color: var(--strong); }
+
+  .tag { font-family: "Press Start 2P"; font-size: 8px; padding: 3px 6px; border: 2px solid var(--strong); background: var(--accent); color: var(--accent-ink); }
+  .tag.p { background: transparent; color: var(--strong); }
+  .tag.g { background: transparent; color: var(--dim); border-color: var(--dim); }
+
+  footer { margin-top: 80px; color: var(--dim); border-top: 3px dashed var(--line); padding-top: 16px; font-size: 13px; }
+
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; border-right: 0; border-bottom: 3px solid var(--strong); }
+    main { padding: 28px 20px 64px; }
+    .hero h1 { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="art" aria-hidden="true"> ▀ ▀
+█▀█▀█
+▀▀▀▀▀</div>
+    <h1 class="logo">KODA</h1>
+    <div class="ver">v0.1.0</div>
+    <button class="toggle" id="theme-toggle" type="button" aria-label="Alternar tema">◐ tema: dark</button>
+    <nav>
+      <div class="grp">COMEÇAR</div>
+      <a href="#intro">Introdução</a>
+      <a href="#install">Instalação</a>
+      <a href="#config">Configuração</a>
+      <div class="grp">USO</div>
+      <a href="#commands">Comandos</a>
+      <a href="#agents">Agentes</a>
+      <a href="#tools">Ferramentas</a>
+      <div class="grp">EXTENDER</div>
+      <a href="#custom-commands">Comandos custom</a>
+      <a href="#custom-agents">Agentes custom</a>
+      <a href="#skills">Skills</a>
+      <a href="#permissions">Permissões</a>
+      <div class="grp">SDK</div>
+      <a href="#sdk">Usar como lib</a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="hero" id="intro">
+      <div class="art" aria-hidden="true"> ▀ ▀
+█▀█▀█
+▀▀▀▀▀</div>
+      <h1>KODA</h1>
+      <p>Um agente de código seguro para o terminal, escrito em TypeScript. CLI e SDK.</p>
+      <pre><code>$ koda<span class="blink"> _</span></code></pre>
+    </div>
+
+    <section>
+      <h2>Introdução</h2>
+      <p>KODA lê seu projeto, edita arquivos e roda comandos, sempre pedindo aprovação para ações sensíveis. Funciona com vários provedores de LLM e é compatível com a estrutura de agentes, skills e comandos do OpenCode.</p>
+      <table>
+        <tr><th>PROVEDOR</th><th>MODELO PADRÃO</th></tr>
+        <tr><td>openai</td><td>gpt-4o-mini</td></tr>
+        <tr><td>anthropic</td><td>claude-3-5-sonnet-latest</td></tr>
+        <tr><td>gemini</td><td>gemini-2.5-flash</td></tr>
+        <tr><td>ollama</td><td>llama3.2 (local)</td></tr>
+      </table>
+    </section>
+
+    <section id="install">
+      <h2>Instalação</h2>
+      <p>Requer <code>Node &gt;= 20</code>.</p>
+<pre><code>npm install
+npm run build
+npm start       <span class="c"># ou: npm run koda (build + start)</span></code></pre>
+      <p>O binário <code>koda</code> é exposto via <code>bin/koda.js</code>.</p>
+    </section>
+
+    <section id="config">
+      <h2>Configuração</h2>
+      <p>Provedor e modelo são definidos por variáveis de ambiente.</p>
+<pre><code><span class="c"># escolha o provedor (padrão: openai)</span>
+export KODA_PROVIDER=anthropic
+export ANTHROPIC_API_KEY=sk-...
+export ANTHROPIC_MODEL=claude-3-5-sonnet-latest</code></pre>
+      <table>
+        <tr><th>PROVEDOR</th><th>CHAVE</th><th>MODELO</th></tr>
+        <tr><td>openai</td><td>OPENAI_API_KEY</td><td>OPENAI_MODEL</td></tr>
+        <tr><td>anthropic</td><td>ANTHROPIC_API_KEY</td><td>ANTHROPIC_MODEL</td></tr>
+        <tr><td>gemini</td><td>GEMINI_API_KEY</td><td>GEMINI_MODEL</td></tr>
+        <tr><td>ollama</td><td>OLLAMA_API_KEY <span class="tag g">opcional</span></td><td>OLLAMA_MODEL</td></tr>
+      </table>
+      <h3>OLLAMA (LOCAL)</h3>
+<pre><code>export KODA_PROVIDER=ollama
+export OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
+export OLLAMA_TOOL_SUPPORT=true</code></pre>
+    </section>
+
+    <section id="commands">
+      <h2>Comandos</h2>
+      <p>Digite <code>/</code> no prompt para ver sugestões.</p>
+      <table>
+        <tr><th>COMANDO</th><th>DESCRIÇÃO</th></tr>
+        <tr><td>/help</td><td>Mostra os comandos built-in</td></tr>
+        <tr><td>/commands</td><td>Lista comandos customizados</td></tr>
+        <tr><td>/model [nome|número]</td><td>Troca o modelo</td></tr>
+        <tr><td>/agents</td><td>Lista agentes</td></tr>
+        <tr><td>/agent [nome]</td><td>Troca o agente primário</td></tr>
+        <tr><td>/skills</td><td>Lista skills</td></tr>
+        <tr><td>/clear</td><td>Limpa o contexto da conversa (pede confirmação)</td></tr>
+        <tr><td>/exit</td><td>Sai do KODA</td></tr>
+      </table>
+      <p>Use <code>@agente tarefa</code> para delegar a um subagente.</p>
+    </section>
+
+    <section id="agents">
+      <h2>Agentes</h2>
+      <table>
+        <tr><th>NOME</th><th>MODO</th><th>DESCRIÇÃO</th></tr>
+        <tr><td>build</td><td><span class="tag">primary</span></td><td>Padrão. Todas as ferramentas disponíveis.</td></tr>
+        <tr><td>plan</td><td><span class="tag">primary</span></td><td>Analisa e propõe planos, sem editar arquivos.</td></tr>
+        <tr><td>general</td><td><span class="tag p">subagent</span></td><td>Pesquisa e tarefas de múltiplos passos.</td></tr>
+        <tr><td>explore</td><td><span class="tag p">subagent</span></td><td>Somente leitura. Busca arquivos e código.</td></tr>
+      </table>
+    </section>
+
+    <section id="tools">
+      <h2>Ferramentas</h2>
+      <table>
+        <tr><th>TOOL</th><th>O QUE FAZ</th></tr>
+        <tr><td>readFile</td><td>Lê arquivos, com intervalo de linhas</td></tr>
+        <tr><td>writeFile</td><td>Cria ou altera arquivos (com aprovação)</td></tr>
+        <tr><td>listDirectory</td><td>Lista diretórios</td></tr>
+        <tr><td>searchFiles</td><td>Busca no projeto</td></tr>
+        <tr><td>getFileInfo</td><td>Metadados de um arquivo</td></tr>
+        <tr><td>runCommand</td><td>Executa comandos com classificação de risco, saída limitada e env em allowlist</td></tr>
+      </table>
+    </section>
+
+    <section id="custom-commands">
+      <h2>Comandos customizados</h2>
+      <p>Crie um arquivo Markdown em <code>.koda/commands/</code>. O nome do arquivo vira o comando.</p>
+<pre><code><span class="c"># .koda/commands/review.md</span>
+---
+description: Revisa um arquivo
+agent: plan
+model: openai/gpt-4o-mini
+subagent: false
+---
+Revise o arquivo $1 com foco em $2.
+Argumentos completos: $ARGUMENTS</code></pre>
+      <p>Uso: <code>/review src/index.ts segurança</code></p>
+      <div class="box">
+        <b>Precedência</b> (maior para menor): <code>.koda/</code> → <code>koda.json</code> → <code>.opencode/</code> → <code>opencode.json</code> → configuração global. Duplicatas no mesmo nível geram erro.
+      </div>
+    </section>
+
+    <section id="custom-agents">
+      <h2>Agentes customizados</h2>
+      <p>Definidos em Markdown (corpo = prompt) ou JSON, nos mesmos diretórios dos comandos.</p>
+<pre><code>---
+description: Revisor de segurança
+mode: subagent
+model: anthropic/claude-3-5-sonnet-latest
+temperature: 0.1
+steps: 15
+permission:
+  edit: deny
+  bash: ask
+---
+Você revisa código procurando vulnerabilidades.</code></pre>
+    </section>
+
+    <section id="skills">
+      <h2>Skills</h2>
+      <p>Cada skill é uma pasta com um <code>SKILL.md</code>.</p>
+<pre><code>.koda/skills/&lt;nome&gt;/SKILL.md</code></pre>
+      <p>Também são lidas as pastas <code>.opencode</code>, <code>.claude</code> e <code>.agents</code>. Liste com <code>/skills</code>.</p>
+    </section>
+
+    <section id="permissions">
+      <h2>Permissões</h2>
+      <p>Cada ação resolve para <code>allow</code>, <code>ask</code> ou <code>deny</code>. Com padrões glob, a última regra que casar vence.</p>
+<pre><code>permission:
+  read: allow
+  edit: ask
+  bash:
+    "*": ask
+    "git status": allow
+    "rm *": deny</code></pre>
+      <p>Chaves: <code>read</code>, <code>edit</code>, <code>list</code>, <code>glob</code>, <code>grep</code>, <code>bash</code>, <code>task</code>, <code>skill</code>.</p>
+    </section>
+
+    <section id="sdk">
+      <h2>Usar como lib</h2>
+      <p>O pacote exporta o SDK em <code>dist/src/index.js</code>.</p>
+<pre><code>import * as koda from "koda-agent";</code></pre>
+      <div class="box"><b>Nota:</b> o pacote é <code>private</code> e ainda não foi publicado no npm.</div>
+    </section>
+
+    <footer>KODA &copy; · feito com pixels.</footer>
+  </main>
+</div>
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("theme-toggle");
+    function label() { btn.textContent = "◐ tema: " + root.dataset.theme; }
+    label();
+    btn.addEventListener("click", function () {
+      var next = root.dataset.theme === "dark" ? "light" : "dark";
+      root.dataset.theme = next;
+      localStorage.setItem("koda-theme", next);
+      label();
+    });
+  })();
+</script>
+</body>
+</html>

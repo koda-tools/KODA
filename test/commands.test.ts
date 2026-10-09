@@ -94,14 +94,20 @@ test("discovers nested project commands with local precedence", async () => {
   }
 });
 
-test("routes built-ins, plain prompts, custom commands, and unsupported subagents", async () => {
+test("routes built-ins, plain prompts, custom commands, and subagent commands", async () => {
   const normal = {
     name: "review",
     template: "Review $1",
     subagent: false,
     source,
   };
-  const child = { name: "child", template: "x", subagent: true, source };
+  const child = {
+    name: "child",
+    template: "x",
+    subagent: true,
+    agent: "explore",
+    source,
+  };
   const registry = new CommandRegistry([normal, child]);
   assert.deepEqual(await routeInput("hello", registry, process.cwd()), {
     type: "prompt",
@@ -115,8 +121,23 @@ test("routes built-ins, plain prompts, custom commands, and unsupported subagent
     type: "prompt",
     prompt: "Review now",
   });
-  await assert.rejects(
-    routeInput("/child", registry, process.cwd()),
-    /unsupported/,
-  );
+  assert.deepEqual(await routeInput("/child", registry, process.cwd()), {
+    type: "prompt",
+    prompt: "x",
+    agent: "explore",
+    subagent: true,
+  });
+  assert.deepEqual(await routeInput("/agents", registry, process.cwd()), {
+    type: "agents",
+  });
+  assert.deepEqual(await routeInput("/skills", registry, process.cwd()), {
+    type: "skills",
+  });
+  assert.deepEqual(await routeInput("/agent", registry, process.cwd()), {
+    type: "agent",
+  });
+  assert.deepEqual(await routeInput("/agent plan", registry, process.cwd()), {
+    type: "agent",
+    name: "plan",
+  });
 });

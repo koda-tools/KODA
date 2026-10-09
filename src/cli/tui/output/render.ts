@@ -25,7 +25,13 @@ async function writeSegments(
   writer.ensureNewLine();
 }
 
-/** Show a written file as a highlighted, line-numbered code block. */
+/** Fence info naming the file, so the code block header shows it. */
+function fenceInfo(filePath: string): string {
+  const title = filePath.includes('"') ? "" : ` title="${filePath}"`;
+  return `${extensionOf(filePath)}${title}`;
+}
+
+/** Show a written file as a highlighted `CODE · <file>` block. */
 export async function renderFile(
   writer: LineWriter,
   file: WriteArguments,
@@ -35,7 +41,7 @@ export async function renderFile(
   const stream = new MarkdownStream(options.highlighter, options.onCodeBlock);
   const segments = [
     ...(await stream.push(
-      `${fence}${extensionOf(file.filePath)}\n${file.content}\n${fence}\n`,
+      `${fence}${fenceInfo(file.filePath)}\n${file.content}\n${fence}\n`,
     )),
     ...(await stream.flush()),
   ];

@@ -3,6 +3,7 @@ export {
   DEFAULT_MAX_ITERATIONS,
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_TOOL_STATUS,
+  STEP_LIMIT_PROMPT,
   THINKING_STATUS,
 } from "./agent/constants.js";
 export type {
@@ -11,6 +12,7 @@ export type {
   AgentRunOptions,
   AgentRunResult,
   CodeAgentOptions,
+  StepLimitBehavior,
   ToolExecutor,
   ToolObservation,
 } from "./agent/types.js";

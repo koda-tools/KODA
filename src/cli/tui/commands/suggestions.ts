@@ -8,6 +8,9 @@ export const BUILT_IN_SUGGESTIONS: readonly CommandSuggestion[] = [
   { name: "help", description: "Show built-in commands" },
   { name: "commands", description: "List custom commands" },
   { name: "model", description: "Switch model" },
+  { name: "agents", description: "List agents" },
+  { name: "agent", description: "Switch the primary agent" },
+  { name: "skills", description: "List skills" },
   { name: "clear", description: "Clear conversation context" },
   { name: "exit", description: "Leave KODA" },
 ];
@@ -20,10 +23,11 @@ export function commandSuggestions(
   const custom = registry
     .list()
     .filter((command) => !seen.has(command.name))
-    .map((command): CommandSuggestion =>
-      command.description === undefined || command.description === ""
-        ? { name: command.name }
-        : { name: command.name, description: command.description },
+    .map(
+      (command): CommandSuggestion =>
+        command.description === undefined || command.description === ""
+          ? { name: command.name }
+          : { name: command.name, description: command.description },
     );
   return [...BUILT_IN_SUGGESTIONS, ...custom];
 }

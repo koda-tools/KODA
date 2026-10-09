@@ -189,7 +189,7 @@ test("/model reports listing failures and still accepts a name", async () => {
   assert.match(output, /Model set to custom\./);
 });
 
-test("renders fenced code with line numbers in the transcript", async () => {
+test("renders mixed text and fenced code as separate blocks", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "koda-code-"));
   const inputs = ["code", "/exit"];
   let output = "";
@@ -225,10 +225,8 @@ test("renders fenced code with line numbers in the transcript", async () => {
         close: () => undefined,
       },
     });
-    assert.match(output, / {2}1 \| print\(1\)\n {2}2 \| print\(2\)\n/);
-    // The block is wrapped in a Card-style frame with a copy hint.
-    assert.match(output, /┌─ py .*Copy/);
-    assert.match(output, /└─+┘/);
+    assert.match(output, /▌ TEXT · KODA\n▌ Sure:\n\n/);
+    assert.match(output, /▌ CODE · py\n▌\n▌ print\(1\)\n▌ print\(2\)\n\n/);
     assert.doesNotMatch(output, /```/);
   } finally {
     await rm(root, { recursive: true, force: true });

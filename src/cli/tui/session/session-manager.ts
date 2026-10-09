@@ -36,8 +36,14 @@ export class SessionManager {
     return this.sessions.length;
   }
 
-  /** Create a new session, make it active, and return it. */
-  public create(title?: string): ManagedSession {
+  /**
+   * Create a new session and return it. It becomes active unless
+   * `activate` is false (a subagent's child session runs in background).
+   */
+  public create(
+    title?: string,
+    options: { readonly activate?: boolean; readonly parentId?: string } = {},
+  ): ManagedSession {
     const id = `s${(this.counter += 1)}`;
     const index = this.sessions.length;
     const entry: ManagedSession = {
@@ -45,9 +51,10 @@ export class SessionManager {
       title: title ?? this.titleFor(index),
       session: this.factory(id),
       transcript: [""],
+      ...(options.parentId === undefined ? {} : { parentId: options.parentId }),
     };
     this.sessions.push(entry);
-    this.active = index;
+    if (options.activate !== false) this.active = index;
     return entry;
   }
 

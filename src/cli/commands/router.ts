@@ -8,6 +8,20 @@ export type RouteResult =
       readonly type: "prompt";
       readonly prompt: string;
       readonly model?: string;
+      /** Agent a command declared (`agent:`) to run the prompt. */
+      readonly agent?: string;
+      /** `subagent: true`: delegate to the agent in a child session. */
+      readonly subagent?: boolean;
+    }
+  | {
+      readonly type: "agents";
+    }
+  | {
+      readonly type: "skills";
+    }
+  | {
+      readonly type: "agent";
+      readonly name?: string;
     }
   | {
       readonly type: "message";
@@ -25,7 +39,7 @@ export type RouteResult =
     };
 
 const BUILT_IN_HELP =
-  "Built-ins: /help, /commands, /model [name|number], /clear, /exit";
+  "Built-ins: /help, /commands, /model [name|number], /agents, /agent [name], /skills, /clear, /exit\nUse @agent <task> to delegate to a subagent.";
 
 export async function routeInput(
   input: string,
@@ -55,12 +69,6 @@ export async function routeInput(
     throw unknownCommandError(slash.name, registry);
   }
 
-  if (command.subagent) {
-    throw new Error(
-      `Command '/${command.name}' requires unsupported subagent execution.`,
-    );
-  }
-
   const template = expandArguments(command.template, slash.arguments);
 
   const prompt = await expandShellBlocks(
@@ -70,7 +78,11 @@ export async function routeInput(
     shellPolicy,
   );
 
-  return promptResult(prompt, command.model);
+  return {
+    ...promptResult(prompt, command.model),
+    ...(command.agent === undefined ? {} : { agent: command.agent }),
+    ...(command.subagent ? { subagent: true } : {}),
+  };
 }
 
 function routeBuiltInCommand(
@@ -101,6 +113,20 @@ function routeBuiltInCommand(
         type: "message",
         content: formatCommandList(registry),
       };
+
+    case "agents":
+      return { type: "agents" };
+
+    case "skills":
+      return { type: "skills" };
+
+    case "agent": {
+      const agent = args.trim();
+
+      return agent.length === 0
+        ? { type: "agent" }
+        : { type: "agent", name: agent };
+    }
 
     case "clear":
     case "reset":

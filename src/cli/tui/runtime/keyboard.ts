@@ -22,15 +22,18 @@ function scrollStep(key: string, targets: KeyboardTargets): number | undefined {
 }
 
 /**
- * Session shortcuts: Ctrl+N new, Ctrl+B sidebar, Tab (empty prompt) opens
- * the switcher. Only reached when no choice list is open, so a modal never
- * gets reopened or bypassed. Returns true when the key was handled.
+ * Session shortcuts: Ctrl+N new, Ctrl+B sidebar, Alt+S opens the switcher,
+ * Tab / Shift+Tab cycle the primary agent (as in OpenCode). Only reached
+ * when no choice list or completion is open, so a modal never gets reopened
+ * or bypassed. Returns true when the key was handled.
  */
 function handleSessionKey(event: KeyEvent, targets: KeyboardTargets): boolean {
   if (event.ctrl && event.key === "n") targets.newSession();
   else if (event.ctrl && event.key === "b") targets.toggleSidebar();
-  else if (event.key === "tab" && !event.ctrl && targets.prompt.isEmpty)
+  else if (event.alt && !event.ctrl && event.key === "s")
     targets.openSessionPicker();
+  else if (event.key === "tab" && !event.ctrl && !event.alt)
+    targets.cycleAgent(event.shift ? -1 : 1);
   else return false;
   return true;
 }
@@ -62,7 +65,7 @@ export function createKeyHandler(
     } else if (choices.isOpen) {
       return; // The builder routes keys to the List.
     } else if (handleSessionKey(event, targets)) {
-      // Handled; Tab with text in the prompt falls through to the prompt.
+      // Handled: session or agent navigation.
     } else {
       const step = scrollStep(event.key, targets);
       if (step !== undefined) targets.transcript.scrollBy(step);

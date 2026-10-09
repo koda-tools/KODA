@@ -9,6 +9,7 @@ import type { Prompt } from "./runtime/prompt.js";
 
 export { runInteractive } from "./application/application.js";
 export type {
+  Dependencies,
   InteractiveOptions,
   InteractiveRuntime,
 } from "./application/types.js";
@@ -30,12 +31,18 @@ export { toDiffViewLines } from "./diff/diff-lines.js";
 export { diffSegments } from "./diff/diff-segments.js";
 export { createLazyHighlighter } from "./highlight/highlighter.js";
 export type { CodeHighlighter, HighlightedLine } from "./highlight/types.js";
-export {
-  frameBottom,
-  frameTop,
-  MarkdownStream,
-} from "./markdown/markdown-stream.js";
-export { createLineWriter } from "./output/line-writer.js";
+export { CodeBlock } from "./blocks/code-block.js";
+export { BLOCK_BORDER, blockIndent } from "./blocks/style.js";
+export { statusLine, TextBlock, userMessage } from "./blocks/text-block.js";
+export type { BlockLine, BlockVariant, CodeBlockInfo } from "./blocks/types.js";
+export { parseFenceInfo } from "./markdown/fence.js";
+export { parseInline, parseMarkdownLine } from "./markdown/markdown-line.js";
+export { MarkdownStream } from "./markdown/markdown-stream.js";
+export type { FenceInfo, InlineToken, MarkdownLine } from "./markdown/types.js";
+// Pure wrapping (no TermUI import): safe to load in batch mode.
+export { cellsToSpans, wrapCells } from "./runtime/wrap.js";
+export type { StyledCell } from "./runtime/types.js";
+export { createLineWriter, writeStatus } from "./output/line-writer.js";
 export { renderDiff, renderFile } from "./output/render.js";
 export type { RenderOptions, WriteArguments } from "./output/types.js";
 export {
@@ -52,8 +59,11 @@ export { estimateCost } from "../../providers/index.js";
 export { Session } from "./session/session.js";
 export { SessionController } from "./session/session-controller.js";
 export { SessionManager } from "./session/session-manager.js";
+export { createSessionIO } from "./session/session-io.js";
 export type {
+  BoundSessionFactory,
   ManagedSession,
+  SessionBinding,
   SessionFactory,
   SessionIdentity,
   SessionStatus,
@@ -70,6 +80,7 @@ export type {
   ModelPickerRequest,
   Segment,
   SelectRequest,
+  SessionIntent,
   SessionPickerItem,
   SessionPickerRequest,
   SessionPickerResult,

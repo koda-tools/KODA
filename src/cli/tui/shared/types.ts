@@ -1,7 +1,17 @@
-/** One unit of rendered output: plain prose, or code with a styled form. */
+/**
+ * One unit of rendered output:
+ * - `text`: plain text appended as-is.
+ * - `code`: styled text (with its own newlines) appended as-is.
+ * - `live`: streaming preview of the unfinished current line; replaces the
+ *   previous preview, and is skipped when the IO cannot replace a line.
+ * - `line`: a finished line (no trailing newline); it replaces the live
+ *   preview when one is showing, so streamed text is never duplicated.
+ */
 export type Segment =
   | { readonly kind: "text"; readonly text: string }
-  | { readonly kind: "code"; readonly plain: string; readonly ansi: string };
+  | { readonly kind: "code"; readonly plain: string; readonly ansi: string }
+  | { readonly kind: "live"; readonly plain: string; readonly ansi: string }
+  | { readonly kind: "line"; readonly plain: string; readonly ansi: string };
 
 export interface LineWriter {
   readonly ensureNewLine: () => void;
@@ -69,7 +79,15 @@ export interface SessionSummaryView {
   readonly provider: string;
   readonly tokens: number;
   readonly cost: number | undefined;
+  /** Primary agent of the session (or the subagent of a child session). */
+  readonly agent?: string;
 }
+
+/**
+ * Navigation raised from the UI: a new session, the session switcher, or
+ * the next/previous primary agent.
+ */
+export type SessionIntent = "new" | "picker" | "agent-next" | "agent-prev";
 
 export type ToolCallStatus = "pending" | "running" | "done" | "error";
 
@@ -95,6 +113,11 @@ export interface InteractiveIO {
   readonly onCancel?: (handler: () => void) => () => void;
   readonly isTTY?: boolean;
   readonly writeStyled?: (text: string) => void;
+  /**
+   * Replace the unfinished last line with styled text (streaming preview).
+   * Without it, previews are skipped and only finished lines are written.
+   */
+  readonly setLiveLine?: (text: string) => void;
   /** Remember a rendered code block so the user can copy it (Ctrl+Y). */
   readonly onCodeBlock?: (code: string) => void;
   readonly setHeader?: (text: string) => void;
@@ -122,12 +145,13 @@ export interface InteractiveIO {
   /** Toggle or set the sidebar's visibility. */
   readonly setSidebarVisible?: (visible: boolean) => void;
   /**
-   * Register a handler for session navigation intents raised from the UI
-   * (e.g. a keybind): `"new"` creates a session, `"picker"` opens the
-   * switcher. Returns an unsubscribe function.
+   * Register a handler for navigation intents raised from the UI (keybinds):
+   * `"new"` creates a session, `"picker"` opens the switcher and
+   * `"agent-next"`/`"agent-prev"` cycle the primary agent. Returns an
+   * unsubscribe function.
    */
   readonly onSessionIntent?: (
-    handler: (intent: "new" | "picker") => void,
+    handler: (intent: SessionIntent) => void,
   ) => () => void;
   /** Read the visible transcript so it can be saved before a session switch. */
   readonly getTranscript?: () => readonly string[];

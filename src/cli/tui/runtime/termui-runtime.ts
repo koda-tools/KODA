@@ -1,6 +1,7 @@
 import { writeClipboard } from "@termuijs/core";
 import { Spinner } from "@termuijs/widgets";
 import type { InteractiveRuntime } from "../application/types.js";
+import { statusLine, userMessage } from "../blocks/text-block.js";
 import { sanitize, sanitizeStyled } from "../shared/sanitize.js";
 import type {
   DiffViewRequest,
@@ -8,12 +9,17 @@ import type {
   ModelPickerRequest,
   SelectRequest,
   SessionPickerRequest,
+  SessionIntent,
   SessionPickerResult,
   SessionSummaryView,
 } from "../shared/types.js";
 import { ChoiceList } from "./choice-list.js";
 import { CommandSuggestions } from "./command-suggestions.js";
-import { MODEL_PICKER_TITLE, SESSION_PICKER_TITLE } from "./constants.js";
+import {
+  MODEL_PICKER_TITLE,
+  PROMPT_TITLE,
+  SESSION_PICKER_TITLE,
+} from "./constants.js";
 import {
   appendToTranscript,
   createConversationStore,
@@ -64,6 +70,7 @@ export class TermUIRuntime implements InteractiveRuntime {
     // Untrusted text loses every escape; styled output keeps SGR colors.
     write: (value) => this.write(sanitize(value)),
     writeStyled: (value) => this.write(sanitizeStyled(value)),
+    setLiveLine: (value) => this.setLiveLine(sanitizeStyled(value)),
     close: () => this.close(),
     onCancel: (handler) => {
       this.cancelHandlers.add(handler);
@@ -95,10 +102,10 @@ export class TermUIRuntime implements InteractiveRuntime {
 
   /** Application-registered handlers for session navigation intents. */
   private readonly sessionIntentHandlers = new Set<
-    (intent: "new" | "picker") => void
+    (intent: SessionIntent) => void
   >();
 
-  private emitSessionIntent(intent: "new" | "picker"): void {
+  private emitSessionIntent(intent: SessionIntent): void {
     for (const handler of [...this.sessionIntentHandlers]) handler(intent);
   }
 
@@ -131,6 +138,8 @@ export class TermUIRuntime implements InteractiveRuntime {
         copyLastCodeBlock: () => this.copyLastCodeBlock(),
         newSession: () => this.emitSessionIntent("new"),
         openSessionPicker: () => this.emitSessionIntent("picker"),
+        cycleAgent: (step) =>
+          this.emitSessionIntent(step === 1 ? "agent-next" : "agent-prev"),
         toggleSidebar: () => this.toggleSidebar(),
         submit: (value) => this.submit(value),
         requestRender: () => this.mounted?.requestRender(),
@@ -160,13 +169,38 @@ export class TermUIRuntime implements InteractiveRuntime {
     const answer = this.pendingAnswer;
     if (answer === undefined) return;
     this.pendingAnswer = undefined;
-    this.write(`${value}\n`);
+    this.writeUserMessage(value);
     answer.resolve(value);
+  }
+
+  /** Echo what the user sent as a `TEXT · USER` block, one blank line apart. */
+  private writeUserMessage(value: string): void {
+    if (value.trim() === "") return;
+    const { transcript } = this.store.getState();
+    const last = transcript.at(-1) ?? "";
+    const beforeLast = transcript.at(-2) ?? "";
+    const lead =
+      last !== ""
+        ? "\n\n"
+        : transcript.length > 1 && beforeLast !== ""
+          ? "\n"
+          : "";
+    const block = userMessage(value)
+      .map((line) => line.ansi)
+      .join("\n");
+    this.write(sanitizeStyled(`${lead}${block}\n\n`));
   }
 
   private write(text: string): void {
     const { transcript } = this.store.getState();
     this.store.setState({ transcript: appendToTranscript(transcript, text) });
+  }
+
+  /** Replace the unfinished last line with a streaming preview. */
+  private setLiveLine(text: string): void {
+    const lines = [...this.store.getState().transcript];
+    lines[lines.length - 1] = text.replace(/\n/g, "");
+    this.store.setState({ transcript: lines });
   }
 
   /** Used by both Ctrl+L and `/clear`. */
@@ -184,9 +218,17 @@ export class TermUIRuntime implements InteractiveRuntime {
     this.store.setState({ transcript: lines.length === 0 ? [""] : [...lines] });
   }
 
-  /** Push the session summaries that drive the sidebar list. */
+  /**
+   * Push the session summaries that drive the sidebar list; the prompt
+   * border names the active session's agent, visible even without sidebar.
+   */
   private setSessions(sessions: readonly SessionSummaryView[]): void {
     this.store.setState({ sessions: sessions.map((s) => ({ ...s })) });
+    const agent = sessions.find((session) => session.active)?.agent;
+    this.prompt.setTitle(
+      agent === undefined ? PROMPT_TITLE : `${PROMPT_TITLE} · ${agent}`,
+    );
+    this.mounted?.requestRender();
   }
 
   private setSidebarVisible(visible: boolean): void {
@@ -238,10 +280,17 @@ export class TermUIRuntime implements InteractiveRuntime {
     this.spinner.setStyle({ height: status === undefined ? 0 : 1 });
   }
 
+  /** Tool/approval text as a KODA-colored block line, on a fresh line. */
+  private writeStatusLine(text: string): void {
+    const last = this.store.getState().transcript.at(-1) ?? "";
+    const lead = last === "" ? "" : "\n";
+    this.write(sanitizeStyled(`${lead}${statusLine(text).ansi}\n`));
+  }
+
   private showDiff(request: DiffViewRequest): boolean {
     if (this.closed) return false;
     this.diffPanel.show(request.lines);
-    if (request.title !== "") this.write(`${request.title}\n`);
+    if (request.title !== "") this.writeStatusLine(request.title);
     return true;
   }
 
@@ -250,7 +299,7 @@ export class TermUIRuntime implements InteractiveRuntime {
     labels: readonly string[],
   ): Promise<number | undefined> {
     if (this.closed) return undefined;
-    this.write(`${title}\n`);
+    this.writeStatusLine(title);
     return this.choices.open(labels);
   }
 
@@ -263,7 +312,7 @@ export class TermUIRuntime implements InteractiveRuntime {
     const choice = await this.choose(title, request.options);
     this.diffPanel.hide();
     if (choice !== undefined)
-      this.write(`→ ${request.options[choice] ?? ""}\n`);
+      this.writeStatusLine(`→ ${request.options[choice] ?? ""}`);
     return choice;
   }
 

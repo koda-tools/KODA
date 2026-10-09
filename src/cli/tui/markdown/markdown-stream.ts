@@ -1,58 +1,48 @@
 import type { BundledLanguage, GrammarState } from "shiki";
+import { CodeBlock } from "../blocks/code-block.js";
+import { BLOCK_SEPARATOR } from "../blocks/style.js";
+import { TextBlock } from "../blocks/text-block.js";
+import type { BlockLine } from "../blocks/types.js";
 import type { CodeHighlighter } from "../highlight/types.js";
-import { DIM, RESET } from "../shared/ansi.js";
 import { sanitize } from "../shared/sanitize.js";
 import type { CodeBlockListener, Segment } from "../shared/types.js";
+import {
+  FENCE_CLOSE,
+  FENCE_OPEN,
+  MAYBE_FENCE,
+  parseFenceInfo,
+} from "./fence.js";
 
-interface Fence {
+interface OpenText {
+  readonly kind: "text";
+  /** Blank lines seen since the last content line, emitted only if more follows. */
+  pendingBlanks: number;
+}
+
+interface OpenCode {
+  readonly kind: "code";
+  readonly block: CodeBlock;
   readonly language: BundledLanguage | undefined;
-  readonly label: string;
-  line: number;
   state: GrammarState | undefined;
-  /** Raw code lines (no gutter), accumulated for clipboard copy. */
+  /** Raw code lines, reported for clipboard copy when the block closes. */
   readonly raw: string[];
 }
 
-const FENCE_OPEN = /^ {0,3}```(.*)$/;
-const FENCE_CLOSE = /^ {0,3}```\s*$/;
-const MAYBE_FENCE = /^ {0,3}`/;
-const GUTTER_WIDTH = 3;
-
-/** Width of the Card-style frame drawn around code blocks. */
-const FRAME_WIDTH = 72;
-const COPY_HINT = "Ctrl+Y Copy";
-
-function gutter(lineNumber: number): string {
-  return `${String(lineNumber).padStart(GUTTER_WIDTH)} | `;
-}
-
-/** Top border of the frame: `┌─ <label> ─────── ⎘ Ctrl+Y Copy ─┐`. */
-export function frameTop(label: string): string {
-  const title = label === "" ? "code" : label;
-  const left = `┌─ ${title} `;
-  const right = ` ⎘ ${COPY_HINT} ─┐`;
-  const fill = Math.max(1, FRAME_WIDTH - left.length - right.length);
-  return `${left}${"─".repeat(fill)}${right}`;
-}
-
-export function frameBottom(): string {
-  return `└${"─".repeat(Math.max(1, FRAME_WIDTH - 2))}┘`;
-}
-
-function borderSegment(line: string): Segment {
-  return { kind: "code", plain: `${line}\n`, ansi: `${DIM}${line}${RESET}\n` };
-}
+const live = (line: BlockLine): Segment => ({ kind: "live", ...line });
+const finished = (line: BlockLine): Segment => ({ kind: "line", ...line });
 
 /**
- * Turns streamed markdown into segments as deltas arrive: prose is released
- * immediately, fenced code is wrapped in a Card-style frame and highlighted
- * line by line. Closing a fence reports the block's raw text so the caller
- * can offer "copy" (Ctrl+Y).
+ * Turns streamed Markdown into message blocks as deltas arrive. Prose goes
+ * into a `TEXT · KODA` block and fenced code into a `CODE` block; a fence
+ * closes the text block and the next prose opens a new one. The unfinished
+ * line is previewed live (replaced on every delta, never duplicated) unless
+ * it might be a fence. `flush()` closes whatever is still open, including
+ * an unterminated code block.
  */
 export class MarkdownStream {
   private partial = "";
-  private midLine = false;
-  private fence: Fence | undefined;
+  private open: OpenText | OpenCode | undefined;
+  private readonly text = new TextBlock("assistant");
 
   public constructor(
     private readonly highlighter?: CodeHighlighter,
@@ -66,7 +56,7 @@ export class MarkdownStream {
       const newline = rest.indexOf("\n");
       if (newline === -1) {
         this.partial += rest;
-        segments.push(...this.releaseProse());
+        segments.push(...this.preview());
         break;
       }
       const line = this.partial + rest.slice(0, newline);
@@ -79,93 +69,91 @@ export class MarkdownStream {
 
   public async flush(): Promise<Segment[]> {
     const line = this.partial;
-    const fence = this.fence;
     this.partial = "";
-    this.fence = undefined;
-    if (this.midLine) {
-      this.midLine = false;
-      return line === "" ? [] : [{ kind: "text", text: line }];
-    }
-    if (fence === undefined) {
-      return line === "" ? [] : [{ kind: "text", text: line }];
-    }
-    // An unterminated fence: emit the trailing line (if any), then close it.
-    const segments: Segment[] = [];
-    if (line !== "" && !FENCE_CLOSE.test(line)) {
-      segments.push(this.codeLine(fence, line));
-    }
-    segments.push(...this.closeFence(fence));
-    return segments;
+    const segments = line === "" ? [] : await this.completeLine(line);
+    return [...segments, ...this.closeBlock()];
   }
 
-  /** Emit partial prose now, unless it might be the start of a fence. */
-  private releaseProse(): Segment[] {
-    if (this.fence !== undefined || this.partial === "") return [];
-    if (!this.midLine && MAYBE_FENCE.test(this.partial)) return [];
-    const text = this.partial;
-    this.partial = "";
-    this.midLine = true;
-    return [{ kind: "text", text }];
+  /** Live preview of the unfinished line (held while it may be a fence). */
+  private preview(): Segment[] {
+    const line = this.partial;
+    if (line.trim() === "" || MAYBE_FENCE.test(line)) return [];
+    const open = this.open;
+    if (open?.kind === "code") return [live(this.codeLine(open, line, false))];
+    return [...this.ensureText(), live(this.text.markdown(line))];
   }
 
   private async completeLine(line: string): Promise<Segment[]> {
-    if (this.midLine) {
-      this.midLine = false;
-      return [{ kind: "text", text: `${line}\n` }];
+    const open = this.open;
+    if (open?.kind === "code") {
+      if (FENCE_CLOSE.test(line)) return this.closeBlock();
+      return [finished(this.codeLine(open, line, true))];
     }
-    if (this.fence === undefined) return this.proseLine(line);
-    if (FENCE_CLOSE.test(line)) {
-      const fence = this.fence;
-      this.fence = undefined;
-      return this.closeFence(fence);
+    const fence = FENCE_OPEN.exec(line);
+    if (fence !== null)
+      return [...this.closeBlock(), ...(await this.openCode(fence[1] ?? ""))];
+    if (line.trim() === "") {
+      if (open !== undefined) open.pendingBlanks += 1;
+      return [];
     }
-    return [this.codeLine(this.fence, line)];
+    return [...this.ensureText(), finished(this.text.markdown(line))];
   }
 
-  private async proseLine(line: string): Promise<Segment[]> {
-    const open = FENCE_OPEN.exec(line);
-    if (open === null) return [{ kind: "text", text: `${line}\n` }];
-    const name = (open[1] ?? "").trim().split(/\s+/)[0] ?? "";
+  /** Open the text block (header) or emit its pending paragraph breaks. */
+  private ensureText(): Segment[] {
+    const open = this.open;
+    if (open?.kind === "text") {
+      const blanks = Array.from({ length: open.pendingBlanks }, () =>
+        finished(this.text.blank()),
+      );
+      open.pendingBlanks = 0;
+      return blanks;
+    }
+    this.open = { kind: "text", pendingBlanks: 0 };
+    return [finished(this.text.header())];
+  }
+
+  private async openCode(info: string): Promise<Segment[]> {
+    const fence = parseFenceInfo(info);
     const language =
-      name === "" ? undefined : await this.highlighter?.resolveLanguage(name);
-    this.fence = {
-      language,
-      label: name,
-      line: 0,
-      state: undefined,
-      raw: [],
-    };
-    return [borderSegment(frameTop(name))];
+      fence.language === ""
+        ? undefined
+        : await this.highlighter?.resolveLanguage(fence.language);
+    const block = new CodeBlock({
+      language: language ?? fence.language,
+      filename: fence.filename,
+    });
+    this.open = { kind: "code", block, language, state: undefined, raw: [] };
+    return [finished(block.header()), finished(block.spacer())];
   }
 
-  /** Close the fence: emit the bottom border and report the raw block. */
-  private closeFence(fence: Fence): Segment[] {
-    this.onCodeBlock?.(fence.raw.join("\n"));
-    return [borderSegment(frameBottom())];
+  /** Close the open block (if any) and leave a gap before the next one. */
+  private closeBlock(): Segment[] {
+    const open = this.open;
+    this.open = undefined;
+    if (open === undefined) return [];
+    if (open.kind === "code" && open.raw.length > 0)
+      this.onCodeBlock?.(open.raw.join("\n"));
+    return [finished(BLOCK_SEPARATOR)];
   }
 
-  private codeLine(fence: Fence, raw: string): Segment {
+  /** Render a code line; `commit` records it and advances grammar state. */
+  private codeLine(open: OpenCode, raw: string, commit: boolean): BlockLine {
     const code = sanitize(raw);
-    fence.raw.push(code);
-    fence.line += 1;
-    const prefix = gutter(fence.line);
-    return {
-      kind: "code",
-      plain: `${prefix}${code}\n`,
-      ansi: `${DIM}${prefix}${RESET}${this.highlight(fence, code)}${RESET}\n`,
-    };
+    if (commit) open.raw.push(code);
+    return open.block.line(code, this.highlight(open, code, commit));
   }
 
-  private highlight(fence: Fence, code: string): string {
-    if (this.highlighter === undefined || fence.language === undefined)
+  private highlight(open: OpenCode, code: string, commit: boolean): string {
+    if (this.highlighter === undefined || open.language === undefined)
       return code;
     try {
       const highlighted = this.highlighter.highlightLine(
         code,
-        fence.language,
-        fence.state,
+        open.language,
+        open.state,
       );
-      fence.state = highlighted.state;
+      if (commit) open.state = highlighted.state;
       return highlighted.ansi;
     } catch {
       return code;

@@ -19,6 +19,7 @@ export class Session {
   private selectedModel: string;
   private active: AbortController | undefined;
   private history: ChatMessage[] = [];
+  private agentName: string | undefined;
 
   public constructor(
     private readonly identity: SessionIdentity,
@@ -36,13 +37,28 @@ export class Session {
     return this.identity.provider;
   }
 
+  /** The session's primary agent (a child session: its subagent). */
+  public get agent(): string | undefined {
+    return this.agentName;
+  }
+
   /** Snapshot for the sidebar/summary: provider, model and running usage. */
   public status(): SessionStatus {
     return {
       provider: this.identity.provider,
       model: this.selectedModel,
       usage: this.usage,
+      ...(this.agentName === undefined ? {} : { agent: this.agentName }),
     };
+  }
+
+  public selectAgent(name: string): void {
+    this.agentName = name;
+  }
+
+  /** Usage spent on this session's behalf elsewhere (its subagents). */
+  public addUsage(used: Usage): void {
+    this.usage = sumUsage(this.usage, used);
   }
 
   public selectModel(model: string): void {

@@ -3,7 +3,11 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { CodeAgent, type ToolExecutor } from "../src/core/index.js";
+import {
+  CodeAgent,
+  STEP_LIMIT_PROMPT,
+  type ToolExecutor,
+} from "../src/core/index.js";
 import type {
   ChatMessage,
   ChatResponse,
@@ -236,4 +240,81 @@ test("reports status labels in execution order and clears them at the end", asyn
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test("summarizes instead of failing when the step limit is reached", async () => {
+  const loop: ChatResponse = {
+    content: "",
+    toolCalls: [{ id: "loop", name: "missing", arguments: "{}" }],
+  };
+  const provider = new FakeProvider([loop, loop, direct("Did A; B remains.")]);
+  const result = await new CodeAgent(
+    provider,
+    new ToolRegistry({ workspaceRoot: process.cwd() }),
+    {
+      identity: { provider: "openai", model: "test-model" },
+      maxIterations: 2,
+      onStepLimit: "summarize",
+    },
+  ).runDetailed("Loop");
+  assert.equal(result.content, "Did A; B remains.");
+  // The summary request carries the instruction but it is not kept.
+  assert.equal(provider.calls[2]?.at(-1)?.content, STEP_LIMIT_PROMPT);
+  assert.ok(!result.messages.some((m) => m.content === STEP_LIMIT_PROMPT));
+  assert.deepEqual(result.messages.at(-1), {
+    role: "assistant",
+    content: "Did A; B remains.",
+  });
+});
+
+test("sends the configured temperature and no tools in the summary call", async () => {
+  const seen: (CompletionOptions | undefined)[] = [];
+  class OptionsProvider extends FakeProvider {
+    public override async complete(
+      messages: readonly ChatMessage[],
+      options?: CompletionOptions,
+    ): Promise<ChatResponse> {
+      seen.push(options);
+      return super.complete(messages, options);
+    }
+  }
+  const loop: ChatResponse = {
+    content: "",
+    toolCalls: [{ id: "l", name: "missing", arguments: "{}" }],
+  };
+  await new CodeAgent(
+    new OptionsProvider([loop, direct("summary")]),
+    new ToolRegistry({ workspaceRoot: process.cwd() }),
+    {
+      identity: { provider: "openai", model: "m" },
+      maxIterations: 1,
+      temperature: 0.1,
+      onStepLimit: "summarize",
+    },
+  ).runDetailed("go");
+  assert.equal(seen[0]?.temperature, 0.1);
+  assert.ok((seen[0]?.tools?.length ?? 0) > 0);
+  assert.equal(seen[1]?.tools, undefined);
+});
+
+test("passes the run's abort signal to tool execution", async () => {
+  const signals: (AbortSignal | undefined)[] = [];
+  const tools: ToolExecutor = {
+    definitions: [],
+    execute: async (_name, _args, signal) => {
+      signals.push(signal);
+      return { ok: true, content: "ok" };
+    },
+    statusLabel: () => undefined,
+  };
+  const controller = new AbortController();
+  await new CodeAgent(
+    new FakeProvider([
+      { content: "", toolCalls: [{ id: "t", name: "x", arguments: "{}" }] },
+      direct("done"),
+    ]),
+    tools,
+    { identity: { provider: "openai", model: "m" } },
+  ).runDetailed("go", { signal: controller.signal });
+  assert.equal(signals[0], controller.signal);
 });

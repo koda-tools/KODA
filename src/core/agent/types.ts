@@ -19,7 +19,12 @@ export interface ToolObservation {
 /** What the agent needs from a tool set (definitions, execution, labels). */
 export interface ToolExecutor {
   readonly definitions: readonly ToolDefinition[];
-  execute(name: string, serializedArguments: string): Promise<ToolObservation>;
+  /** `signal` aborts long-running tools when the run is cancelled. */
+  execute(
+    name: string,
+    serializedArguments: string,
+    signal?: AbortSignal,
+  ): Promise<ToolObservation>;
   /** Progress label shown while the tool runs, if the tool declares one. */
   statusLabel(name: string): string | undefined;
 }
@@ -35,10 +40,19 @@ export interface AgentObserver {
   ): Promise<void> | void;
 }
 
+/** What happens when a run uses up `maxIterations`. */
+export type StepLimitBehavior = "error" | "summarize";
+
 export interface CodeAgentOptions {
   readonly identity: AgentIdentity;
   readonly maxIterations?: number;
   readonly systemPrompt?: string;
+  readonly temperature?: number;
+  /**
+   * `error` (default) fails the run; `summarize` makes one last call without
+   * tools so the model reports what it did and what is left.
+   */
+  readonly onStepLimit?: StepLimitBehavior;
 }
 
 export interface AgentRunOptions {
