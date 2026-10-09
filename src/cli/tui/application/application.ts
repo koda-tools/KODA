@@ -233,6 +233,11 @@ async function processInput(
       deps.options.workspaceRoot,
       deps.options.shellPolicy,
     );
+    if (route.type === "prompt")
+      deps.sessions.nameFromMessage(
+        deps.sessions.activeEntry(),
+        input.trimStart().startsWith("/") ? route.prompt : input,
+      );
     return await handleRoute(deps, route);
   } catch (error: unknown) {
     reportFailure(deps, error);

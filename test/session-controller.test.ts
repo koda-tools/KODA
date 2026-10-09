@@ -100,3 +100,33 @@ test("picker items mark the active session", () => {
   assert.equal(items[0]?.active, false);
   assert.equal(items[1]?.active, true);
 });
+
+test("a session is titled after the first message typed in it", () => {
+  const fake = new FakeIO();
+  const sessions = controller(fake);
+  sessions.nameFromMessage(
+    sessions.activeEntry(),
+    "  Quero criar\numa api nestjs  ",
+  );
+  sessions.newSession();
+  sessions.nameFromMessage(
+    sessions.activeEntry(),
+    "Exemplo de codigo em python",
+  );
+  sessions.nameFromMessage(sessions.activeEntry(), "outra mensagem");
+  assert.deepEqual(
+    fake.sessions.map((session) => session.title),
+    ["Quero criar", "Exemplo de codigo em python"],
+  );
+});
+
+test("long messages are clipped and blank ones keep the placeholder", () => {
+  const fake = new FakeIO();
+  const sessions = controller(fake);
+  sessions.nameFromMessage(sessions.activeEntry(), "   ");
+  assert.equal(fake.sessions[0]?.title, "Session 1");
+  sessions.nameFromMessage(sessions.activeEntry(), "a".repeat(100));
+  const title = fake.sessions[0]?.title ?? "";
+  assert.equal(title.length, 40);
+  assert.ok(title.endsWith("…"));
+});

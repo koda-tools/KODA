@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -23,25 +23,26 @@
 █▀█▀█
 ▀▀▀▀▀</div>
     <h1 class="logo">KODA</h1>
-    <div class="ver">v0.1.0</div>
-    <button class="toggle" id="theme-toggle" type="button" aria-label="Alternar tema">◐ tema: dark</button>
-    <button class="menu-btn" id="menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
+    <div class="ver">v0.1.3</div>
+    <a class="gh" href="https://github.com/koda-tools/KODA" target="_blank" rel="noopener noreferrer" aria-label="KODA on GitHub"><svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span>koda-tools/KODA</span></a>
+    <button class="toggle" id="theme-toggle" type="button" aria-label="Toggle theme">◐ theme: dark</button>
+    <button class="menu-btn" id="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
     <nav id="main-nav">
-      <div class="grp">COMEÇAR</div>
-      <a href="#intro">Introdução</a>
-      <a href="#install">Instalação</a>
-      <a href="#config">Configuração</a>
-      <div class="grp">USO</div>
-      <a href="#commands">Comandos</a>
-      <a href="#agents">Agentes</a>
-      <a href="#tools">Ferramentas</a>
-      <div class="grp">EXTENDER</div>
-      <a href="#custom-commands">Comandos custom</a>
-      <a href="#custom-agents">Agentes custom</a>
+      <div class="grp">GETTING STARTED</div>
+      <a href="#intro">Introduction</a>
+      <a href="#install">Installation</a>
+      <a href="#config">Configuration</a>
+      <div class="grp">USAGE</div>
+      <a href="#commands">Commands</a>
+      <a href="#agents">Agents</a>
+      <a href="#tools">Tools</a>
+      <div class="grp">EXTEND</div>
+      <a href="#custom-commands">Custom commands</a>
+      <a href="#custom-agents">Custom agents</a>
       <a href="#skills">Skills</a>
-      <a href="#permissions">Permissões</a>
+      <a href="#permissions">Permissions</a>
       <div class="grp">SDK</div>
-      <a href="#sdk">Usar como lib</a>
+      <a href="#sdk">Use as a library</a>
     </nav>
   </aside>
 
@@ -51,15 +52,15 @@
 █▀█▀█
 ▀▀▀▀▀</div>
       <h1>KODA</h1>
-      <p>Um agente de código seguro para o terminal, escrito em TypeScript. CLI e SDK.</p>
+      <p>A secure coding agent for the terminal, written in TypeScript. CLI and SDK.</p>
       <pre><code>$ koda<span class="blink"> _</span></code></pre>
     </div>
 
     <section>
-      <h2>Introdução</h2>
-      <p>KODA lê seu projeto, edita arquivos e roda comandos, sempre pedindo aprovação para ações sensíveis. Funciona com vários provedores de LLM e é compatível com a estrutura de agentes, skills e comandos do OpenCode.</p>
+      <h2>Introduction</h2>
+      <p>KODA reads your project, edits files and runs commands, always asking for approval on sensitive actions. It works with several LLM providers and is compatible with the OpenCode structure for agents, skills and commands.</p>
       <table>
-        <tr><th>PROVEDOR</th><th>MODELO PADRÃO</th></tr>
+        <tr><th>PROVIDER</th><th>DEFAULT MODEL</th></tr>
         <tr><td>openai</td><td>gpt-4o-mini</td></tr>
         <tr><td>anthropic</td><td>claude-3-5-sonnet-latest</td></tr>
         <tr><td>gemini</td><td>gemini-2.5-flash</td></tr>
@@ -68,30 +69,41 @@
     </section>
 
     <section id="install">
-      <h2>Instalação</h2>
-      <p>Requer <code>Node &gt;= 20</code>.</p>
+      <h2>Installation</h2>
+      <p>Requires <code>Node &gt;= 20</code>.</p>
 <pre><code>npm install -g @koda-tools/koda</code></pre>
-      <p>Depois é só abrir o terminal no seu projeto e rodar:</p>
+      <p>Then just open a terminal in your project and run:</p>
 <pre><code>koda</code></pre>
-      <p>Para testar sem instalar, use <code>npx @koda-tools/koda</code>.</p>
-      <h3>ATUALIZAR</h3>
+      <p>To try it without installing, use <code>npx @koda-tools/koda</code>.</p>
+      <h3>UPDATE</h3>
 <pre><code>npm update -g @koda-tools/koda</code></pre>
     </section>
 
     <section id="config">
-      <h2>Configuração</h2>
-      <p>Provedor e modelo são definidos por variáveis de ambiente.</p>
-<pre><code><span class="c"># escolha o provedor (padrão: openai)</span>
+      <h2>Configuration</h2>
+      <p>Provider and model are set through environment variables.</p>
+<pre><code><span class="c"># choose the provider (default: openai)</span>
 export KODA_PROVIDER=anthropic
 export ANTHROPIC_API_KEY=sk-...
 export ANTHROPIC_MODEL=claude-3-5-sonnet-latest</code></pre>
       <table>
-        <tr><th>PROVEDOR</th><th>CHAVE</th><th>MODELO</th></tr>
+        <tr><th>PROVIDER</th><th>KEY</th><th>MODEL</th></tr>
         <tr><td>openai</td><td>OPENAI_API_KEY</td><td>OPENAI_MODEL</td></tr>
         <tr><td>anthropic</td><td>ANTHROPIC_API_KEY</td><td>ANTHROPIC_MODEL</td></tr>
         <tr><td>gemini</td><td>GEMINI_API_KEY</td><td>GEMINI_MODEL</td></tr>
-        <tr><td>ollama</td><td>OLLAMA_API_KEY <span class="tag g">opcional</span></td><td>OLLAMA_MODEL</td></tr>
+        <tr><td>ollama</td><td>OLLAMA_API_KEY <span class="tag g">optional</span></td><td>OLLAMA_MODEL</td></tr>
       </table>
+      <h3>CONNECT A PROVIDER (/CONNECT)</h3>
+      <p>Instead of exporting variables, save the key with <code>/connect</code> inside KODA, or with <code>koda connect</code> straight from the terminal (requires an interactive terminal).</p>
+<pre><code><span class="c"># pick the provider from a list (↑/↓, Enter, Esc cancels)</span>
+/connect
+
+<span class="c"># or pass the provider directly</span>
+/connect anthropic
+koda connect anthropic</code></pre>
+      <p>Available providers: <code>openai</code>, <code>anthropic</code> and <code>gemini</code>. Ollama is local and needs no key. The list shows the state of each one: <code>connected</code>, <code>from environment</code> or <code>not connected</code>.</p>
+      <p>After choosing, type the key (the input is hidden). It is saved to <code>~/.config/koda/auth.json</code> with permission <code>600</code>.</p>
+      <div class="box"><b>Rules:</b> the first connected provider becomes the default. Environment variables still take precedence over the saved key. Restart KODA to use the new provider (or set <code>KODA_PROVIDER=name</code>).</div>
       <h3>OLLAMA (LOCAL)</h3>
 <pre><code>export KODA_PROVIDER=ollama
 export OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
@@ -99,69 +111,70 @@ export OLLAMA_TOOL_SUPPORT=true</code></pre>
     </section>
 
     <section id="commands">
-      <h2>Comandos</h2>
-      <p>Digite <code>/</code> no prompt para ver sugestões.</p>
+      <h2>Commands</h2>
+      <p>Type <code>/</code> at the prompt to see suggestions.</p>
       <table>
-        <tr><th>COMANDO</th><th>DESCRIÇÃO</th></tr>
-        <tr><td>/help</td><td>Mostra os comandos built-in</td></tr>
-        <tr><td>/commands</td><td>Lista comandos customizados</td></tr>
-        <tr><td>/model [nome|número]</td><td>Troca o modelo</td></tr>
-        <tr><td>/agents</td><td>Lista agentes</td></tr>
-        <tr><td>/agent [nome]</td><td>Troca o agente primário</td></tr>
-        <tr><td>/skills</td><td>Lista skills</td></tr>
-        <tr><td>/clear</td><td>Limpa o contexto da conversa (pede confirmação)</td></tr>
-        <tr><td>/exit</td><td>Sai do KODA</td></tr>
+        <tr><th>COMMAND</th><th>DESCRIPTION</th></tr>
+        <tr><td>/help</td><td>Shows the built-in commands</td></tr>
+        <tr><td>/commands</td><td>Lists custom commands</td></tr>
+        <tr><td>/model [name|number]</td><td>Switches the model</td></tr>
+        <tr><td>/agents</td><td>Lists agents</td></tr>
+        <tr><td>/agent [name]</td><td>Switches the primary agent</td></tr>
+        <tr><td>/skills</td><td>Lists skills</td></tr>
+        <tr><td>/connect [provider]</td><td>Saves a provider's API key</td></tr>
+        <tr><td>/clear</td><td>Clears the conversation context (asks for confirmation)</td></tr>
+        <tr><td>/exit</td><td>Exits KODA</td></tr>
       </table>
-      <p>Use <code>@agente tarefa</code> para delegar a um subagente.</p>
+      <p>Use <code>@agent task</code> to delegate to a subagent.</p>
     </section>
 
     <section id="agents">
-      <h2>Agentes</h2>
+      <h2>Agents</h2>
       <table>
-        <tr><th>NOME</th><th>MODO</th><th>DESCRIÇÃO</th></tr>
-        <tr><td>build</td><td><span class="tag">primary</span></td><td>Padrão. Todas as ferramentas disponíveis.</td></tr>
-        <tr><td>plan</td><td><span class="tag">primary</span></td><td>Analisa e propõe planos, sem editar arquivos.</td></tr>
-        <tr><td>general</td><td><span class="tag p">subagent</span></td><td>Pesquisa e tarefas de múltiplos passos.</td></tr>
-        <tr><td>explore</td><td><span class="tag p">subagent</span></td><td>Somente leitura. Busca arquivos e código.</td></tr>
+        <tr><th>NAME</th><th>MODE</th><th>DESCRIPTION</th></tr>
+        <tr><td>build</td><td><span class="tag">primary</span></td><td>Default. All tools available.</td></tr>
+        <tr><td>plan</td><td><span class="tag">primary</span></td><td>Analyzes and proposes plans, without editing files.</td></tr>
+        <tr><td>general</td><td><span class="tag p">subagent</span></td><td>Research and multi-step tasks.</td></tr>
+        <tr><td>explore</td><td><span class="tag p">subagent</span></td><td>Read-only. Searches files and code.</td></tr>
       </table>
     </section>
 
     <section id="tools">
-      <h2>Ferramentas</h2>
+      <h2>Tools</h2>
       <table>
-        <tr><th>TOOL</th><th>O QUE FAZ</th></tr>
-        <tr><td>readFile</td><td>Lê arquivos, com intervalo de linhas</td></tr>
-        <tr><td>writeFile</td><td>Cria ou altera arquivos (com aprovação)</td></tr>
-        <tr><td>listDirectory</td><td>Lista diretórios</td></tr>
-        <tr><td>searchFiles</td><td>Busca no projeto</td></tr>
-        <tr><td>getFileInfo</td><td>Metadados de um arquivo</td></tr>
-        <tr><td>runCommand</td><td>Executa comandos com classificação de risco, saída limitada e env em allowlist</td></tr>
+        <tr><th>TOOL</th><th>WHAT IT DOES</th></tr>
+        <tr><td>readFile</td><td>Reads files, with line ranges</td></tr>
+        <tr><td>writeFile</td><td>Creates or changes files (with approval)</td></tr>
+        <tr><td>listDirectory</td><td>Lists directories</td></tr>
+        <tr><td>searchFiles</td><td>Searches the project</td></tr>
+        <tr><td>getFileInfo</td><td>File metadata</td></tr>
+        <tr><td>runCommand</td><td>Runs commands with risk classification, bounded output and an allowlisted env</td></tr>
       </table>
     </section>
 
     <section id="custom-commands">
-      <h2>Comandos customizados</h2>
-      <p>Crie um arquivo Markdown em <code>.koda/commands/</code>. O nome do arquivo vira o comando.</p>
+      <h2>Custom commands</h2>
+      <p>Create a Markdown file in <code>.koda/commands/</code>. The file name becomes the command.</p>
 <pre><code><span class="c"># .koda/commands/review.md</span>
 ---
-description: Revisa um arquivo
+description: Reviews a file
 agent: plan
 model: openai/gpt-4o-mini
 subagent: false
 ---
-Revise o arquivo $1 com foco em $2.
-Argumentos completos: $ARGUMENTS</code></pre>
-      <p>Uso: <code>/review src/index.ts segurança</code></p>
+Review the file $1 focusing on $2.
+Full arguments: $ARGUMENTS</code></pre>
+      <p>Usage: <code>/review src/index.ts security</code></p>
       <div class="box">
-        <b>Precedência</b> (maior para menor): <code>.koda/</code> → <code>koda.json</code> → <code>.opencode/</code> → <code>opencode.json</code> → configuração global. Duplicatas no mesmo nível geram erro.
+        <b>Precedence</b> (highest to lowest): <code>.koda/</code> → <code>koda.json</code> → <code>.opencode/</code> → <code>opencode.json</code> → global configuration. Duplicates at the same level cause an error.
       </div>
     </section>
 
     <section id="custom-agents">
-      <h2>Agentes customizados</h2>
-      <p>Definidos em Markdown (corpo = prompt) ou JSON, nos mesmos diretórios dos comandos.</p>
+      <h2>Custom agents</h2>
+      <p>Defined in Markdown (body = prompt) or JSON, in the same directories as commands.</p>
 <pre><code>---
-description: Revisor de segurança
+description: Security reviewer
 mode: subagent
 model: anthropic/claude-3-5-sonnet-latest
 temperature: 0.1
@@ -170,19 +183,19 @@ permission:
   edit: deny
   bash: ask
 ---
-Você revisa código procurando vulnerabilidades.</code></pre>
+You review code looking for vulnerabilities.</code></pre>
     </section>
 
     <section id="skills">
       <h2>Skills</h2>
-      <p>Cada skill é uma pasta com um <code>SKILL.md</code>.</p>
-<pre><code>.koda/skills/&lt;nome&gt;/SKILL.md</code></pre>
-      <p>Também são lidas as pastas <code>.opencode</code>, <code>.claude</code> e <code>.agents</code>. Liste com <code>/skills</code>.</p>
+      <p>Each skill is a folder with a <code>SKILL.md</code>.</p>
+<pre><code>.koda/skills/&lt;name&gt;/SKILL.md</code></pre>
+      <p>The <code>.opencode</code>, <code>.claude</code> and <code>.agents</code> folders are also read. List them with <code>/skills</code>.</p>
     </section>
 
     <section id="permissions">
-      <h2>Permissões</h2>
-      <p>Cada ação resolve para <code>allow</code>, <code>ask</code> ou <code>deny</code>. Com padrões glob, a última regra que casar vence.</p>
+      <h2>Permissions</h2>
+      <p>Each action resolves to <code>allow</code>, <code>ask</code> or <code>deny</code>. With glob patterns, the last matching rule wins.</p>
 <pre><code>permission:
   read: allow
   edit: ask
@@ -190,16 +203,16 @@ Você revisa código procurando vulnerabilidades.</code></pre>
     "*": ask
     "git status": allow
     "rm *": deny</code></pre>
-      <p>Chaves: <code>read</code>, <code>edit</code>, <code>list</code>, <code>glob</code>, <code>grep</code>, <code>bash</code>, <code>task</code>, <code>skill</code>.</p>
+      <p>Keys: <code>read</code>, <code>edit</code>, <code>list</code>, <code>glob</code>, <code>grep</code>, <code>bash</code>, <code>task</code>, <code>skill</code>.</p>
     </section>
 
     <section id="sdk">
-      <h2>Usar como lib</h2>
-      <p>O pacote exporta o SDK em <code>dist/src/index.js</code>.</p>
+      <h2>Use as a library</h2>
+      <p>The package exports the SDK at <code>dist/src/index.js</code>.</p>
 <pre><code>import * as koda from "@koda-tools/koda";</code></pre>
     </section>
 
-    <footer>KODA &copy; · feito com pixels.</footer>
+    <footer>KODA &copy; · made with pixels.</footer>
   </main>
 </div>
 <script>
@@ -209,7 +222,7 @@ Você revisa código procurando vulnerabilidades.</code></pre>
     function setMenu(open) {
       aside.classList.toggle("open", open);
       menuBtn.setAttribute("aria-expanded", open);
-      menuBtn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+      menuBtn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
     }
     menuBtn.addEventListener("click", function () { setMenu(!aside.classList.contains("open")); });
     document.querySelectorAll("nav a").forEach(function (a) {
@@ -219,7 +232,7 @@ Você revisa código procurando vulnerabilidades.</code></pre>
   (function () {
     var root = document.documentElement;
     var btn = document.getElementById("theme-toggle");
-    function label() { btn.textContent = "◐ tema: " + root.dataset.theme; }
+    function label() { btn.textContent = "◐ theme: " + root.dataset.theme; }
     label();
     btn.addEventListener("click", function () {
       var next = root.dataset.theme === "dark" ? "light" : "dark";

@@ -11,6 +11,17 @@ import type {
 } from "./types.js";
 import { totalTokens } from "./usage-format.js";
 
+const MAX_TITLE_LENGTH = 40;
+
+/** First line of the message, whitespace collapsed and clipped. */
+function titleFrom(message: string): string {
+  const line = message.trim().split(/\r?\n/, 1)[0] ?? "";
+  const text = line.replace(/\s+/g, " ");
+  return text.length > MAX_TITLE_LENGTH
+    ? `${text.slice(0, MAX_TITLE_LENGTH - 1)}…`
+    : text;
+}
+
 /** Build the sidebar summary for one managed session. */
 function summarize(entry: ManagedSession, active: boolean): SessionSummaryView {
   const status = entry.session.status();
@@ -100,6 +111,18 @@ export class SessionController {
     if (entry === undefined) return;
     this.io.setTranscript?.(entry.transcript);
     entry.session.showHeader();
+    this.pushSummaries();
+  }
+
+  /**
+   * Name a `Session N` after the first message typed in it. Sessions that
+   * already have a real title (subagent children) keep it.
+   */
+  public nameFromMessage(entry: ManagedSession, message: string): void {
+    const title = titleFrom(message);
+    if (entry.named || title === "") return;
+    entry.title = title;
+    entry.named = true;
     this.pushSummaries();
   }
 

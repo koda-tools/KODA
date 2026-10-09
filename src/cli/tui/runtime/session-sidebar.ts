@@ -18,6 +18,9 @@ function compactCost(cost: number | undefined): string {
   return cost === undefined ? "N/A" : `$${cost.toFixed(4)}`;
 }
 
+/** Room for a session title: the row prefix (`  ● `) and a right margin. */
+const TITLE_WIDTH = WIDTH - 10;
+
 /** Clip a label to the sidebar's inner width so it never wraps. */
 function clip(text: string, width: number): string {
   return text.length > width ? `${text.slice(0, width - 1)}…` : text;
@@ -65,7 +68,7 @@ function sessionLines(
   for (const session of sessions) {
     if (session.active) activeLine = lines.length;
     const marker = session.active ? "●" : "○";
-    lines.push(`  ${marker} ${clip(session.title, WIDTH - 6)}`);
+    lines.push(`  ${marker} ${clip(session.title, TITLE_WIDTH)}`);
   }
   lines.push("", "  + New session");
   return { lines, activeLine };

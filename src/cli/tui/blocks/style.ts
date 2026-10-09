@@ -22,9 +22,9 @@ const BORDER_COLOR: Readonly<Record<BlockVariant, string>> = {
  * diverge later. The transcript extends it to the full row width.
  */
 const BACKGROUND: Readonly<Record<BlockVariant, string>> = {
-  user: bgRgb(80, 80, 80),
-  assistant: bgRgb(80, 80, 80),
-  code: bgRgb(80, 80, 80),
+  user: bgRgb(40, 40, 40),
+  assistant: bgRgb(40, 40, 40),
+  code: bgRgb(40, 40, 40),
 };
 
 /** Keep the block background on after every reset inside the content. */

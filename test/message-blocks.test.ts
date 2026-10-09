@@ -98,7 +98,7 @@ test("lines that fit are not wrapped", () => {
   assert.deepEqual(rowsText(wrapCells(cells("no width"), 0, 0)), ["no width"]);
 });
 
-const BACKGROUND = "\x1b[48;2;40;44;52m";
+const BACKGROUND = "\x1b[48;2;40;40;40m";
 
 test("blocks sit on a dark gray background that survives inline resets", () => {
   for (const line of [

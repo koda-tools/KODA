@@ -16,6 +16,8 @@ export interface SessionStatus extends SessionIdentity {
 export interface ManagedSession {
   readonly id: string;
   title: string;
+  /** False while the title is the `Session N` placeholder. */
+  named: boolean;
   readonly session: Session;
   /** This session's own transcript buffer (only the active one is shown). */
   transcript: string[];

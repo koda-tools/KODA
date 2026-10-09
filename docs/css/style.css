@@ -52,6 +52,8 @@ aside .art { font-size: 22px; margin-bottom: 10px; }
 .hero .art { font-size: 56px; margin-bottom: 18px; text-shadow: 4px 4px 0 var(--shadow); }
 .logo { font-size: 18px; margin: 0 0 6px; text-shadow: 3px 3px 0 var(--shadow); }
 .ver { color: var(--dim); font-size: 13px; margin-bottom: 18px; }
+.gh { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 13px; text-decoration: none; color: var(--strong); }
+.gh svg { flex: none; }
 .toggle {
   width: 100%; font: inherit; font-size: 13px; cursor: pointer; margin-bottom: 20px;
   background: var(--bg); color: var(--strong); border: 2px solid var(--strong); padding: 6px 10px;

@@ -49,6 +49,7 @@ export class SessionManager {
     const entry: ManagedSession = {
       id,
       title: title ?? this.titleFor(index),
+      named: title !== undefined,
       session: this.factory(id),
       transcript: [""],
       ...(options.parentId === undefined ? {} : { parentId: options.parentId }),
