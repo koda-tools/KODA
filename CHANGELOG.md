@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-10-09
+
+Covers the changes made since 0.1.0 (versions 0.1.1 to 0.1.5 were not released separately).
+
+### Added
+
+- Sessions are now named after the first message typed in them.
+- Documentation site: mobile hamburger menu, GitHub link, and a `/connect` section.
+
+### Changed
+
+- Approval choices are now `Accept` and `Reject` (previously `Autorizar` and `Rejeitar`), and the hint line is in English.
+- Message blocks use a darker gray background.
+- The documentation site and `README.md` are now in English.
+- The docs deploy workflow targets the `koda-code` Cloudflare Pages project.
+
+### Fixed
+
+- Text in message blocks no longer touches the right edge of the transcript; it now keeps a 2-column margin.
+
 ## [0.1.0] - 2026-10-09
 
 First release of KODA, a secure TypeScript AI coding agent for the terminal.
@@ -32,5 +52,6 @@ First release of KODA, a secure TypeScript AI coding agent for the terminal.
 
 - The package is published as `@koda-tools/koda`.
 
-[Unreleased]: https://github.com/koda-tools/KODA/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/koda-tools/KODA/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/koda-tools/KODA/compare/v0.1.0...v0.1.5
 [0.1.0]: https://github.com/koda-tools/KODA/releases/tag/v0.1.0
