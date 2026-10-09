@@ -4,6 +4,9 @@ import { parseAnsiLine } from "./ansi-parser.js";
 import type { LineLayout, StyledCell, StyledSpan, VisualRow } from "./types.js";
 import { cellsToSpans, wrapCells } from "./wrap.js";
 
+/** Columns kept free between block text and the right edge of the row. */
+const BLOCK_RIGHT_MARGIN = 2;
+
 /** Keep graphemes from `text` that fit in `maxWidth` terminal columns. */
 function clip(text: string, maxWidth: number): string {
   let width = 0;
@@ -123,7 +126,10 @@ export class AnsiLogView extends Widget {
     // A block's fill color is the background its border is drawn on.
     const fill = layout.fill(visible) ? spans[0]?.style.bg : undefined;
     if (width <= 0) return [{ spans, fill }];
-    return wrapCells(toCells(spans), width, layout.indent(visible)).map(
+    // Block text stops short of the right edge; only the fill reaches it.
+    const wrapWidth =
+      fill === undefined ? width : Math.max(1, width - BLOCK_RIGHT_MARGIN);
+    return wrapCells(toCells(spans), wrapWidth, layout.indent(visible)).map(
       (cells) => ({ spans: cellsToSpans(cells), fill }),
     );
   }
