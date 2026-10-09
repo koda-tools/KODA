@@ -65,7 +65,7 @@ test("only single-line slash text without arguments is a query", () => {
 test("matches command names by case-insensitive prefix", () => {
   assert.deepEqual(
     matchSuggestions(items, "CO").map((item) => item.name),
-    ["commands", "comand-a", "comand-x"],
+    ["commands", "connect", "comand-a", "comand-x"],
   );
   assert.deepEqual(matchSuggestions(items, "zzz"), []);
   assert.equal(completion({ name: "model" }), "/model ");

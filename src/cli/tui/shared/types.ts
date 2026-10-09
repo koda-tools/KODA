@@ -109,6 +109,11 @@ export interface ToolCallHandle {
 export interface InteractiveIO {
   readonly question: (prompt: string) => Promise<string | undefined>;
   readonly write: (text: string) => void;
+  /**
+   * Like `question`, but the typed text is masked and never echoed to the
+   * transcript. Use it for API keys.
+   */
+  readonly askSecret?: (prompt: string) => Promise<string | undefined>;
   readonly close: () => void;
   readonly onCancel?: (handler: () => void) => () => void;
   readonly isTTY?: boolean;

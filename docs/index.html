@@ -25,7 +25,8 @@
     <h1 class="logo">KODA</h1>
     <div class="ver">v0.1.0</div>
     <button class="toggle" id="theme-toggle" type="button" aria-label="Alternar tema">◐ tema: dark</button>
-    <nav>
+    <button class="menu-btn" id="menu-btn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
+    <nav id="main-nav">
       <div class="grp">COMEÇAR</div>
       <a href="#intro">Introdução</a>
       <a href="#install">Instalação</a>
@@ -202,6 +203,19 @@ Você revisa código procurando vulnerabilidades.</code></pre>
   </main>
 </div>
 <script>
+  (function () {
+    var menuBtn = document.getElementById("menu-btn");
+    var aside = document.querySelector("aside");
+    function setMenu(open) {
+      aside.classList.toggle("open", open);
+      menuBtn.setAttribute("aria-expanded", open);
+      menuBtn.setAttribute("aria-label", open ? "Fechar menu" : "Abrir menu");
+    }
+    menuBtn.addEventListener("click", function () { setMenu(!aside.classList.contains("open")); });
+    document.querySelectorAll("nav a").forEach(function (a) {
+      a.addEventListener("click", function () { setMenu(false); });
+    });
+  })();
   (function () {
     var root = document.documentElement;
     var btn = document.getElementById("theme-toggle");

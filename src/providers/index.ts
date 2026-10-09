@@ -28,6 +28,20 @@ export {
 } from "./config/environment.js";
 export type { ProviderConfig, ProviderIdentity } from "./config/types.js";
 export { ProviderFactory } from "./factory/factory.js";
+export {
+  CONNECTABLE_PROVIDERS,
+  authFilePath,
+  credentialSource,
+  readAuth,
+  removeApiKey,
+  saveApiKey,
+  withStoredCredentials,
+} from "./auth/store.js";
+export type {
+  CredentialSource,
+  StoredApiKey,
+  StoredAuth,
+} from "./auth/types.js";
 export { describeFailure } from "./shared/errors.js";
 export { AnthropicProvider } from "./adapters/anthropic/anthropic.provider.js";
 export type { AnthropicProviderOptions } from "./adapters/anthropic/types.js";

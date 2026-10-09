@@ -1,6 +1,6 @@
 {
   "name": "@koda-tools/koda",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A secure TypeScript AI coding agent CLI and SDK",
   "type": "module",
   "license": "Unlicense",

@@ -66,6 +66,8 @@ export interface AppInternals {
 
 export interface PendingAnswer {
   readonly resolve: (value: string | undefined) => void;
+  /** The answer is masked while typed and not echoed afterwards. */
+  readonly secret?: boolean;
 }
 
 /** A lightweight per-session summary the sidebar renders from. */

@@ -10,13 +10,19 @@ import {
 import { CodeAgent } from "../core/index.js";
 import {
   ProviderFactory,
+  authFilePath,
+  readAuth,
   resolveProviderIdentity,
+  withStoredCredentials,
   type ILLMProvider,
 } from "../providers/index.js";
 import { ToolRegistry, type WritePolicy } from "../tools/registry.js";
 import type { CommandPolicy } from "../tools/command/types.js";
 import { computeFileDiff } from "../utils/diff.js";
 import { ProviderError } from "../utils/errors.js";
+import { runConnect } from "./connect/flow.js";
+import { createReadlineUI } from "./connect/readline-ui.js";
+import type { ConnectionSettings } from "./connect/types.js";
 import {
   createLazyHighlighter,
   createLineWriter,
@@ -35,6 +41,8 @@ export interface CliEnvironment {
   readonly argv: readonly string[];
   readonly env: NodeJS.ProcessEnv;
   readonly cwd: string;
+  /** Where global KODA files live; defaults to ~/.config/koda. */
+  readonly configRoot?: string;
   readonly stdin?: NodeJS.ReadableStream & { readonly isTTY?: boolean };
   readonly stdout: Pick<NodeJS.WriteStream, "write"> & {
     readonly isTTY?: boolean;
@@ -129,6 +137,7 @@ function createCommandPolicy(
 }
 
 function createAgent(
+  env: NodeJS.ProcessEnv,
   runtime: CliEnvironment,
   provider: ILLMProvider,
   writePolicy: WritePolicy | undefined,
@@ -141,12 +150,13 @@ function createAgent(
       ...(writePolicy === undefined ? {} : { writePolicy }),
       ...(commandPolicy === undefined ? {} : { commandPolicy }),
     }),
-    { identity: resolveProviderIdentity(runtime.env) },
+    { identity: resolveProviderIdentity(env) },
   );
 }
 
-const globalRoots = () => ({
-  globalKodaRoot: path.join(os.homedir(), ".config", "koda"),
+const globalRoots = (runtime: CliEnvironment) => ({
+  globalKodaRoot:
+    runtime.configRoot ?? path.join(os.homedir(), ".config", "koda"),
   globalOpenCodeRoot: path.join(os.homedir(), ".config", "opencode"),
 });
 
@@ -156,6 +166,7 @@ const globalRoots = () => ({
  */
 function createAgentRuntime(
   runtime: CliEnvironment,
+  env: NodeJS.ProcessEnv,
   catalog: AgentCatalog,
   provider: ILLMProvider,
   io: InteractiveIO | undefined,
@@ -165,8 +176,8 @@ function createAgentRuntime(
   return new AgentRuntime({
     catalog,
     workspaceRoot: runtime.cwd,
-    env: runtime.env,
-    identity: resolveProviderIdentity(runtime.env),
+    env,
+    identity: resolveProviderIdentity(env),
     defaultProvider: provider,
     writePolicy,
     commandPolicy,
@@ -179,6 +190,7 @@ function createAgentRuntime(
 
 async function runInteractiveSession(
   runtime: CliEnvironment,
+  connection: ConnectionSettings,
   termUI: InteractiveRuntime,
   agent: CodeAgent,
   agents: AgentRuntime,
@@ -187,9 +199,10 @@ async function runInteractiveSession(
   await runInteractive({
     agent,
     agents,
-    ...resolveProviderIdentity(runtime.env),
+    ...resolveProviderIdentity(connection.env),
     workspaceRoot: runtime.cwd,
-    ...globalRoots(),
+    ...globalRoots(runtime),
+    connection,
     io: termUI.io,
     runtime: termUI,
     highlighter,
@@ -221,6 +234,24 @@ async function runBatch(
   runtime.stdout.write(`${await prepared.agent.run(prompt)}\n`);
 }
 
+/** `koda connect [provider]`: saves an API key without starting a session. */
+async function runConnectCommand(
+  runtime: CliEnvironment,
+  settings: ConnectionSettings,
+): Promise<number> {
+  if (runtime.stdin?.isTTY !== true || runtime.stdout.isTTY !== true) {
+    runtime.stderr.write("koda connect needs an interactive terminal.\n");
+    return USAGE_EXIT_CODE;
+  }
+  const { ui, close } = createReadlineUI(runtime.stdin, runtime.stdout);
+  try {
+    await runConnect(ui, settings, runtime.argv[1]);
+    return 0;
+  } finally {
+    close();
+  }
+}
+
 export async function runCli(runtime: CliEnvironment): Promise<number> {
   const prompt = runtime.argv.join(" ").trim();
   const interactive = isInteractive(runtime, prompt);
@@ -229,18 +260,24 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
     return USAGE_EXIT_CODE;
   }
   try {
+    const authFile = authFilePath(globalRoots(runtime).globalKodaRoot);
+    const env = withStoredCredentials(runtime.env, await readAuth(authFile));
+    const connection: ConnectionSettings = { authFile, env };
+    if (runtime.argv[0] === "connect")
+      return await runConnectCommand(runtime, connection);
     // The provider first: a missing key fails before anything is loaded.
-    const provider = ProviderFactory.fromEnvironment(runtime.env);
+    const provider = ProviderFactory.fromEnvironment(env);
     const termUI = interactive ? await loadTermUIRuntime() : undefined;
     const highlighter = createLazyHighlighter();
     const writePolicy = createWritePolicy(termUI?.io, highlighter);
     const commandPolicy = createCommandPolicy(termUI?.io);
     const catalog = await loadCatalog({
       workspaceRoot: runtime.cwd,
-      ...globalRoots(),
+      ...globalRoots(runtime),
     });
     const agents = createAgentRuntime(
       runtime,
+      env,
       catalog,
       provider,
       termUI?.io,
@@ -251,8 +288,9 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
     else
       await runInteractiveSession(
         runtime,
+        connection,
         termUI,
-        createAgent(runtime, provider, writePolicy, commandPolicy),
+        createAgent(env, runtime, provider, writePolicy, commandPolicy),
         agents,
         highlighter,
       );

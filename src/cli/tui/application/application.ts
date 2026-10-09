@@ -1,5 +1,6 @@
 import { CommandRegistry, discoverCommands } from "../../commands/discovery.js";
 import { routeInput, type RouteResult } from "../../commands/router.js";
+import { runConnectCommand } from "../commands/connect-command.js";
 import { decide } from "../commands/decision.js";
 import { runModelCommand } from "../commands/model-command.js";
 import { commandSuggestions } from "../commands/suggestions.js";
@@ -150,6 +151,14 @@ async function handleRoute(
       break;
     case "model":
       await runModel(deps, route);
+      break;
+    case "connect":
+      await runConnectCommand(
+        deps.io,
+        (text) => deps.writer.write(text),
+        deps.options.connection,
+        route.name,
+      );
       break;
     case "prompt":
       await runPrompt(deps, route);

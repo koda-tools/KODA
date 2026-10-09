@@ -32,6 +32,10 @@ export type RouteResult =
       readonly name?: string;
     }
   | {
+      readonly type: "connect";
+      readonly name?: string;
+    }
+  | {
       readonly type: "clear";
     }
   | {
@@ -39,7 +43,7 @@ export type RouteResult =
     };
 
 const BUILT_IN_HELP =
-  "Built-ins: /help, /commands, /model [name|number], /agents, /agent [name], /skills, /clear, /exit\nUse @agent <task> to delegate to a subagent.";
+  "Built-ins: /help, /commands, /model [name|number], /agents, /agent [name], /skills, /connect [provider], /clear, /exit\nUse @agent <task> to delegate to a subagent.";
 
 export async function routeInput(
   input: string,
@@ -126,6 +130,14 @@ function routeBuiltInCommand(
       return agent.length === 0
         ? { type: "agent" }
         : { type: "agent", name: agent };
+    }
+
+    case "connect": {
+      const provider = args.trim();
+
+      return provider.length === 0
+        ? { type: "connect" }
+        : { type: "connect", name: provider };
     }
 
     case "clear":

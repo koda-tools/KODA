@@ -4,6 +4,7 @@ import type {
   CommandRegistry,
   DiscoveryOptions,
 } from "../../commands/discovery.js";
+import type { ConnectionSettings } from "../../connect/types.js";
 import type { ShellPolicy } from "../../commands/types.js";
 import type { CodeHighlighter } from "../highlight/types.js";
 import type { SessionController } from "../session/session-controller.js";
@@ -27,6 +28,8 @@ export interface InteractiveOptions extends DiscoveryOptions {
   readonly agents?: AgentRuntime;
   readonly provider: string;
   readonly model: string;
+  /** Where `/connect` saves API keys; without it the command is off. */
+  readonly connection?: ConnectionSettings;
   readonly io?: InteractiveIO;
   readonly runtime?: InteractiveRuntime;
   readonly shellPolicy?: ShellPolicy;

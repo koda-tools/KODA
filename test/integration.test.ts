@@ -31,8 +31,8 @@ class PackageProvider implements ILLMProvider {
       };
     this.observed = contentToText(messages.at(-1)?.content ?? "");
     return {
-      content: this.observed.includes("koda-agent")
-        ? "The project is koda-agent."
+      content: this.observed.includes("@koda-tools/koda")
+        ? "The project is @koda-tools/koda."
         : "Name not found.",
       toolCalls: [],
     };
@@ -53,6 +53,6 @@ test("grounds a package name answer in a readFile observation", async () => {
     new ToolRegistry({ workspaceRoot: process.cwd() }),
     { identity: { provider: "openai", model: "test-model" } },
   ).run("Read package.json and report the project name.");
-  assert.match(provider.observed, /"name": "koda-agent"/);
-  assert.equal(answer, "The project is koda-agent.");
+  assert.match(provider.observed, /"name": "@koda-tools\/koda"/);
+  assert.equal(answer, "The project is @koda-tools/koda.");
 });

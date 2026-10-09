@@ -99,9 +99,25 @@ td:first-child { white-space: nowrap; color: var(--strong); }
 
 footer { margin-top: 80px; color: var(--dim); border-top: 3px dashed var(--line); padding-top: 16px; font-size: 13px; }
 
+.menu-btn { display: none; }
+
 @media (max-width: 800px) {
   .layout { grid-template-columns: 1fr; }
-  aside { position: static; height: auto; border-right: 0; border-bottom: 3px solid var(--strong); }
+  aside { position: sticky; top: 0; z-index: 10; height: auto; max-height: 100vh; border-right: 0; border-bottom: 3px solid var(--strong); }
+  .menu-btn {
+    display: flex; flex-direction: column; justify-content: center; gap: 5px;
+    position: absolute; top: 20px; right: 20px; width: 44px; height: 40px; padding: 0 9px; cursor: pointer;
+    background: var(--bg); border: 2px solid var(--strong); box-shadow: 3px 3px 0 var(--shadow);
+  }
+  .menu-btn span { display: block; height: 3px; background: var(--strong); transition: transform .15s steps(3), opacity .15s steps(2); }
+  .menu-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
+  aside.open .menu-btn span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+  aside.open .menu-btn span:nth-child(2) { opacity: 0; }
+  aside.open .menu-btn span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+  nav { display: none; }
+  aside.open nav { display: block; }
+  aside:not(.open) .toggle { margin-bottom: 0; }
+  aside:not(.open) .ver { margin-bottom: 12px; }
   main { padding: 28px 20px 64px; }
   .hero h1 { font-size: 26px; }
 }

@@ -2,6 +2,9 @@ import type { KeyEvent } from "@termuijs/core";
 import { LAYOUT, PROMPT_PLACEHOLDER, PROMPT_TITLE } from "./constants.js";
 import { TitledTextArea } from "./titled-text-area.js";
 
+const SECRET_MASK = "•";
+const PRINTABLE = /^[^\u0000-\u001f\u007f]+$/u;
+
 /**
  * Multi-line prompt on TermUI's `TextArea`
  * (https://www.termui.io/components/text-area) that grows with its content,
@@ -25,6 +28,8 @@ export class Prompt {
     },
   );
   private readonly listeners = new Set<(value: string) => void>();
+  /** The real text while in secret mode; `undefined` otherwise. */
+  private secret: string | undefined;
 
   public get value(): string {
     return this.widget.value;
@@ -60,7 +65,35 @@ export class Prompt {
   }
 
   public handleKey(event: KeyEvent): void {
-    this.widget.handleKey(event);
+    if (this.secret === undefined) this.widget.handleKey(event);
+    else this.handleSecretKey(event);
+  }
+
+  /** Mask what is typed (API keys): the widget shows `•`, we keep the text. */
+  public beginSecret(): void {
+    this.widget.value = "";
+    this.secret = "";
+    this.changed();
+  }
+
+  public endSecret(): void {
+    this.secret = undefined;
+    this.widget.value = "";
+    this.changed();
+  }
+
+  private handleSecretKey(event: KeyEvent): void {
+    if (this.secret === undefined) return;
+    if (event.key === "backspace") {
+      this.secret = this.secret.slice(0, -1);
+      this.widget.handleKey(event);
+      return;
+    }
+    // Typed or pasted printable text; named keys (arrows…) are ignored.
+    const text = event.ctrl || event.alt ? "" : event.raw.toString("utf8");
+    if (!PRINTABLE.test(text)) return;
+    this.secret += text;
+    for (const _char of text) this.widget.insertChar(SECRET_MASK);
   }
 
   public insertNewline(): void {
@@ -69,7 +102,8 @@ export class Prompt {
 
   /** Return the text and clear the field. */
   public take(): string {
-    const value = this.widget.value;
+    const value = this.secret ?? this.widget.value;
+    if (this.secret !== undefined) this.secret = "";
     this.widget.value = "";
     this.changed();
     return value;

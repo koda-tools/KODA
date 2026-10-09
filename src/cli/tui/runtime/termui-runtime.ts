@@ -67,6 +67,7 @@ export class TermUIRuntime implements InteractiveRuntime {
 
   public readonly io: InteractiveIO = {
     question: (prompt) => this.question(prompt),
+    askSecret: (prompt) => this.askSecret(prompt),
     // Untrusted text loses every escape; styled output keeps SGR colors.
     write: (value) => this.write(sanitize(value)),
     writeStyled: (value) => this.write(sanitizeStyled(value)),
@@ -165,11 +166,24 @@ export class TermUIRuntime implements InteractiveRuntime {
     });
   }
 
+  /** Like `question`, with the typed text masked and never echoed. */
+  private askSecret(prompt: string): Promise<string | undefined> {
+    if (this.closed) return Promise.resolve(undefined);
+    this.write(prompt);
+    this.prompt.beginSecret();
+    return new Promise((resolve) => {
+      this.pendingAnswer = { resolve, secret: true };
+    });
+  }
+
   private submit(value: string): void {
     const answer = this.pendingAnswer;
     if (answer === undefined) return;
     this.pendingAnswer = undefined;
-    this.writeUserMessage(value);
+    if (answer.secret === true) {
+      this.prompt.endSecret();
+      this.write("••••••••\n");
+    } else this.writeUserMessage(value);
     answer.resolve(value);
   }
 
@@ -329,6 +343,7 @@ export class TermUIRuntime implements InteractiveRuntime {
   private resolvePending(): void {
     const answer = this.pendingAnswer;
     this.pendingAnswer = undefined;
+    if (answer?.secret === true) this.prompt.endSecret();
     answer?.resolve(undefined);
     this.choices.close(undefined);
   }

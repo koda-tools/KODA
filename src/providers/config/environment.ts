@@ -50,7 +50,7 @@ function requiredEnv(env: NodeJS.ProcessEnv, variable: string): string {
   const value = optionalEnv(env[variable]);
   if (value === undefined)
     throw new ProviderError(
-      `Missing required environment variable ${variable}.`,
+      `Missing required environment variable ${variable}. Set it or run 'koda connect'.`,
     );
   return value;
 }
