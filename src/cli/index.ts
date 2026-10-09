@@ -118,7 +118,7 @@ function createWritePolicy(
   };
 }
 
-/** Approves commands through the same Autorizar/Rejeitar list as writes. */
+/** Approves commands through the same Accept/Reject list as writes. */
 function createCommandPolicy(
   io: InteractiveIO | undefined,
 ): CommandPolicy | undefined {
@@ -162,7 +162,7 @@ const globalRoots = (runtime: CliEnvironment) => ({
 
 /**
  * Agents run with the same write/command approvals as before; `ask` on
- * other tools (read, skill, task…) uses the same Autorizar/Rejeitar list.
+ * other tools (read, skill, task…) uses the same Accept/Reject list.
  */
 function createAgentRuntime(
   runtime: CliEnvironment,

@@ -101,7 +101,7 @@ export class TextBlock {
 }
 
 /**
- * A tool/approval status line (`✓ writeFile a.ts`, `→ Autorizar`) inside a
+ * A tool/approval status line (`✓ writeFile a.ts`, `→ Accept`) inside a
  * KODA-colored block, shown verbatim and without a header.
  */
 export function statusLine(text: string): BlockLine {

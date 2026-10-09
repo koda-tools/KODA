@@ -15,7 +15,7 @@ function baseIO(overrides: Partial<InteractiveIO>): InteractiveIO {
   };
 }
 
-test("selector choice Autorizar resolves to true and shows the waiting status", async () => {
+test("selector choice Accept resolves to true and shows the waiting status", async () => {
   const statuses: (string | undefined)[] = [];
   let seen: SelectRequest | undefined;
   const io = baseIO({
@@ -27,13 +27,13 @@ test("selector choice Autorizar resolves to true and shows the waiting status", 
   });
   const result = await decide(io, "Write  a.ts", "fallback [y/N] ");
   assert.equal(result, true);
-  assert.deepEqual(seen?.options, ["Autorizar", "Rejeitar"]);
+  assert.deepEqual(seen?.options, ["Accept", "Reject"]);
   assert.equal(seen?.title, "Write  a.ts");
-  assert.match(seen?.hint ?? "", /Enter confirmar/);
+  assert.match(seen?.hint ?? "", /Enter confirm/);
   assert.deepEqual(statuses, ["Waiting for decision...", undefined]);
 });
 
-test("selector choice Rejeitar resolves to false and clears the status", async () => {
+test("selector choice Reject resolves to false and clears the status", async () => {
   const statuses: (string | undefined)[] = [];
   const io = baseIO({
     setStatus: (text) => statuses.push(text),
@@ -45,7 +45,7 @@ test("selector choice Rejeitar resolves to false and clears the status", async (
   assert.equal(statuses.at(-1), undefined);
 });
 
-test("selector choice Reject resolves to false", async () => {
+test("selector choice 1 resolves to false", async () => {
   const io = baseIO({ select: async () => 1 });
   assert.equal(await decide(io, "t", "f [y/N] "), false);
 });

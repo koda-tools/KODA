@@ -4,7 +4,7 @@ import type { ChoiceListHooks } from "./types.js";
 
 /**
  * The one TermUI `List` (https://www.termui.io/components/list) used for
- * every choice: `/model` and Autorizar/Rejeitar. Being the only List in the
+ * every choice: `/model` and Accept/Reject. Being the only List in the
  * tree, the `AppBuilder` keeps it focused and routes ↑/↓/Enter to it.
  */
 export class ChoiceList {

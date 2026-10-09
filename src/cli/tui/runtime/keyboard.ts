@@ -55,7 +55,7 @@ export function createKeyHandler(
       return;
     }
     if (event.key === "escape") {
-      // Closes an open choice (counts as Rejeitar) or aborts a request.
+      // Closes an open choice (counts as Reject) or aborts a request.
       if (choices.isOpen) choices.close(undefined);
       else if (targets.isBusy()) targets.cancel();
     } else if (event.ctrl && event.key === "l") {

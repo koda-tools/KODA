@@ -1,9 +1,9 @@
 import type { InteractiveIO } from "../shared/types.js";
 
 const WAITING_STATUS = "Waiting for decision...";
-const SELECT_HINT = "↑/↓ escolher · Enter confirmar · Esc rejeitar";
+const SELECT_HINT = "↑/↓ choose · Enter confirm · Esc reject";
 /** Index 0 approves. */
-const DECISION_OPTIONS = ["Autorizar", "Rejeitar"] as const;
+const DECISION_OPTIONS = ["Accept", "Reject"] as const;
 
 async function confirmByLine(
   io: InteractiveIO,
