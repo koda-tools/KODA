@@ -69,10 +69,12 @@
     <section id="install">
       <h2>Instalação</h2>
       <p>Requer <code>Node &gt;= 20</code>.</p>
-<pre><code>npm install
-npm run build
-npm start       <span class="c"># ou: npm run koda (build + start)</span></code></pre>
-      <p>O binário <code>koda</code> é exposto via <code>bin/koda.js</code>.</p>
+<pre><code>npm install -g @koda-tools/koda</code></pre>
+      <p>Depois é só abrir o terminal no seu projeto e rodar:</p>
+<pre><code>koda</code></pre>
+      <p>Para testar sem instalar, use <code>npx @koda-tools/koda</code>.</p>
+      <h3>ATUALIZAR</h3>
+<pre><code>npm update -g @koda-tools/koda</code></pre>
     </section>
 
     <section id="config">
@@ -193,8 +195,7 @@ Você revisa código procurando vulnerabilidades.</code></pre>
     <section id="sdk">
       <h2>Usar como lib</h2>
       <p>O pacote exporta o SDK em <code>dist/src/index.js</code>.</p>
-<pre><code>import * as koda from "koda";</code></pre>
-      <div class="box"><b>Nota:</b> o pacote é <code>private</code> e ainda não foi publicado no npm.</div>
+<pre><code>import * as koda from "@koda-tools/koda";</code></pre>
     </section>
 
     <footer>KODA &copy; · feito com pixels.</footer>

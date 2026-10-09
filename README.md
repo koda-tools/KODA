@@ -25,6 +25,15 @@ O KODA lê o seu projeto, edita arquivos e executa comandos, sempre pedindo apro
 ## Instalação
 
 ```bash
+npm install -g @koda-tools/koda
+koda
+```
+
+Para testar sem instalar: `npx @koda-tools/koda`.
+
+Para rodar a partir do código-fonte:
+
+```bash
 npm install
 npm run build
 npm start

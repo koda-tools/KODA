@@ -1,0 +1,56 @@
+name: Release
+
+# Publishes to npm ONLY when a GitHub Release is published.
+# Trunk-based flow:
+#   1. Work merges into `main` (validated by CI).
+#   2. Bump the version in package.json (on main) and push.
+#   3. Create a GitHub Release with tag `vX.Y.Z` → this workflow publishes it.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write # enables npm provenance (--provenance) on supported registries
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish # optional: gate behind a protected environment
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node (registry configured for publish)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.0
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install (clean, from lockfile)
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test -- --passWithNoTests
+
+      - name: Verify the release tag matches package.json
+        # Guards against publishing a version that doesn't match the tag.
+        # Accepts tags like "v1.2.3" or "1.2.3".
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "package.json: $PKG_VERSION | release tag: $TAG"
+          if [ "$PKG_VERSION" != "$TAG" ]; then
+            echo "::error::Release tag ($TAG) does not match package.json version ($PKG_VERSION)."
+            echo "Bump package.json to $TAG (or tag the release vX.Y.Z to match) and recreate the release."
+            exit 1
+          fi
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

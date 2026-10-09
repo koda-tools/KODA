@@ -1,9 +1,12 @@
 {
-  "name": "koda",
+  "name": "@koda-tools/koda",
   "version": "0.1.0",
   "description": "A secure TypeScript AI coding agent CLI and SDK",
   "type": "module",
-  "private": true,
+  "license": "Unlicense",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "koda": "bin/koda.js"
   },
@@ -16,6 +19,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
     "koda": "tsc -p tsconfig.json && node ./bin/koda.js",
     "start": "node ./bin/koda.js",
     "check": "tsc -p tsconfig.json --noEmit",
