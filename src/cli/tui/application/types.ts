@@ -5,6 +5,7 @@ import type {
   DiscoveryOptions,
 } from "../../commands/discovery.js";
 import type { ConnectionSettings } from "../../connect/types.js";
+import type { McpTools } from "../../../mcp/types.js";
 import type { ShellPolicy } from "../../commands/types.js";
 import type { CodeHighlighter } from "../highlight/types.js";
 import type { SessionController } from "../session/session-controller.js";
@@ -30,6 +31,8 @@ export interface InteractiveOptions extends DiscoveryOptions {
   readonly model: string;
   /** Where `/connect` saves API keys; without it the command is off. */
   readonly connection?: ConnectionSettings;
+  /** MCP servers behind `/mcp`; without it the command reports none. */
+  readonly mcp?: McpTools;
   readonly io?: InteractiveIO;
   readonly runtime?: InteractiveRuntime;
   readonly shellPolicy?: ShellPolicy;

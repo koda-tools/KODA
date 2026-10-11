@@ -19,6 +19,7 @@ import {
 import { ToolRegistry, type WritePolicy } from "../tools/registry.js";
 import type { CommandPolicy } from "../tools/command/types.js";
 import { computeFileDiff } from "../utils/diff.js";
+import { McpManager, loadMcpConfig } from "../mcp/index.js";
 import { ProviderError } from "../utils/errors.js";
 import { runConnect } from "./connect/flow.js";
 import { createReadlineUI } from "./connect/readline-ui.js";
@@ -168,6 +169,7 @@ function createAgentRuntime(
   runtime: CliEnvironment,
   env: NodeJS.ProcessEnv,
   catalog: AgentCatalog,
+  mcp: McpManager,
   provider: ILLMProvider,
   io: InteractiveIO | undefined,
   writePolicy: WritePolicy | undefined,
@@ -179,6 +181,7 @@ function createAgentRuntime(
     env,
     identity: resolveProviderIdentity(env),
     defaultProvider: provider,
+    extraTools: mcp.tools,
     writePolicy,
     commandPolicy,
     approve:
@@ -194,11 +197,13 @@ async function runInteractiveSession(
   termUI: InteractiveRuntime,
   agent: CodeAgent,
   agents: AgentRuntime,
+  mcp: McpManager,
   highlighter: CodeHighlighter,
 ): Promise<void> {
   await runInteractive({
     agent,
     agents,
+    mcp,
     ...resolveProviderIdentity(connection.env),
     workspaceRoot: runtime.cwd,
     ...globalRoots(runtime),
@@ -223,10 +228,12 @@ async function runInteractiveSession(
 async function runBatch(
   runtime: CliEnvironment,
   agents: AgentRuntime,
+  mcp: McpManager,
   prompt: string,
 ): Promise<void> {
-  for (const issue of agents.catalog.diagnostics)
+  for (const issue of [...agents.catalog.diagnostics, ...mcp.diagnostics])
     runtime.stderr.write(`Warning: ${issue}\n`);
+  await mcp.start();
   const prepared = agents.prepare(agents.defaultAgent().name, {
     runSubagent: runQuietly,
   });
@@ -259,6 +266,7 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
     runtime.stderr.write("Usage: koda <prompt>\n");
     return USAGE_EXIT_CODE;
   }
+  let mcp: McpManager | undefined;
   try {
     const authFile = authFilePath(globalRoots(runtime).globalKodaRoot);
     const env = withStoredCredentials(runtime.env, await readAuth(authFile));
@@ -275,16 +283,26 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
       workspaceRoot: runtime.cwd,
       ...globalRoots(runtime),
     });
+    mcp = new McpManager(
+      await loadMcpConfig({
+        workspaceRoot: runtime.cwd,
+        ...globalRoots(runtime),
+        env: runtime.env,
+      }),
+      { cwd: runtime.cwd, env },
+    );
+    void mcp.start();
     const agents = createAgentRuntime(
       runtime,
       env,
       catalog,
+      mcp,
       provider,
       termUI?.io,
       writePolicy,
       commandPolicy,
     );
-    if (termUI === undefined) await runBatch(runtime, agents, prompt);
+    if (termUI === undefined) await runBatch(runtime, agents, mcp, prompt);
     else
       await runInteractiveSession(
         runtime,
@@ -292,6 +310,7 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
         termUI,
         createAgent(env, runtime, provider, writePolicy, commandPolicy),
         agents,
+        mcp,
         highlighter,
       );
     return 0;
@@ -300,6 +319,8 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
       error instanceof Error ? error.message : "Unexpected failure.";
     runtime.stderr.write(`Koda failed: ${message}\n`);
     return error instanceof ProviderError ? USAGE_EXIT_CODE : FAILURE_EXIT_CODE;
+  } finally {
+    await mcp?.close();
   }
 }
 

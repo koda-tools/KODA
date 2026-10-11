@@ -82,6 +82,8 @@ Type `/` at the prompt to see suggestions.
 | `/agents`             | Lists agents                                |
 | `/agent [name]`       | Switches the primary agent                  |
 | `/skills`             | Lists skills                                |
+| `/connect [provider]` | Saves a provider's API key                  |
+| `/mcp`                | Shows MCP servers and their status          |
 | `/clear`              | Clears conversation context                 |
 | `/exit`               | Exits KODA                                  |
 
@@ -90,6 +92,44 @@ Use `@agent task` to delegate a task to a subagent.
 ## Tools
 
 `readFile`, `writeFile`, `listDirectory`, `searchFiles`, `getFileInfo`, and `runCommand`.
+
+## MCP servers
+
+KODA connects to [MCP](https://modelcontextprotocol.io) servers, using the same `mcp` section as OpenCode in `koda.json` or `opencode.json` (project root, `.koda/`, `.opencode/` or the global `~/.config/koda`).
+
+```json
+{
+  "mcp": {
+    "filesystem": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."],
+      "environment": { "LOG_LEVEL": "info" }
+    },
+    "docs": {
+      "type": "remote",
+      "url": "https://example.com/mcp",
+      "headers": { "Authorization": "Bearer {env:DOCS_TOKEN}" }
+    },
+    "old-server": { "enabled": false }
+  }
+}
+```
+
+- `local` servers are started by KODA and talk over stdio. `remote` servers use streamable HTTP, falling back to SSE.
+- Fields: `enabled` (default `true`), `timeout` in ms to connect and list tools (default `30000`), `environment` (local) and `headers` (remote). `{env:NAME}` is replaced by the environment variable.
+- A server that fails to start never blocks the session. Run `/mcp` to see each server's status and tool count.
+- Each tool is exposed as `<server>_<tool>`. Local servers only receive a safe set of variables (`PATH`, `HOME`...) plus the `environment` you list, never your API keys.
+- Calls are allowed by default. Restrict them with the `mcp` permission, which matches the tool name:
+
+```yaml
+permission:
+  mcp:
+    "*": allow
+    "docs_*": ask
+    "filesystem_write_file": deny
+```
+
+> MCP servers run code and send data to third parties. Only enable servers you trust, and review `koda.json` / `opencode.json` in projects you did not write.
 
 ## Extension
 

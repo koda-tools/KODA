@@ -32,6 +32,9 @@ export type RouteResult =
       readonly name?: string;
     }
   | {
+      readonly type: "mcp";
+    }
+  | {
       readonly type: "connect";
       readonly name?: string;
     }
@@ -43,7 +46,7 @@ export type RouteResult =
     };
 
 const BUILT_IN_HELP =
-  "Built-ins: /help, /commands, /model [name|number], /agents, /agent [name], /skills, /connect [provider], /clear, /exit\nUse @agent <task> to delegate to a subagent.";
+  "Built-ins: /help, /commands, /model [name|number], /agents, /agent [name], /skills, /connect [provider], /mcp, /clear, /exit\nUse @agent <task> to delegate to a subagent.";
 
 export async function routeInput(
   input: string,
@@ -131,6 +134,9 @@ function routeBuiltInCommand(
         ? { type: "agent" }
         : { type: "agent", name: agent };
     }
+
+    case "mcp":
+      return { type: "mcp" };
 
     case "connect": {
       const provider = args.trim();

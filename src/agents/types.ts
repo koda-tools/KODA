@@ -23,7 +23,9 @@ export type PermissionKey =
   | "grep"
   | "bash"
   | "task"
-  | "skill";
+  | "skill"
+  /** MCP tools, matched by their `<server>_<tool>` name. */
+  | "mcp";
 
 export type Permissions = Readonly<
   Partial<Record<PermissionKey, PermissionRule>>
@@ -102,9 +104,11 @@ export type Delegate = (
   signal: AbortSignal | undefined,
 ) => Promise<ToolObservation>;
 
-/** An extra tool an agent can be given (skill, task). */
+/** An extra tool an agent can be given (skill, task, MCP). */
 export interface AgentTool {
   readonly definition: ToolDefinition;
+  /** Permission key checked against the tool name before each call. */
+  readonly permission?: { readonly key: PermissionKey } | undefined;
   readonly statusLabel: string;
   readonly execute: (
     args: Readonly<Record<string, unknown>>,
@@ -137,6 +141,8 @@ export interface RuntimeOptions {
   readonly approve?: ApprovalPrompt | undefined;
   /** Builds the provider for an agent's `model` (tests inject fakes). */
   readonly createProvider?: ((provider: string) => ILLMProvider) | undefined;
+  /** Extra tools (MCP) added to every run; read again on each run. */
+  readonly extraTools?: (() => readonly AgentTool[]) | undefined;
   /** Time limit of one subagent run (default 5 minutes). */
   readonly subagentTimeoutMs?: number | undefined;
 }

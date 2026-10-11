@@ -12,6 +12,7 @@ export const BUILT_IN_SUGGESTIONS: readonly CommandSuggestion[] = [
   { name: "agent", description: "Switch the primary agent" },
   { name: "skills", description: "List skills" },
   { name: "connect", description: "Connect a provider (API key)" },
+  { name: "mcp", description: "Show MCP servers" },
   { name: "clear", description: "Clear conversation context" },
   { name: "exit", description: "Leave KODA" },
 ];

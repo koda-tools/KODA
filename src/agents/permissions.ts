@@ -18,6 +18,7 @@ export const DEFAULT_PERMISSIONS: Readonly<
   bash: "ask",
   task: "allow",
   skill: "allow",
+  mcp: "allow",
 };
 
 const SEVERITY: Readonly<Record<PermissionAction, number>> = {

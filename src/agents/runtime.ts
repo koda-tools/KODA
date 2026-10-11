@@ -255,6 +255,7 @@ export class AgentRuntime {
       delegate === undefined
         ? undefined
         : createTaskTool(this.subagents(true), layers, delegate),
+      ...(this.options.extraTools?.() ?? []),
     ].filter((tool): tool is AgentTool => tool !== undefined);
     const toolset = new AgentToolset(registry, {
       layers,

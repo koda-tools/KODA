@@ -239,3 +239,63 @@ test("a subagent with edit allow cannot write when the parent denies edit", asyn
     assert.match(provider.toolRepliesOf(1)[0] ?? "", /Permission denied/);
   });
 });
+
+function mcpToolset(permission: Permissions, approve?: () => Promise<boolean>) {
+  const gate: GateState = { preapproved: false };
+  const calls: string[] = [];
+  const names = ["gh_search", "gh_delete", "fs_read"];
+  const tools = new AgentToolset(fakeBase(gate).base, {
+    layers: [permission],
+    extraTools: names.map((name) => ({
+      definition: { name, description: name, parameters: {} },
+      statusLabel: "x",
+      permission: { key: "mcp" as const },
+      execute: async () => {
+        calls.push(name);
+        return { ok: true, content: `${name} ok` };
+      },
+    })),
+    gate,
+    approve,
+    agentName: "tester",
+  });
+  return { tools, calls };
+}
+
+test("MCP tools are allowed by default", async () => {
+  const { tools, calls } = mcpToolset({});
+  assert.ok(tools.definitions.some((tool) => tool.name === "gh_search"));
+  assert.equal((await tools.execute("gh_search", "{}")).ok, true);
+  assert.deepEqual(calls, ["gh_search"]);
+});
+
+test("mcp patterns can deny, hide and ask per tool name", async () => {
+  const asked: string[] = [];
+  const { tools, calls } = mcpToolset(
+    { mcp: { "*": "allow", "gh_*": "ask", gh_delete: "deny" } },
+    async () => {
+      asked.push("asked");
+      return false;
+    },
+  );
+  const names = tools.definitions.map((tool) => tool.name);
+  assert.ok(!names.includes("gh_delete"));
+  assert.ok(names.includes("gh_search") && names.includes("fs_read"));
+
+  assert.match((await tools.execute("gh_delete", "{}")).content, /denied/);
+  assert.match(
+    (await tools.execute("gh_search", "{}")).content,
+    /denied by user/,
+  );
+  assert.equal((await tools.execute("fs_read", "{}")).ok, true);
+  assert.deepEqual(asked, ["asked"]);
+  assert.deepEqual(calls, ["fs_read"]);
+});
+
+test("mcp: deny removes every MCP tool", () => {
+  const { tools } = mcpToolset({ mcp: "deny" });
+  assert.deepEqual(
+    tools.definitions.map((tool) => tool.name),
+    ["readFile", "writeFile", "runCommand"],
+  );
+});

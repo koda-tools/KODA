@@ -2,7 +2,11 @@ import type { ToolExecutor, ToolObservation } from "../core/index.js";
 import type { ToolDefinition } from "../providers/index.js";
 import type { CommandPolicy } from "../tools/command/types.js";
 import type { WritePolicy } from "../tools/registry.js";
-import { checkToolCall, isToolHidden } from "./permissions.js";
+import {
+  checkToolCall,
+  isToolHidden,
+  resolvePermission,
+} from "./permissions.js";
 import type {
   AgentTool,
   GateState,
@@ -76,7 +80,31 @@ export class AgentToolset implements ToolExecutor {
     this.definitions = [
       ...base.definitions,
       ...options.extraTools.map((tool) => tool.definition),
-    ].filter((definition) => !isToolHidden(options.layers, definition.name));
+    ].filter((definition) => !this.hidden(definition.name));
+  }
+
+  /** Denied outright: a fully denied key or, for MCP, a denying pattern. */
+  private hidden(name: string): boolean {
+    const permission = this.extras.get(name)?.permission;
+    if (permission !== undefined)
+      return (
+        resolvePermission(this.options.layers, permission.key, name) === "deny"
+      );
+    return isToolHidden(this.options.layers, name);
+  }
+
+  private check(
+    name: string,
+    args: Readonly<Record<string, unknown>>,
+  ): PermissionCheck | undefined {
+    const permission = this.extras.get(name)?.permission;
+    if (permission === undefined)
+      return checkToolCall(this.options.layers, name, args);
+    return {
+      key: permission.key,
+      subject: name,
+      action: resolvePermission(this.options.layers, permission.key, name),
+    };
   }
 
   public statusLabel(name: string): string | undefined {
@@ -93,12 +121,12 @@ export class AgentToolset implements ToolExecutor {
       extra !== undefined ||
       this.base.definitions.some((definition) => definition.name === name);
     if (!known) return failure(`Unknown tool '${name}'.`);
-    if (isToolHidden(this.options.layers, name))
+    if (this.hidden(name))
       return failure(
         `Permission denied: ${name} is not available to agent '${this.options.agentName}'.`,
       );
     const args = parseArgs(serializedArguments);
-    const check = checkToolCall(this.options.layers, name, args);
+    const check = this.check(name, args);
     if (check?.action === "deny")
       return failure(
         `Permission denied: ${describe(check)} for agent '${this.options.agentName}'.`,
@@ -126,7 +154,10 @@ export class AgentToolset implements ToolExecutor {
   ): Promise<boolean> {
     const approve = this.options.approve;
     if (approve === undefined) return false;
-    const target = check.subject === "" ? tool : `${tool}  ${check.subject}`;
+    const target =
+      check.subject === "" || check.subject === tool
+        ? tool
+        : `${tool}  ${check.subject}`;
     return approve(
       `${this.options.agentName}: ${target}`,
       `Allow agent '${this.options.agentName}' to use ${tool} (${describe(check)})? [y/N] `,

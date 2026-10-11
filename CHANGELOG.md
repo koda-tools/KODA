@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-10-09
+
+### Added
+
+- MCP support: servers configured in the `mcp` section of `koda.json` / `opencode.json` (same format as OpenCode). Local servers (stdio) and remote servers (streamable HTTP, falling back to SSE), `{env:NAME}` placeholders, per-server `enabled` and `timeout`.
+- `/mcp` command to list servers, their status and tool count.
+- `mcp` permission key to allow, ask or deny MCP tools by name pattern (allowed by default).
+- MCP tools are exposed as `<server>_<tool>` to every agent and subagent. Servers connect in the background, and a failing server never blocks the session.
+- Documentation: an "MCP servers" section on the site and in the README, and `/connect` and `/mcp` in the command tables.
+
+### Changed
+
+- Local MCP servers only receive a safe set of environment variables plus the `environment` set in the config, so session API keys are not passed on.
+- The documentation site uses a dark scrollbar that matches the theme.
+
+### Dependencies
+
+- Added `@modelcontextprotocol/sdk` 1.31.0.
+
 ## [0.1.5] - 2026-10-09
 
 Covers the changes made since 0.1.0 (versions 0.1.1 to 0.1.5 were not released separately).
@@ -52,6 +71,7 @@ First release of KODA, a secure TypeScript AI coding agent for the terminal.
 
 - The package is published as `@koda-tools/koda`.
 
-[Unreleased]: https://github.com/koda-tools/KODA/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/koda-tools/KODA/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/koda-tools/KODA/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/koda-tools/KODA/compare/v0.1.0...v0.1.5
 [0.1.0]: https://github.com/koda-tools/KODA/releases/tag/v0.1.0

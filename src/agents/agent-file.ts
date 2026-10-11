@@ -21,6 +21,7 @@ const PERMISSION_KEYS: readonly PermissionKey[] = [
   "bash",
   "task",
   "skill",
+  "mcp",
 ];
 /** Legacy `tools:` names → the permission key they map to. */
 const LEGACY_TOOLS: Readonly<Record<string, PermissionKey>> = {
