@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node (registry configured for publish)
         uses: actions/setup-node@v4
         with:
-          node-version: 20.19.0
+          node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
 
@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
       - name: Test
-        run: npm test -- --passWithNoTests
+        run: npm test
 
       - name: Verify the release tag matches package.json
         # Guards against publishing a version that doesn't match the tag.

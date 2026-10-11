@@ -26,7 +26,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20.19.0
+          node-version: 22
           cache: npm
 
       - name: Install (clean, from lockfile)
@@ -36,5 +36,4 @@ jobs:
         run: npm run build
 
       - name: Test
-        # --passWithNoTests keeps CI green until the first test is added.
-        run: npm test -- --passWithNoTests
+        run: npm test
