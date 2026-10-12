@@ -1,6 +1,11 @@
 import type { KeyEvent } from "@termuijs/core";
-import { LAYOUT, PROMPT_PLACEHOLDER, PROMPT_TITLE } from "./constants.js";
-import { TitledTextArea } from "./titled-text-area.js";
+import { LAYOUT, PROMPT_PLACEHOLDER, PROMPT_SEND_HINT } from "./constants.js";
+import { PromptArea } from "./prompt-area.js";
+
+/** Box height for `rows` lines of text: text, border and the box chrome. */
+function boxHeight(rows: number): number {
+  return rows + LAYOUT.borderRows + LAYOUT.promptChromeRows;
+}
 
 const SECRET_MASK = "•";
 const PRINTABLE = /^[^\u0000-\u001f\u007f]+$/u;
@@ -8,22 +13,24 @@ const PRINTABLE = /^[^\u0000-\u001f\u007f]+$/u;
 /**
  * Multi-line prompt on TermUI's `TextArea`
  * (https://www.termui.io/components/text-area) that grows with its content,
- * labeled in its top border. `AppBuilder` only routes keys to List/TextInput,
+ * drawn as a message box (see `PromptArea`). `AppBuilder` only routes keys to List/TextInput,
  * so the runtime forwards keys here, and focus (which draws the cursor) is
  * managed manually.
  */
 export class Prompt {
-  public readonly widget = new TitledTextArea(
-    PROMPT_TITLE,
+  public readonly widget = new PromptArea(
+    PROMPT_PLACEHOLDER,
+    PROMPT_SEND_HINT,
     {
       flexGrow: 0,
       flexShrink: 0,
       border: "single",
       borderColor: { type: "named", name: "cyan" },
+      padding: { top: 1, right: 2, bottom: 3, left: 4 },
+      height: boxHeight(LAYOUT.promptMinRows),
     },
     {
       rows: LAYOUT.promptMinRows,
-      placeholder: PROMPT_PLACEHOLDER,
       onChange: () => this.changed(),
     },
   );
@@ -47,9 +54,9 @@ export class Prompt {
     for (const char of text) this.widget.insertChar(char);
   }
 
-  /** Label in the top border, e.g. `Message · build`. */
-  public setTitle(title: string): void {
-    this.widget.setTitle(title);
+  /** Left footer text of the box, e.g. `build · gpt-4o-mini`. */
+  public setInfo(info: string): void {
+    this.widget.setInfo(info);
   }
 
   public set focused(focused: boolean) {
@@ -120,6 +127,6 @@ export class Prompt {
       LAYOUT.promptMaxRows,
       Math.max(LAYOUT.promptMinRows, lines),
     );
-    this.widget.setStyle({ height: rows + LAYOUT.borderRows });
+    this.widget.setStyle({ height: boxHeight(rows) });
   }
 }

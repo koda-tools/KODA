@@ -52,7 +52,7 @@ export {
 export { parseAnsiLine } from "./runtime/ansi-parser.js";
 // Type-only imports inside: safe to load without TermUI (batch mode).
 export { createKeyHandler } from "./runtime/keyboard.js";
-export { PROMPT_TITLE } from "./runtime/constants.js";
+export { PROMPT_PLACEHOLDER, PROMPT_SEND_HINT } from "./runtime/constants.js";
 export type { Prompt } from "./runtime/prompt.js";
 export { renderHeader } from "./session/header.js";
 export { estimateCost } from "../../providers/index.js";

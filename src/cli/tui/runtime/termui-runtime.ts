@@ -15,11 +15,7 @@ import type {
 } from "../shared/types.js";
 import { ChoiceList } from "./choice-list.js";
 import { CommandSuggestions } from "./command-suggestions.js";
-import {
-  MODEL_PICKER_TITLE,
-  PROMPT_TITLE,
-  SESSION_PICKER_TITLE,
-} from "./constants.js";
+import { MODEL_PICKER_TITLE, SESSION_PICKER_TITLE } from "./constants.js";
 import {
   appendToTranscript,
   createConversationStore,
@@ -234,13 +230,14 @@ export class TermUIRuntime implements InteractiveRuntime {
 
   /**
    * Push the session summaries that drive the sidebar list; the prompt
-   * border names the active session's agent, visible even without sidebar.
+   * footer names the active session's agent and model, visible even
+   * without the sidebar.
    */
   private setSessions(sessions: readonly SessionSummaryView[]): void {
     this.store.setState({ sessions: sessions.map((s) => ({ ...s })) });
-    const agent = sessions.find((session) => session.active)?.agent;
-    this.prompt.setTitle(
-      agent === undefined ? PROMPT_TITLE : `${PROMPT_TITLE} · ${agent}`,
+    const active = sessions.find((session) => session.active);
+    this.prompt.setInfo(
+      [active?.agent, active?.model].filter(Boolean).join(" · "),
     );
     this.mounted?.requestRender();
   }

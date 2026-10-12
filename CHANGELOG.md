@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The message field is now a box with an accent bar, a placeholder and a footer showing the agent and model on the left and the send hint on the right.
+
 ## [0.1.6] - 2026-10-09
 
 ### Added
