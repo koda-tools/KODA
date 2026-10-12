@@ -52,7 +52,6 @@ export async function runCommandTool(
   });
 
   const content = formatResult(command, result, policy.maxOutputBytes);
-  const ok =
-    !result.timedOut && !result.cancelled && result.exitCode === 0;
+  const ok = !result.timedOut && !result.cancelled && result.exitCode === 0;
   return { ok, content };
 }

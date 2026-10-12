@@ -1,0 +1,67 @@
+# Spec delta for the "context-window-limits" capability.
+capability: context-window-limits
+purpose: Keep every request inside the selected model's context window and let each model answer up to its real output limit.
+
+operations:
+  - op: add
+    id: catalog-model-limits
+    title: Each model has effective context and output limits
+    statement: The system SHALL resolve a context limit and an output limit for any provider and model, taking them from the model catalog when the model is catalogued and from the provider's default otherwise, SHALL cap the output limit so a single reply cannot reserve the whole window, and these limits SHALL be the single source for request output caps and conversation budgets.
+    verify: node --test --import tsx test/model-catalog.test.ts
+    scenarios:
+      - when: a catalogued model is resolved
+        then: its catalog limits apply, with the output capped
+      - when: a model is not in the catalog
+        then: the provider's default limit applies
+      - when: the provider is unknown
+        then: a small conservative limit applies
+
+  - op: add
+    id: explicit-output-limit
+    title: Every provider receives an explicit output limit
+    statement: Each completion and streaming request SHALL carry an output-token limit resolved for the model of that request, and an explicit maxTokens from the caller SHALL take precedence.
+    verify: node --test --import tsx test/provider-wire.test.ts
+    scenarios:
+      - when: a request is sent without an explicit maxTokens
+        then: the body carries the resolved output limit for that model
+      - when: the request names a different model
+        then: the limit follows that model
+      - when: the caller passes maxTokens
+        then: the body carries the caller's value
+
+  - op: add
+    id: token-aware-compaction
+    title: The conversation is compacted by token budget
+    statement: The interactive session SHALL keep its conversation within a budget derived from the model's context limit minus its output limit and a reserve for the system prompt, tool definitions and next prompt, dropping whole oldest turns first, never dropping the system prompt and never leaving an orphan tool reply, and SHALL re-apply the budget when the user switches model.
+    verify: node --test --import tsx test/conversation-context.test.ts
+    scenarios:
+      - when: the accumulated conversation exceeds the budget
+        then: the oldest turns are dropped until it fits and the remaining history still starts at a user message
+      - when: a single turn alone exceeds the budget
+        then: that turn is kept so the current question survives
+      - when: the user switches to a model with a smaller window
+        then: the existing history is compacted to the new budget
+
+  - op: add
+    id: compaction-notice
+    title: Dropped turns are reported
+    statement: When compaction drops messages, the session SHALL report how many were dropped so the user knows the context was shortened.
+    verify: node --test --import tsx test/conversation-context.test.ts
+    scenarios:
+      - when: compaction drops older messages
+        then: the transcript shows how many messages were dropped
+      - when: nothing is dropped
+        then: no notice is shown
+
+  - op: add
+    id: token-estimation
+    title: Token estimation without a new dependency
+    statement: The system SHALL estimate the token size of a conversation from its content without a tokenizer dependency, erring high for ordinary text, counting wide-script characters individually, and charging a fixed cost per message and per image part.
+    verify: node --test --import tsx test/tokens.test.ts
+    scenarios:
+      - when: plain text is measured
+        then: the estimate is not lower than one token per four characters
+      - when: CJK text is measured
+        then: each character counts as at least one token
+      - when: a message carries a base64 image
+        then: the image contributes a fixed cost instead of its encoded length

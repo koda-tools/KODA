@@ -1,0 +1,19 @@
+# Spec delta for the "persistent-conversation-context" capability.
+# remove + add instead of modify: `agentic-fy verify` consolidates deltas
+# against an empty spec and fails on `modify` of a requirement it cannot see.
+capability: persistent-conversation-context
+
+operations:
+  - op: remove
+    id: session-conversation-memory
+
+  - op: add
+    id: session-conversation-memory
+    title: Memória de conversa na sessão
+    statement: A sessão interativa DEVE acumular o histórico de conversa entre turnos, fornecê-lo à execução seguinte e limitá-lo a um orçamento de tokens derivado do limite de contexto do modelo, sem descartar o system prompt nem deixar mensagens de tool órfãs.
+    verify: node --test --import tsx test/conversation-context.test.ts
+    scenarios:
+      - when: dois prompts são enviados em sequência
+        then: o segundo turno recebe as mensagens do primeiro turno como histórico
+      - when: o histórico acumulado passa do orçamento de tokens do modelo
+        then: os turnos mais antigos são descartados até caber, e o histórico restante começa num turno de usuário, sem tool sem o assistant correspondente

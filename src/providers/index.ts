@@ -15,12 +15,40 @@ export type {
   ToolDefinition,
   Usage,
 } from "./contracts/types.js";
-export { PROVIDERS, isProviderName } from "./catalog/catalog.js";
+export {
+  PROVIDERS,
+  PROVIDER_NAMES,
+  isProviderName,
+  providerSpec,
+} from "./catalog/catalog.js";
 export { estimateCost } from "./catalog/pricing.js";
+export {
+  CATALOG_GENERATED_AT,
+  CATALOG_SOURCE,
+  modelInfo,
+  useCatalogTable,
+} from "./catalog/model-catalog.js";
+export { initCatalog } from "./catalog/catalog-startup.js";
+export { modelLimit } from "./catalog/limits.js";
+export { estimateTokens } from "./shared/tokens.js";
+export { fetchModelCatalog } from "./catalog/catalog-fetch.js";
+export {
+  CACHE_TTL_MS,
+  cacheFilePath,
+  isStale,
+  readCache,
+  writeCache,
+} from "./catalog/catalog-cache.js";
 export type {
+  BuiltInProvider,
+  CatalogCache,
+  CatalogTable,
+  ModelInfo,
+  ModelLimit,
   ModelPrice,
   ProviderName,
   ProviderSpec,
+  SdkKind,
 } from "./catalog/types.js";
 export {
   configFromEnvironment,
@@ -43,11 +71,16 @@ export type {
   StoredAuth,
 } from "./auth/types.js";
 export { describeFailure } from "./shared/errors.js";
-export { AnthropicProvider } from "./adapters/anthropic/anthropic.provider.js";
-export type { AnthropicProviderOptions } from "./adapters/anthropic/types.js";
-export { GeminiProvider } from "./adapters/gemini/gemini.provider.js";
-export type { GeminiProviderOptions } from "./adapters/gemini/types.js";
-export { OllamaProvider } from "./adapters/ollama/ollama.provider.js";
-export type { OllamaProviderOptions } from "./adapters/ollama/types.js";
-export { OpenAIProvider } from "./adapters/openai/openai.provider.js";
-export type { OpenAIProviderOptions } from "./adapters/openai/types.js";
+export {
+  AnthropicProvider,
+  GeminiProvider,
+  OllamaProvider,
+  OpenAIProvider,
+  providerFromConfig,
+} from "./adapters/ai-sdk/vendors.js";
+export type {
+  AnthropicProviderOptions,
+  GeminiProviderOptions,
+  OllamaProviderOptions,
+  OpenAIProviderOptions,
+} from "./adapters/ai-sdk/types.js";

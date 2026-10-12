@@ -73,17 +73,14 @@ export function configFromEnvironment(
   provider: ProviderName = providerFromEnvironment(env),
 ): ProviderConfig {
   const spec = providerSpec(provider);
-  const model = optional("model", modelFromEnvironment(env, provider));
-  if (provider === "ollama")
-    return {
-      provider,
-      ...model,
-      ...optional("apiKey", variable(env, spec.apiKeyEnv)),
-      ...optional("baseURL", variable(env, spec.baseURLEnv)),
-      ...optional(
-        "toolSupport",
-        toolSupport(variable(env, spec.toolSupportEnv)),
-      ),
-    };
-  return { provider, apiKey: requiredEnv(env, spec.apiKeyEnv), ...model };
+  const apiKey = spec.apiKeyRequired
+    ? requiredEnv(env, spec.apiKeyEnv)
+    : variable(env, spec.apiKeyEnv);
+  return {
+    provider,
+    ...optional("apiKey", apiKey),
+    ...optional("model", modelFromEnvironment(env, provider)),
+    ...optional("baseURL", variable(env, spec.baseURLEnv)),
+    ...optional("toolSupport", toolSupport(variable(env, spec.toolSupportEnv))),
+  };
 }

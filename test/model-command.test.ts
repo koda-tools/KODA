@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import {
-  parseWriteArguments,
-  runModelCommand,
-} from "../src/cli/tui/index.js";
+import { parseWriteArguments, runModelCommand } from "../src/cli/tui/index.js";
 
 const base = {
   current: "alpha",

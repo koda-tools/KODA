@@ -87,8 +87,7 @@ export function classify(
 ): CommandDecision {
   const whole = normalize(command);
   const spanning = WHOLE_COMMAND_DENY.find((rule) => rule.test.test(whole));
-  if (spanning !== undefined)
-    return { level: "deny", reason: spanning.reason };
+  if (spanning !== undefined) return { level: "deny", reason: spanning.reason };
   const parts = segments(command);
   if (parts.length === 0) return { level: "confirm" };
   for (const segment of parts) {

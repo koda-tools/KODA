@@ -23,7 +23,8 @@ const SAFE_NAMES: readonly string[] = [
 ];
 
 /** Names that look like secrets are dropped even when explicitly provided. */
-const SECRET_NAME = /(?:_|^)(?:API_?KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|PRIVATE_?KEY)S?(?:_|$)/i;
+const SECRET_NAME =
+  /(?:_|^)(?:API_?KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|PRIVATE_?KEY)S?(?:_|$)/i;
 
 function assign(
   target: Record<string, string>,

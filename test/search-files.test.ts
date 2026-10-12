@@ -80,7 +80,10 @@ test("reports no matches with the number of files scanned", async () => {
 
 test("limits cap the matches and add a truncation notice", async () => {
   const many = Object.fromEntries(
-    Array.from({ length: 6 }, (_, index) => [`f${index}.txt`, "hit\nhit\nhit\n"]),
+    Array.from({ length: 6 }, (_, index) => [
+      `f${index}.txt`,
+      "hit\nhit\nhit\n",
+    ]),
   );
   await withWorkspace(many, async (root) => {
     const limited = await searchFilesTool(
@@ -119,13 +122,16 @@ test("binary files are skipped", async () => {
 });
 
 test("long lines are truncated", async () => {
-  await withWorkspace({ "long.txt": `${"a".repeat(400)}needle\n` }, async (root) => {
-    const output = await searchFilesTool(
-      { query: "needle" },
-      { workspaceRoot: root },
-    );
-    assert.match(output, /…$/);
-  });
+  await withWorkspace(
+    { "long.txt": `${"a".repeat(400)}needle\n` },
+    async (root) => {
+      const output = await searchFilesTool(
+        { query: "needle" },
+        { workspaceRoot: root },
+      );
+      assert.match(output, /…$/);
+    },
+  );
 });
 
 test("an empty query is rejected", async () => {

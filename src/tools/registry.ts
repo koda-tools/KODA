@@ -143,7 +143,8 @@ export const SEARCH_FILES_DEFINITION: ToolDefinition = {
       query: { type: "string", minLength: 1, description: "Text or pattern" },
       path: {
         type: "string",
-        description: "Relative directory to search; defaults to the workspace root",
+        description:
+          "Relative directory to search; defaults to the workspace root",
       },
       regex: {
         type: "boolean",
@@ -189,7 +190,8 @@ export const RUN_COMMAND_DEFINITION: ToolDefinition = {
       command: { type: "string", minLength: 1, description: "Command line" },
       cwd: {
         type: "string",
-        description: "Relative directory to run in; defaults to the workspace root",
+        description:
+          "Relative directory to run in; defaults to the workspace root",
       },
       timeoutMs: {
         type: "integer",

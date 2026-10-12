@@ -29,10 +29,7 @@ test("never forwards credential-looking variables", () => {
 });
 
 test("extras are added but secrets among them are dropped", () => {
-  const env = buildEnv(
-    { PATH: "/bin" },
-    { CI: "1", MY_API_KEY: "secret" },
-  );
+  const env = buildEnv({ PATH: "/bin" }, { CI: "1", MY_API_KEY: "secret" });
   assert.equal(env.CI, "1");
   assert.equal("MY_API_KEY" in env, false);
 });

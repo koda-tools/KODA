@@ -1,15 +1,60 @@
-import type { ChatMessage, Usage } from "../../../providers/index.js";
+import {
+  estimateTokens,
+  modelLimit,
+  type ChatMessage,
+  type Usage,
+} from "../../../providers/index.js";
 import { sumUsage } from "../../../core/index.js";
 import type { InteractiveIO, LineWriter } from "../shared/types.js";
 import { renderHeader } from "./header.js";
 import type { SessionIdentity, SessionStatus } from "./types.js";
 
-const MAX_HISTORY_MESSAGES = 40;
+/**
+ * Share of the context window kept free for what the history does not
+ * carry: the system prompt, the tool definitions and the next prompt.
+ */
+const RESERVE_RATIO = 0.1;
+const MIN_RESERVE_TOKENS = 1_024;
 
-/** Keep the newest messages, starting at a user turn (no orphan tool replies). */
-function trimHistory(history: readonly ChatMessage[]): ChatMessage[] {
-  let start = Math.max(0, history.length - MAX_HISTORY_MESSAGES);
-  while (start < history.length && history[start]?.role !== "user") start += 1;
+/** Tokens the history may use: the window minus the reply and the reserve. */
+function historyBudget(provider: string, model: string): number {
+  const { context, output } = modelLimit(provider, model);
+  const reserve = Math.max(
+    MIN_RESERVE_TOKENS,
+    Math.ceil(context * RESERVE_RATIO),
+  );
+  return Math.max(0, context - output - reserve);
+}
+
+function nextUserTurn(history: readonly ChatMessage[], from: number): number {
+  let index = from;
+  while (index < history.length && history[index]?.role !== "user") index += 1;
+  return index;
+}
+
+/**
+ * Drops whole turns, oldest first, until the history fits the budget. The
+ * kept history always starts at a user message, so no tool reply is left
+ * without its call. The newest turn is kept even when it alone is over the
+ * budget: without summarization, cutting it would lose the current question.
+ */
+function trimHistory(
+  history: readonly ChatMessage[],
+  budget: number,
+): ChatMessage[] {
+  const sizes = history.map((message) => estimateTokens([message]));
+  let total = sizes.reduce((sum, size) => sum + size, 0);
+  let start = 0;
+  const dropUntil = (end: number): void => {
+    for (let index = start; index < end; index += 1) total -= sizes[index] ?? 0;
+    start = end;
+  };
+  dropUntil(nextUserTurn(history, 0));
+  while (total > budget) {
+    const next = nextUserTurn(history, start + 1);
+    if (next >= history.length) break;
+    dropUntil(next);
+  }
   return history.slice(start);
 }
 
@@ -63,6 +108,8 @@ export class Session {
 
   public selectModel(model: string): void {
     this.selectedModel = model;
+    // A smaller window must not receive the old model's history.
+    this.compact(this.history);
     this.showHeader();
   }
 
@@ -103,8 +150,29 @@ export class Session {
     return this.history;
   }
 
-  public appendTurn(messages: readonly ChatMessage[]): void {
-    this.history = trimHistory([...this.history, ...messages]);
+  /** Adds a turn and compacts; `dropped` counts the messages that left. */
+  public appendTurn(messages: readonly ChatMessage[]): {
+    readonly dropped: number;
+  } {
+    return this.compact([...this.history, ...messages]);
+  }
+
+  /** Fits the history to the selected model and reports what was dropped. */
+  private compact(history: readonly ChatMessage[]): {
+    readonly dropped: number;
+  } {
+    this.history = trimHistory(
+      history,
+      historyBudget(this.identity.provider, this.selectedModel),
+    );
+    const dropped = history.length - this.history.length;
+    if (dropped > 0) {
+      this.writer.ensureNewLine();
+      this.writer.write(
+        `Context trimmed: ${dropped} older ${dropped === 1 ? "message" : "messages"} dropped to fit the model window.\n`,
+      );
+    }
+    return { dropped };
   }
 
   /**

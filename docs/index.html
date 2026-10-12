@@ -23,7 +23,7 @@
 █▀█▀█
 ▀▀▀▀▀</div>
     <h1 class="logo">KODA</h1>
-    <div class="ver">v0.1.6</div>
+    <div class="ver">0.2.0</div>
     <a class="gh" href="https://github.com/koda-tools/KODA" target="_blank" rel="noopener noreferrer" aria-label="KODA on GitHub"><svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span>koda-tools/KODA</span></a>
     <button class="toggle" id="theme-toggle" type="button" aria-label="Toggle theme">◐ theme: dark</button>
     <button class="menu-btn" id="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
@@ -62,16 +62,34 @@
       <p>KODA reads your project, edits files and runs commands, always asking for approval on sensitive actions. It works with several LLM providers and is compatible with the OpenCode structure for agents, skills and commands.</p>
       <table>
         <tr><th>PROVIDER</th><th>DEFAULT MODEL</th></tr>
-        <tr><td>openai</td><td>gpt-4o-mini</td></tr>
-        <tr><td>anthropic</td><td>claude-3-5-sonnet-latest</td></tr>
-        <tr><td>gemini</td><td>gemini-2.5-flash</td></tr>
+        <tr><td>openai</td><td>gpt-4.1-mini</td></tr>
+        <tr><td>anthropic</td><td>claude-sonnet-4-6</td></tr>
+        <tr><td>gemini</td><td>gemini-3.8-flash</td></tr>
+        <tr><td>openrouter</td><td>anthropic/claude-sonnet-4.5</td></tr>
+        <tr><td>groq</td><td>moonshotai/kimi-k2-instruct</td></tr>
+        <tr><td>cerebras</td><td>qwen-3-coder-480b</td></tr>
+        <tr><td>together</td><td>moonshotai/Kimi-K2-Instruct</td></tr>
+        <tr><td>fireworks</td><td>accounts/fireworks/models/kimi-k2-instruct</td></tr>
+        <tr><td>deepinfra</td><td>moonshotai/Kimi-K2-Instruct</td></tr>
+        <tr><td>nebius</td><td>moonshotai/Kimi-K2-Instruct</td></tr>
+        <tr><td>baseten</td><td>moonshotai/Kimi-K2-Instruct</td></tr>
+        <tr><td>deepseek</td><td>deepseek-chat</td></tr>
+        <tr><td>xai</td><td>grok-code-fast-1</td></tr>
+        <tr><td>mistral</td><td>devstral-medium-latest</td></tr>
+        <tr><td>moonshot</td><td>kimi-k2-0905-preview</td></tr>
+        <tr><td>zai</td><td>glm-4.6</td></tr>
+        <tr><td>nvidia</td><td>moonshotai/kimi-k2-instruct</td></tr>
         <tr><td>ollama</td><td>llama3.2 (local)</td></tr>
+        <tr><td>lmstudio</td><td>qwen2.5-coder-7b-instruct (local)</td></tr>
+        <tr><td>vllm</td><td>Qwen/Qwen2.5-Coder-7B-Instruct (local)</td></tr>
+        <tr><td>llamacpp</td><td>default (local)</td></tr>
       </table>
+      <p>Every provider past the first three is OpenAI-compatible and served from the catalog with no extra dependency. Each uses <code>&lt;NAME&gt;_API_KEY</code>, <code>&lt;NAME&gt;_MODEL</code> and <code>&lt;NAME&gt;_BASE_URL</code>; connect with <code>/connect</code> and select with <code>KODA_PROVIDER=&lt;name&gt;</code>. Local servers (ollama, lmstudio, vllm, llamacpp) need no key.</p>
     </section>
 
     <section id="install">
       <h2>Installation</h2>
-      <p>Requires <code>Node &gt;= 20</code>.</p>
+      <p>Requires <code>Node &gt;= 22</code>.</p>
 <pre><code>npm install -g @koda-tools/koda</code></pre>
       <p>Then just open a terminal in your project and run:</p>
 <pre><code>koda</code></pre>
@@ -86,14 +104,32 @@
 <pre><code><span class="c"># choose the provider (default: openai)</span>
 export KODA_PROVIDER=anthropic
 export ANTHROPIC_API_KEY=sk-...
-export ANTHROPIC_MODEL=claude-3-5-sonnet-latest</code></pre>
+export ANTHROPIC_MODEL=claude-sonnet-4-6</code></pre>
       <table>
-        <tr><th>PROVIDER</th><th>KEY</th><th>MODEL</th></tr>
-        <tr><td>openai</td><td>OPENAI_API_KEY</td><td>OPENAI_MODEL</td></tr>
-        <tr><td>anthropic</td><td>ANTHROPIC_API_KEY</td><td>ANTHROPIC_MODEL</td></tr>
-        <tr><td>gemini</td><td>GEMINI_API_KEY</td><td>GEMINI_MODEL</td></tr>
-        <tr><td>ollama</td><td>OLLAMA_API_KEY <span class="tag g">optional</span></td><td>OLLAMA_MODEL</td></tr>
+        <tr><th>PROVIDER</th><th>KEY</th><th>MODEL</th><th>BASE URL</th></tr>
+        <tr><td>openai</td><td>OPENAI_API_KEY</td><td>OPENAI_MODEL</td><td>&mdash;</td></tr>
+        <tr><td>anthropic</td><td>ANTHROPIC_API_KEY</td><td>ANTHROPIC_MODEL</td><td>&mdash;</td></tr>
+        <tr><td>gemini</td><td>GEMINI_API_KEY</td><td>GEMINI_MODEL</td><td>&mdash;</td></tr>
+        <tr><td>openrouter</td><td>OPENROUTER_API_KEY</td><td>OPENROUTER_MODEL</td><td>https://openrouter.ai/api/v1</td></tr>
+        <tr><td>groq</td><td>GROQ_API_KEY</td><td>GROQ_MODEL</td><td>https://api.groq.com/openai/v1</td></tr>
+        <tr><td>cerebras</td><td>CEREBRAS_API_KEY</td><td>CEREBRAS_MODEL</td><td>https://api.cerebras.ai/v1</td></tr>
+        <tr><td>together</td><td>TOGETHER_API_KEY</td><td>TOGETHER_MODEL</td><td>https://api.together.xyz/v1</td></tr>
+        <tr><td>fireworks</td><td>FIREWORKS_API_KEY</td><td>FIREWORKS_MODEL</td><td>https://api.fireworks.ai/inference/v1</td></tr>
+        <tr><td>deepinfra</td><td>DEEPINFRA_API_KEY</td><td>DEEPINFRA_MODEL</td><td>https://api.deepinfra.com/v1/openai</td></tr>
+        <tr><td>nebius</td><td>NEBIUS_API_KEY</td><td>NEBIUS_MODEL</td><td>https://api.studio.nebius.com/v1</td></tr>
+        <tr><td>baseten</td><td>BASETEN_API_KEY</td><td>BASETEN_MODEL</td><td>https://inference.baseten.co/v1</td></tr>
+        <tr><td>deepseek</td><td>DEEPSEEK_API_KEY</td><td>DEEPSEEK_MODEL</td><td>https://api.deepseek.com/v1</td></tr>
+        <tr><td>xai</td><td>XAI_API_KEY</td><td>XAI_MODEL</td><td>https://api.x.ai/v1</td></tr>
+        <tr><td>mistral</td><td>MISTRAL_API_KEY</td><td>MISTRAL_MODEL</td><td>https://api.mistral.ai/v1</td></tr>
+        <tr><td>moonshot</td><td>MOONSHOT_API_KEY</td><td>MOONSHOT_MODEL</td><td>https://api.moonshot.ai/v1</td></tr>
+        <tr><td>zai</td><td>ZAI_API_KEY</td><td>ZAI_MODEL</td><td>https://api.z.ai/api/paas/v4</td></tr>
+        <tr><td>nvidia</td><td>NVIDIA_API_KEY</td><td>NVIDIA_MODEL</td><td>https://integrate.api.nvidia.com/v1</td></tr>
+        <tr><td>ollama</td><td>OLLAMA_API_KEY <span class="tag g">optional</span></td><td>OLLAMA_MODEL</td><td>http://127.0.0.1:11434/v1</td></tr>
+        <tr><td>lmstudio</td><td>LMSTUDIO_API_KEY <span class="tag g">optional</span></td><td>LMSTUDIO_MODEL</td><td>http://127.0.0.1:1234/v1</td></tr>
+        <tr><td>vllm</td><td>VLLM_API_KEY <span class="tag g">optional</span></td><td>VLLM_MODEL</td><td>http://127.0.0.1:8000/v1</td></tr>
+        <tr><td>llamacpp</td><td>LLAMACPP_API_KEY <span class="tag g">optional</span></td><td>LLAMACPP_MODEL</td><td>http://127.0.0.1:8080/v1</td></tr>
       </table>
+      <p>Each <code>&lt;NAME&gt;_BASE_URL</code> overrides the default shown above. Hosted providers require their key; local servers do not.</p>
       <h3>CONNECT A PROVIDER (/CONNECT)</h3>
       <p>Instead of exporting variables, save the key with <code>/connect</code> inside KODA, or with <code>koda connect</code> straight from the terminal (requires an interactive terminal).</p>
 <pre><code><span class="c"># pick the provider from a list (↑/↓, Enter, Esc cancels)</span>
@@ -201,7 +237,7 @@ export OLLAMA_TOOL_SUPPORT=true</code></pre>
 ---
 description: Reviews a file
 agent: plan
-model: openai/gpt-4o-mini
+model: openai/gpt-4.1-mini
 subagent: false
 ---
 Review the file $1 focusing on $2.
@@ -218,7 +254,7 @@ Full arguments: $ARGUMENTS</code></pre>
 <pre><code>---
 description: Security reviewer
 mode: subagent
-model: anthropic/claude-3-5-sonnet-latest
+model: anthropic/claude-sonnet-4-6
 temperature: 0.1
 steps: 15
 permission:

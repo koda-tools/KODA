@@ -74,14 +74,19 @@ test("splits mixed Markdown into TEXT and CODE blocks", async () => {
     plain(segments),
     [
       "▌ TEXT · KODA",
+      "▌",
       "▌ Here:",
+      "▌",
       "",
       "▌ CODE · ts",
       "▌",
       "▌ const a = 1;",
+      "▌",
       "",
       "▌ TEXT · KODA",
+      "▌",
       "▌ Done.",
+      "▌",
       "",
       "",
     ].join("\n"),
@@ -104,9 +109,9 @@ test("previews the unfinished line and replaces it when it ends", async () => {
   const first = await stream.push("Hel");
   assert.deepEqual(
     first.map((s) => s.kind),
-    ["line", "live"],
+    ["line", "line", "live"],
   );
-  assert.equal(first[1]?.kind === "live" ? first[1].plain : "", "▌ Hel");
+  assert.equal(first[2]?.kind === "live" ? first[2].plain : "", "▌ Hel");
   const second = await stream.push("lo\n");
   assert.deepEqual(
     second.map((s) => (s.kind === "line" ? s.plain : s.kind)),
@@ -120,9 +125,21 @@ test("keeps paragraph breaks inside a block but drops trailing blanks", async ()
   const segments = await render(["a\n\nb\n\n\n```\nx\n```\n"]);
   assert.equal(
     plain(segments),
-    ["▌ TEXT · KODA", "▌ a", "▌", "▌ b", "", "▌ CODE", "▌", "▌ x", "", ""].join(
-      "\n",
-    ),
+    [
+      "▌ TEXT · KODA",
+      "▌",
+      "▌ a",
+      "▌",
+      "▌ b",
+      "▌",
+      "",
+      "▌ CODE",
+      "▌",
+      "▌ x",
+      "▌",
+      "",
+      "",
+    ].join("\n"),
   );
 });
 
@@ -147,7 +164,7 @@ test("closes an unterminated code block on flush and reports it", async () => {
   const blocks: string[] = [];
   const stream = new MarkdownStream(undefined, (code) => blocks.push(code));
   const segments = await render(["```\n  a\nb"], stream);
-  assert.equal(plain(segments), "▌ CODE\n▌\n▌   a\n▌ b\n\n");
+  assert.equal(plain(segments), "▌ CODE\n▌\n▌   a\n▌ b\n▌\n\n");
   assert.deepEqual(blocks, ["  a\nb"]);
 });
 

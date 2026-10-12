@@ -58,17 +58,24 @@ test("Ctrl+N creates a new session", () => {
   assert.deepEqual(calls, ["newSession"]);
 });
 
-test("Tab and Shift+Tab cycle the primary agent", () => {
+test("Alt+A and Alt+Shift+A cycle the primary agent", () => {
   const { calls, handle } = setup();
-  handle(key("tab"));
-  handle(key("tab", { shift: true }));
-  assert.deepEqual(calls, ["agent:1", "agent:-1"]);
+  handle(key("a", { alt: true }));
+  handle(key("a", { alt: true, shift: true }));
+  handle(key("A", { alt: true }));
+  assert.deepEqual(calls, ["agent:1", "agent:-1", "agent:-1"]);
 });
 
-test("Tab cycles the agent even with text in the prompt", () => {
+test("Alt+A cycles the agent even with text in the prompt", () => {
   const { calls, handle } = setup({ promptText: "hello" });
-  handle(key("tab"));
+  handle(key("a", { alt: true }));
   assert.deepEqual(calls, ["agent:1"]);
+});
+
+test("Tab no longer switches the agent", () => {
+  const { calls, handle } = setup();
+  handle(key("tab"));
+  assert.deepEqual(calls, ["prompt:tab"]);
 });
 
 test("Alt+S opens the session picker; Ctrl+S still submits", () => {
@@ -86,8 +93,7 @@ test("Ctrl+B toggles the sidebar", () => {
 
 test("session shortcuts do not fire while a modal is open", () => {
   const { calls, handle } = setup({ modalOpen: true });
-  handle(key("tab"));
-  handle(key("tab", { shift: true }));
+  handle(key("a", { alt: true }));
   handle(key("s", { alt: true }));
   handle(key("n", { ctrl: true }));
   handle(key("b", { ctrl: true }));

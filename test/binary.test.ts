@@ -23,7 +23,10 @@ test("PNG and control-byte heavy buffers are binary", () => {
     0x49, 0x48, 0x44, 0x52,
   ]);
   assert.equal(isLikelyBinary(png), true);
-  assert.equal(isLikelyBinary(Buffer.from([0x01, 0x02, 0x03, 0x04, 0x61])), true);
+  assert.equal(
+    isLikelyBinary(Buffer.from([0x01, 0x02, 0x03, 0x04, 0x61])),
+    true,
+  );
 });
 
 test("only the first 8 KB are sampled", () => {

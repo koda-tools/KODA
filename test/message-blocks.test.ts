@@ -24,7 +24,13 @@ test("user messages render as a cyan TEXT · USER block, verbatim", () => {
   const lines = userMessage("Quero um exemplo\n  **sem markdown**\n");
   assert.deepEqual(
     lines.map((line) => line.plain),
-    ["▌ TEXT · USER", "▌ Quero um exemplo", "▌   **sem markdown**"],
+    [
+      "▌ TEXT · USER",
+      "▌",
+      "▌ Quero um exemplo",
+      "▌   **sem markdown**",
+      "▌",
+    ],
   );
   assert.match(lines[0]?.ansi ?? "", /\x1b\[38;2;51;227;250m▌/);
 });
@@ -100,10 +106,16 @@ test("lines that fit are not wrapped", () => {
 
 const BACKGROUND = "\x1b[48;2;40;40;40m";
 
-test("blocks sit on a dark gray background that survives inline resets", () => {
+test("text blocks have no background", () => {
   for (const line of [
     new TextBlock("assistant").markdown("**bold** and `code` text"),
     new TextBlock("user").header(),
+  ])
+    assert.doesNotMatch(line.ansi, /\x1b\[48;/);
+});
+
+test("code blocks sit on a dark gray background that survives inline resets", () => {
+  for (const line of [
     new CodeBlock({ language: "ts" }).line("x", "\x1b[38;2;1;2;3mx\x1b[0m"),
   ]) {
     assert.ok(line.ansi.startsWith(BACKGROUND), line.ansi);

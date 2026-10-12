@@ -1,11 +1,13 @@
-import { Box } from "@termuijs/widgets";
+import type { Box } from "@termuijs/widgets";
 import { formatCost, formatTokens } from "../session/usage-format.js";
 import { AnsiLogView } from "./ansi-log-view.js";
 import { LAYOUT, SCROLL_SYNC_INTERVAL_MS } from "./constants.js";
+import { CONTENT_BACKGROUND, FilledBox } from "./filled-box.js";
 import { TrackScrollbar } from "./track-scrollbar.js";
 import type { ConversationStore, SessionSummary } from "./types.js";
 
 const WIDTH = LAYOUT.sidebarWidth;
+const BACKGROUND = CONTENT_BACKGROUND;
 /** Scrollbar only shows up once the session list actually needs it. */
 const SCROLLBAR_THRESHOLD = 20;
 
@@ -34,7 +36,7 @@ const LOGO = [
   "▀▀▀▀▀",
   "                      ",
 ];
-/** Left + right border of the sidebar box. */
+/** Left + right padding of the sidebar box (where the border used to be). */
 const BORDER_COLUMNS = 2;
 
 /** Columns available for text inside the border (minus the scrollbar). */
@@ -101,7 +103,7 @@ function sidebarContent(sessions: readonly SessionSummary[]): SidebarContent {
 }
 
 /**
- * Left column listing every session and the active session's stats. Scrolls
+ * Right column listing every session and the active session's stats. Scrolls
  * like the transcript (`AnsiLogView` + `TrackScrollbar`) so a long session
  * list doesn't overflow the screen; auto-scrolls to keep the active session
  * in view, since the sidebar itself isn't a focusable, user-scrollable list.
@@ -112,12 +114,14 @@ export class SessionSidebar {
     flexGrow: 1,
     flexShrink: 1,
     height: "100%",
+    bg: BACKGROUND,
   });
   private readonly scrollbar = new TrackScrollbar({
     width: 1,
     flexGrow: 0,
     flexShrink: 0,
     height: "100%",
+    bg: BACKGROUND,
   });
   public readonly widget: Box;
   private scrollTop = 0;
@@ -126,13 +130,15 @@ export class SessionSidebar {
   private unsubscribe: (() => void) | undefined;
 
   public constructor(private readonly store: ConversationStore) {
-    this.widget = new Box({
+    this.widget = new FilledBox({
       flexDirection: "row",
       alignItems: "stretch",
       flexGrow: 0,
       flexShrink: 0,
-      border: "single",
-      borderColor: { type: "named", name: "brightBlack" },
+      // No border: padding 1 keeps the inner area the border used to leave.
+      border: "none",
+      padding: 1,
+      bg: BACKGROUND,
     });
     this.widget.addChild(this.view);
     this.widget.addChild(this.scrollbar);

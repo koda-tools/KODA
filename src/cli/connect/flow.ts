@@ -1,8 +1,8 @@
 import {
   CONNECTABLE_PROVIDERS,
-  PROVIDERS,
   credentialSource,
   isProviderName,
+  providerSpec,
   readAuth,
   saveApiKey,
   type CredentialSource,
@@ -69,7 +69,7 @@ export async function runConnect(
   const before = await readAuth(settings.authFile);
   const provider = await chooseProvider(ui, settings, before, requested);
   if (provider === undefined) return false;
-  const apiKeyEnv = PROVIDERS[provider].apiKeyEnv;
+  const apiKeyEnv = providerSpec(provider).apiKeyEnv;
   const key = (
     await ui.secret(`Enter the ${provider} API key (${apiKeyEnv}): `)
   )?.trim();

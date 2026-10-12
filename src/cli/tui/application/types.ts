@@ -23,7 +23,7 @@ export interface InteractiveOptions extends DiscoveryOptions {
   readonly agent: CodeAgent;
   /**
    * Agents and skills of the workspace. With it, each session has a
-   * primary agent (Tab cycles), `@name` and the task tool delegate to
+   * primary agent (Alt+A cycles), `@name` and the task tool delegate to
    * subagents in child sessions.
    */
   readonly agents?: AgentRuntime;

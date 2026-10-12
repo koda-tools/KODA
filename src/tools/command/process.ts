@@ -47,12 +47,7 @@ class Capture {
 function killTree(pid: number, force: boolean): void {
   try {
     if (isWindows) {
-      spawn("taskkill", [
-        "/pid",
-        String(pid),
-        "/t",
-        ...(force ? ["/f"] : []),
-      ]);
+      spawn("taskkill", ["/pid", String(pid), "/t", ...(force ? ["/f"] : [])]);
     } else {
       process.kill(-pid, force ? "SIGKILL" : "SIGTERM");
     }

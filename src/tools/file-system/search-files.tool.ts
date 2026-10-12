@@ -45,7 +45,10 @@ interface Match {
 }
 
 /** Requested limits, defaulted, then capped by the registry ceilings. */
-function resolveLimits(args: SearchFilesArgs, options: SearchFilesOptions): Limits {
+function resolveLimits(
+  args: SearchFilesArgs,
+  options: SearchFilesOptions,
+): Limits {
   const pick = (name: keyof Limits): number =>
     bounded(args[name], LIMITS[name], options[name]);
   return {
@@ -58,7 +61,9 @@ function resolveLimits(args: SearchFilesArgs, options: SearchFilesOptions): Limi
 function compileQuery(args: SearchFilesArgs): RegExp {
   if (args.query.trim() === "") throw new ToolError("The query is required.");
   const source =
-    args.regex === true ? args.query : args.query.replace(REGEX_SPECIALS, "\\$&");
+    args.regex === true
+      ? args.query
+      : args.query.replace(REGEX_SPECIALS, "\\$&");
   try {
     return new RegExp(source, args.caseSensitive === true ? "g" : "gi");
   } catch (error: unknown) {
@@ -79,8 +84,10 @@ function globToRegex(glob: string): RegExp {
 }
 
 function pathFilter(args: SearchFilesArgs): (path: string) => boolean {
-  const include = args.include === undefined ? undefined : globToRegex(args.include);
-  const exclude = args.exclude === undefined ? undefined : globToRegex(args.exclude);
+  const include =
+    args.include === undefined ? undefined : globToRegex(args.include);
+  const exclude =
+    args.exclude === undefined ? undefined : globToRegex(args.exclude);
   return (path) =>
     (include?.test(path) ?? true) && !(exclude?.test(path) ?? false);
 }
@@ -109,7 +116,8 @@ function* matchesIn(
         path,
         line: index + 1,
         column: (hit.index ?? 0) + 1,
-        text: line.length > LINE_WIDTH ? `${line.slice(0, LINE_WIDTH - 1)}…` : line,
+        text:
+          line.length > LINE_WIDTH ? `${line.slice(0, LINE_WIDTH - 1)}…` : line,
       };
       if ((found += 1) >= limit) return;
     }
@@ -134,7 +142,8 @@ export async function searchFilesTool(
     ...(options.signal === undefined ? {} : { signal: options.signal }),
   })) {
     if (!entry.isFile || !selects(entry.relativePath)) continue;
-    if (scanned >= limits.maxFiles || matches.length >= limits.maxMatches) break;
+    if (scanned >= limits.maxFiles || matches.length >= limits.maxMatches)
+      break;
     scanned += 1;
     const text = await readText(entry.absolutePath, maxBytes);
     if (text === undefined) continue;
@@ -150,6 +159,8 @@ export async function searchFilesTool(
     (match) => `${match.path}:${match.line}:${match.column}  ${match.text}`,
   );
   if (matches.length >= limits.maxMatches || scanned >= limits.maxFiles)
-    lines.push(`…more matches (showed ${matches.length}, scanned ${files(scanned)}).`);
+    lines.push(
+      `…more matches (showed ${matches.length}, scanned ${files(scanned)}).`,
+    );
   return lines.join("\n");
 }

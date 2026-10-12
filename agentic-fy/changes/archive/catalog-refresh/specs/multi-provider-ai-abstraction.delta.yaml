@@ -1,0 +1,24 @@
+# Spec delta for the existing "multi-provider-ai-abstraction" capability.
+# Adds model discovery for the two providers that lack it. Uses `add` with a new id
+# rather than `modify`, so evidence collection can consolidate this delta on its own.
+capability: multi-provider-ai-abstraction
+
+operations:
+  - op: add
+    id: model-discovery
+    title: Every provider can list its models
+    statement: Each provider adapter SHALL be able to list the chat-capable model identifiers its vendor currently serves, excluding models the vendor reports as deprecated or retired and excluding models that cannot generate chat content, and SHALL send credentials in request headers rather than in URLs.
+    verify: node --test --import tsx test/list-models.test.ts test/tui.test.ts
+    scenarios:
+      - when: the model picker is opened on Anthropic or Gemini
+        then: it lists models returned by that vendor instead of showing nothing
+      - when: a vendor reports a model as deprecated or retired
+        then: that model is absent from the list offered to the user
+      - when: a vendor returns model identifiers with a resource-name prefix
+        then: the adapter yields the bare identifier the completion request expects
+      - when: a vendor paginates its model list
+        then: the adapter follows the pages up to a bounded limit and returns the combined result
+      - when: a listing request fails
+        then: the session reports an actionable error without exposing the API key
+      - when: model discovery is added for a provider
+        then: the agent loop, the provider contract and the model-picker UI need no change

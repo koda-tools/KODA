@@ -191,7 +191,7 @@ function selectAgent(deps: Dependencies, name: string): void {
   deps.sessions.pushSummaries();
 }
 
-/** Tab / Shift+Tab: the next or previous primary agent. */
+/** Alt+A / Alt+Shift+A: the next or previous primary agent. */
 export function cycleAgent(
   deps: Dependencies,
   runtime: AgentRuntime,
@@ -214,7 +214,7 @@ export function formatAgents(
 ): string {
   const subagents = runtime.subagents();
   return [
-    "Primary agents (Tab / Shift+Tab, /agent <name>):",
+    "Primary agents (Alt+A / Alt+Shift+A, /agent <name>):",
     ...runtime.primaryAgents().map((agent) => describeAgent(agent, current)),
     "",
     "Subagents (@name <task>, or the task tool):",

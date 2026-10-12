@@ -18,6 +18,11 @@ async function emptyConfigRoot(): Promise<string> {
   return mkdtemp(path.join(os.tmpdir(), "koda-cli-"));
 }
 
+/** Keeps the background catalog refresh off the real network. */
+const offlineFetch = (async () => {
+  throw new TypeError("fetch failed");
+}) as typeof globalThis.fetch;
+
 test("rejects a missing prompt", async () => {
   const stdout = new Sink();
   const stderr = new Sink();
@@ -26,6 +31,7 @@ test("rejects a missing prompt", async () => {
     env: {},
     cwd: process.cwd(),
     configRoot: await emptyConfigRoot(),
+    fetch: offlineFetch,
     stdout,
     stderr,
   });
@@ -41,6 +47,7 @@ test("rejects a missing API key without exposing credentials", async () => {
     env: {},
     cwd: process.cwd(),
     configRoot: await emptyConfigRoot(),
+    fetch: offlineFetch,
     stdout,
     stderr,
   });

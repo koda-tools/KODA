@@ -17,15 +17,14 @@ function validateRange(
   startLine: number | undefined,
   endLine: number | undefined,
 ): void {
-  if (startLine !== undefined && (!Number.isInteger(startLine) || startLine < 1))
+  if (
+    startLine !== undefined &&
+    (!Number.isInteger(startLine) || startLine < 1)
+  )
     throw new ToolError("startLine must be a positive integer.");
   if (endLine !== undefined && (!Number.isInteger(endLine) || endLine < 1))
     throw new ToolError("endLine must be a positive integer.");
-  if (
-    startLine !== undefined &&
-    endLine !== undefined &&
-    endLine < startLine
-  )
+  if (startLine !== undefined && endLine !== undefined && endLine < startLine)
     throw new ToolError("endLine must be greater than or equal to startLine.");
 }
 

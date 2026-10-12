@@ -5,9 +5,14 @@ import { test } from "node:test";
 
 const ROOT = path.resolve("src/providers");
 const BARREL = "index.ts";
-const SDK_FREE_FOLDERS = ["shared/", "contracts/", "catalog/", "config/"];
-const VENDOR_IMPORT =
-  /from\s+["'](?:openai|@anthropic-ai\/sdk|@google\/genai)(?:\/[^"']*)?["']/;
+const SDK_FREE_FOLDERS = [
+  "shared/",
+  "contracts/",
+  "catalog/",
+  "config/",
+  "auth/",
+];
+const VENDOR_IMPORT = /from\s+["'](?:ai|@ai-sdk\/[^"']+)["']/;
 
 function listFiles(directory: string): string[] {
   return readdirSync(directory).flatMap((entry) => {
@@ -73,6 +78,34 @@ test("legacy provider modules and TUI pricing are gone", () => {
     "src/providers/openai.provider.ts",
     "src/providers/adapters/error-description.ts",
     "src/cli/tui/session/pricing.ts",
+    "src/providers/adapters/openai",
+    "src/providers/adapters/anthropic",
+    "src/providers/adapters/gemini",
+    "src/providers/adapters/ollama",
   ])
     assert.ok(!existsSync(path.resolve(legacy)), `${legacy} should be removed`);
+});
+
+test("the AI SDK is the only model transport", () => {
+  const manifest: unknown = JSON.parse(readFileSync("package.json", "utf8"));
+  const { dependencies, engines } = manifest as {
+    dependencies: Record<string, string>;
+    engines: Record<string, string>;
+  };
+  for (const removed of ["openai", "@anthropic-ai/sdk", "@google/genai"])
+    assert.ok(!(removed in dependencies), `${removed} should be removed`);
+  for (const required of [
+    "ai",
+    "@ai-sdk/openai",
+    "@ai-sdk/anthropic",
+    "@ai-sdk/google",
+    "@ai-sdk/openai-compatible",
+    "zod",
+  ]) {
+    const version = dependencies[required];
+    assert.ok(version !== undefined, `${required} should be a dependency`);
+    assert.match(version ?? "", /^\d+\.\d+\.\d+$/, `${required} must be exact`);
+  }
+  // The AI SDK packages require Node 22.
+  assert.equal(engines.node, ">=22.0.0");
 });

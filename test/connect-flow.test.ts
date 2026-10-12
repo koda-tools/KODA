@@ -5,7 +5,14 @@ import path from "node:path";
 import { test } from "node:test";
 import { runConnect } from "../src/cli/connect/flow.js";
 import type { ConnectUI } from "../src/cli/connect/types.js";
-import { authFilePath, readAuth, saveApiKey } from "../src/providers/index.js";
+import {
+  CONNECTABLE_PROVIDERS,
+  PROVIDER_NAMES,
+  authFilePath,
+  providerSpec,
+  readAuth,
+  saveApiKey,
+} from "../src/providers/index.js";
 
 async function setup(answers: { choice?: number; key?: string }) {
   const root = await mkdtemp(path.join(os.tmpdir(), "koda-connect-"));
@@ -45,7 +52,18 @@ test("lists connection status next to each provider", async () => {
   assert.match(labels?.[0] ?? "", /^openai\s+✓ connected$/);
   assert.match(labels?.[1] ?? "", /^anthropic\s+not connected$/);
   assert.match(labels?.[2] ?? "", /^gemini\s+✓ from environment$/);
-  assert.equal(labels?.length, 3);
+  // Every provider that needs a key is listed, and no local one is.
+  assert.equal(labels?.length, CONNECTABLE_PROVIDERS.length);
+});
+
+test("the connect list is every key-needing provider and no local one", () => {
+  const needKey = PROVIDER_NAMES.filter((p) => providerSpec(p).apiKeyRequired);
+  const local = PROVIDER_NAMES.filter((p) => providerSpec(p).local === true);
+  for (const name of CONNECTABLE_PROVIDERS)
+    assert.equal(providerSpec(name).apiKeyRequired, true, name);
+  assert.deepEqual([...CONNECTABLE_PROVIDERS].sort(), [...needKey].sort());
+  for (const name of local)
+    assert.ok(!CONNECTABLE_PROVIDERS.includes(name), name);
 });
 
 test("a second provider is saved but does not replace the default", async () => {

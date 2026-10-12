@@ -5,22 +5,22 @@ import { loadIgnores } from "../src/utils/gitignore.js";
 import { withWorkspace } from "./helpers/workspace.js";
 
 test("ignores comments and blank lines", async () => {
-  await withWorkspace({ ".gitignore": "# a comment\n\n*.log\n" }, async (root) => {
-    const ignore = await loadIgnores(root, root);
-    assert.equal(ignore.isIgnored("debug.log", false), true);
-    assert.equal(ignore.isIgnored("debug.txt", false), false);
-  });
+  await withWorkspace(
+    { ".gitignore": "# a comment\n\n*.log\n" },
+    async (root) => {
+      const ignore = await loadIgnores(root, root);
+      assert.equal(ignore.isIgnored("debug.log", false), true);
+      assert.equal(ignore.isIgnored("debug.txt", false), false);
+    },
+  );
 });
 
 test("negation reintroduces a previously ignored path", async () => {
-  await withWorkspace(
-    { ".gitignore": "*.log\n!keep.log\n" },
-    async (root) => {
-      const ignore = await loadIgnores(root, root);
-      assert.equal(ignore.isIgnored("drop.log", false), true);
-      assert.equal(ignore.isIgnored("keep.log", false), false);
-    },
-  );
+  await withWorkspace({ ".gitignore": "*.log\n!keep.log\n" }, async (root) => {
+    const ignore = await loadIgnores(root, root);
+    assert.equal(ignore.isIgnored("drop.log", false), true);
+    assert.equal(ignore.isIgnored("keep.log", false), false);
+  });
 });
 
 test("a trailing slash matches directories only", async () => {

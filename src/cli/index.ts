@@ -11,6 +11,7 @@ import { CodeAgent } from "../core/index.js";
 import {
   ProviderFactory,
   authFilePath,
+  initCatalog,
   readAuth,
   resolveProviderIdentity,
   withStoredCredentials,
@@ -44,6 +45,8 @@ export interface CliEnvironment {
   readonly cwd: string;
   /** Where global KODA files live; defaults to ~/.config/koda. */
   readonly configRoot?: string;
+  /** Used for the background model-catalog refresh; tests inject one. */
+  readonly fetch?: typeof globalThis.fetch;
   readonly stdin?: NodeJS.ReadableStream & { readonly isTTY?: boolean };
   readonly stdout: Pick<NodeJS.WriteStream, "write"> & {
     readonly isTTY?: boolean;
@@ -268,6 +271,10 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
   }
   let mcp: McpManager | undefined;
   try {
+    void initCatalog(
+      globalRoots(runtime).globalKodaRoot,
+      runtime.fetch ?? globalThis.fetch,
+    );
     const authFile = authFilePath(globalRoots(runtime).globalKodaRoot);
     const env = withStoredCredentials(runtime.env, await readAuth(authFile));
     const connection: ConnectionSettings = { authFile, env };
