@@ -50,13 +50,23 @@ class Provider implements ILLMProvider {
 
 test("renders Koda status and unknown cost", () => {
   const header = renderHeader({
-    provider: "ollama",
-    model: "local",
+    provider: "openai",
+    model: "not-a-catalogued-model",
     usage: { inputTokens: 20 },
   });
   assert.match(header, /KODA/);
   assert.match(header, /20 tokens/);
   assert.match(header, /N\/A/);
+});
+
+test("renders zero cost for the local ollama provider", () => {
+  const header = renderHeader({
+    provider: "ollama",
+    model: "local",
+    usage: { inputTokens: 20 },
+  });
+  assert.match(header, /20 tokens/);
+  assert.match(header, /\$0\.0000/);
 });
 
 test("runs an interactive prompt and exits", async () => {
@@ -225,8 +235,8 @@ test("renders mixed text and fenced code as separate blocks", async () => {
         close: () => undefined,
       },
     });
-    assert.match(output, /▌ TEXT · KODA\n▌ Sure:\n\n/);
-    assert.match(output, /▌ CODE · py\n▌\n▌ print\(1\)\n▌ print\(2\)\n\n/);
+    assert.match(output, /▌ TEXT · KODA\n▌\n▌ Sure:\n▌\n\n/);
+    assert.match(output, /▌ CODE · py\n▌\n▌ print\(1\)\n▌ print\(2\)\n▌\n\n/);
     assert.doesNotMatch(output, /```/);
   } finally {
     await rm(root, { recursive: true, force: true });

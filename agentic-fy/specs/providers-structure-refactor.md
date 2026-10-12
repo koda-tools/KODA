@@ -6,7 +6,7 @@ Keep the LLM provider layer organized by purpose, with shared SDK-free helpers, 
 ## Requirements
 
 ### Requirement: Providers are organized in purpose folders {#providers-folders-by-purpose}
-Every TypeScript file under src/providers SHALL live inside a purpose folder (contracts, catalog, config, factory, shared, adapters/<vendor>), except the barrel src/providers/index.ts, and exported interfaces and type aliases SHALL be declared only in types.ts files.
+Every TypeScript file under src/providers SHALL live inside a purpose folder (contracts, catalog, config, factory, auth, shared, adapters/ai-sdk), except the barrel src/providers/index.ts, and exported interfaces and type aliases SHALL be declared only in types.ts files.
 > verify: `npm test -- test/providers-structure.test.ts`
 
 #### Scenario:
@@ -30,7 +30,7 @@ Error wrapping, system extraction, tool-call argument parsing, optional request 
 - THEN it uses wrapProviderError and an existing ProviderError is rethrown unchanged
 
 ### Requirement: Single provider catalog with pricing {#providers-single-catalog}
-Provider names, default models, model and API key environment variables, default max tokens, and model prices SHALL be defined once in src/providers/catalog, and the factory, identity resolution, and TUI cost estimation SHALL derive from it.
+Provider names, the AI SDK provider kind, default models, model and API key environment variables, default max tokens, and model prices SHALL be defined once in src/providers/catalog, and the factory, the AI SDK adapter, identity resolution, and TUI cost estimation SHALL derive from it.
 > verify: `npm test -- test/factory.test.ts`
 
 #### Scenario:
@@ -42,8 +42,8 @@ Provider names, default models, model and API key environment variables, default
 - THEN both the factory and resolveProviderIdentity throw ProviderError
 
 ### Requirement: Real streaming on every provider {#providers-real-streaming}
-Anthropic and Gemini adapters SHALL stream incrementally from their SDKs, emitting text-delta events as chunks arrive, followed by tool-call, usage and done events, and SHALL honor options.signal.
-> verify: `npm test -- test/provider-adapters.test.ts`
+Every provider SHALL stream incrementally through the AI SDK full stream, emitting text-delta events as chunks arrive, followed by tool-call, usage and done events, and SHALL honor options.signal.
+> verify: `npm test -- test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN the vendor stream yields several text chunks
@@ -55,7 +55,7 @@ Anthropic and Gemini adapters SHALL stream incrementally from their SDKs, emitti
 
 ### Requirement: Known adapter bugs are fixed {#providers-bug-fixes}
 Gemini SHALL send the function name in functionResponse, forward the abort signal and report finishReason; Anthropic SHALL send image parts and SHALL NOT send empty text blocks; adapters SHALL NOT re-wrap ProviderError.
-> verify: `npm test -- test/provider-adapters.test.ts`
+> verify: `npm test -- test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN a Gemini tool message answers a previous call
@@ -70,7 +70,7 @@ Gemini SHALL send the function name in functionResponse, forward the abort signa
 - THEN the request contains no empty text block
 
 ### Requirement: Single public entry point {#providers-public-barrel}
-Code outside src/providers SHALL import provider modules only through src/providers/index.ts, legacy shims SHALL be removed, and src/index.ts SHALL keep exporting the same public symbols.
+Code outside src/providers SHALL import provider modules only through src/providers/index.ts, legacy shims SHALL be removed, and src/index.ts SHALL keep exporting the same public symbols, with provider option types that accept a standard fetch function instead of a vendor SDK client.
 > verify: `npm run check`
 
 #### Scenario:
@@ -79,7 +79,7 @@ Code outside src/providers SHALL import provider modules only through src/provid
 
 #### Scenario:
 - WHEN an SDK consumer imports the provider classes, ProviderFactory, ProviderConfig or contracts
-- THEN the imports still resolve with the same types
+- THEN the same symbols resolve and the provider options take fetch instead of client
 
 ### Requirement: Refactor keeps behavior {#providers-refactor-behavior-parity}
 The restructured provider layer SHALL keep the agent, TUI and batch behavior and strict type safety.

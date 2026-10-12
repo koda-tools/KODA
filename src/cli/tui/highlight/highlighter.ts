@@ -1,8 +1,4 @@
-import type {
-  BundledLanguage,
-  GrammarState,
-  createHighlighter,
-} from "shiki";
+import type { BundledLanguage, GrammarState, createHighlighter } from "shiki";
 import { RESET } from "../shared/ansi.js";
 import type { CodeHighlighter, HighlightedLine } from "./types.js";
 
@@ -43,7 +39,10 @@ function renderToken(token: Token): string {
   return style === "" ? token.content : `${style}${token.content}${RESET}`;
 }
 
-function withState(ansi: string, state: GrammarState | undefined): HighlightedLine {
+function withState(
+  ansi: string,
+  state: GrammarState | undefined,
+): HighlightedLine {
   return state === undefined ? { ansi } : { ansi, state };
 }
 
@@ -83,7 +82,9 @@ export function createLazyHighlighter(): CodeHighlighter {
 
   const load = async (): Promise<CodeHighlighter | undefined> => {
     try {
-      const shiki = await (await import("shiki")).createHighlighter({
+      const shiki = await (
+        await import("shiki")
+      ).createHighlighter({
         themes: [THEME],
         langs: [],
       });

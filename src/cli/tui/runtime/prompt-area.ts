@@ -25,7 +25,7 @@ const HINT_MARGIN = 5;
  *
  *     ┌──────────────────────────────┐
  *     │ ▌                            │
- *     │ ▌  Type your message...      │
+ *     │ ▌  Type your Message      │
  *     │ ▌                            │
  *     │                              │
  *     │  build · gpt-4o-mini  Enter ↵│
@@ -56,6 +56,7 @@ export class PromptArea extends TextArea {
   }
 
   protected override _renderSelf(screen: Screen): void {
+    this.fillBackground(screen);
     super._renderSelf(screen);
     if (this.value !== "") return;
     const { x, y, width, height } = this._getContentRect();
@@ -68,6 +69,19 @@ export class PromptArea extends TextArea {
       truncate(this.placeholder, width - offset),
       { ...styleToCellAttrs(this._style), dim: true },
     );
+  }
+
+  /**
+   * TermUI only paints the cells it writes text to, so the style's `bg`
+   * would cover the text alone; fill the whole box first.
+   */
+  private fillBackground(screen: Screen): void {
+    const bg = this._style.bg;
+    if (bg === undefined) return;
+    const { x, y, width, height } = this._rect;
+    for (let row = y; row < y + height; row++)
+      for (let column = x; column < x + width; column++)
+        screen.setCell(column, row, { char: " ", bg });
   }
 
   protected override _renderBorder(screen: Screen): void {

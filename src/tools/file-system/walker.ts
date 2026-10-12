@@ -111,7 +111,13 @@ async function* traverse(
       const inside = path.relative(context.root, real);
       if (inside.startsWith("..") || path.isAbsolute(inside)) continue;
     }
-    yield { absolutePath: absolute, relativePath: relative, depth, isDirectory, isFile };
+    yield {
+      absolutePath: absolute,
+      relativePath: relative,
+      depth,
+      isDirectory,
+      isFile,
+    };
     if (isDirectory && depth < context.maxDepth)
       yield* traverse(absolute, depth + 1, context);
   }

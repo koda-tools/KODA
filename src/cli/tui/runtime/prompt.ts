@@ -1,5 +1,6 @@
 import type { KeyEvent } from "@termuijs/core";
 import { LAYOUT, PROMPT_PLACEHOLDER, PROMPT_SEND_HINT } from "./constants.js";
+import { BLOCK_BACKGROUND_RGB } from "../blocks/style.js";
 import { PromptArea } from "./prompt-area.js";
 
 /** Box height for `rows` lines of text: text, border and the box chrome. */
@@ -24,9 +25,13 @@ export class Prompt {
     {
       flexGrow: 0,
       flexShrink: 0,
-      border: "single",
-      borderColor: { type: "named", name: "cyan" },
-      padding: { top: 1, right: 2, bottom: 3, left: 4 },
+      // No border line: one extra row/column of padding on each side keeps
+      // the geometry the accent bar and the footer are drawn against.
+      border: "none",
+      focusRingStyle: "none",
+      padding: { top: 2, right: 3, bottom: 3, left: 5 },
+      // The whole box (text included) uses the message blocks' gray.
+      bg: { type: "rgb", ...BLOCK_BACKGROUND_RGB },
       height: boxHeight(LAYOUT.promptMinRows),
     },
     {

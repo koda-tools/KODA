@@ -1,0 +1,34 @@
+# Spec delta for the "providers-structure-refactor" capability.
+capability: providers-structure-refactor
+
+operations:
+  - op: modify
+    id: providers-folders-by-purpose
+    set:
+      statement: Every TypeScript file under src/providers SHALL live inside a purpose folder (contracts, catalog, config, factory, auth, shared, adapters/ai-sdk), except the barrel src/providers/index.ts, and exported interfaces and type aliases SHALL be declared only in types.ts files.
+
+  - op: modify
+    id: providers-single-catalog
+    set:
+      statement: Provider names, the AI SDK provider kind, default models, model and API key environment variables, default max tokens, and model prices SHALL be defined once in src/providers/catalog, and the factory, the AI SDK adapter, identity resolution, and TUI cost estimation SHALL derive from it.
+
+  - op: modify
+    id: providers-real-streaming
+    set:
+      statement: Every provider SHALL stream incrementally through the AI SDK full stream, emitting text-delta events as chunks arrive, followed by tool-call, usage and done events, and SHALL honor options.signal.
+      verify: npm test -- test/provider-wire.test.ts
+
+  - op: modify
+    id: providers-bug-fixes
+    set:
+      verify: npm test -- test/provider-wire.test.ts
+
+  - op: modify
+    id: providers-public-barrel
+    set:
+      statement: Code outside src/providers SHALL import provider modules only through src/providers/index.ts, legacy shims SHALL be removed, and src/index.ts SHALL keep exporting the same public symbols, with provider option types that accept a standard fetch function instead of a vendor SDK client.
+    removeScenarios:
+      - an SDK consumer imports the provider classes, ProviderFactory, ProviderConfig or contracts
+    addScenarios:
+      - when: an SDK consumer imports the provider classes, ProviderFactory, ProviderConfig or contracts
+        then: the same symbols resolve and the provider options take fetch instead of client

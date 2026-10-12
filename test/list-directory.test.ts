@@ -116,7 +116,10 @@ test("skips symlinks that point outside the workspace", async () => {
 
 test("an empty directory reports it plainly", async () => {
   await withWorkspace({}, async (root) => {
-    assert.equal(await listDirectoryTool({}, { workspaceRoot: root }), "(empty)");
+    assert.equal(
+      await listDirectoryTool({}, { workspaceRoot: root }),
+      "(empty)",
+    );
   });
 });
 

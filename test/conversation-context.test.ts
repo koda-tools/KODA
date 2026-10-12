@@ -4,13 +4,15 @@ import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { CodeAgent } from "../src/core/index.js";
-import type {
-  ChatMessage,
-  ChatResponse,
-  CompletionOptions,
-  ILLMProvider,
-  ProviderCapabilities,
-  StreamEvent,
+import {
+  estimateTokens,
+  modelLimit,
+  type ChatMessage,
+  type ChatResponse,
+  type CompletionOptions,
+  type ILLMProvider,
+  type ProviderCapabilities,
+  type StreamEvent,
 } from "../src/providers/index.js";
 import { ToolRegistry } from "../src/tools/registry.js";
 import {
@@ -20,15 +22,17 @@ import {
   type LineWriter,
 } from "../src/cli/tui/index.js";
 
-function silentWriter(): LineWriter {
+function silentWriter(
+  write: (text: string) => void = () => undefined,
+): LineWriter {
   return {
     ensureNewLine: () => undefined,
-    write: () => undefined,
+    write,
     writeSegment: () => undefined,
   };
 }
 
-function newSession(): Session {
+function newSession(write?: (text: string) => void): Session {
   return new Session(
     { provider: "test", model: "model" },
     {
@@ -36,7 +40,7 @@ function newSession(): Session {
       write: () => undefined,
       close: () => undefined,
     },
-    silentWriter(),
+    silentWriter(write),
   );
 }
 
@@ -190,25 +194,93 @@ test("session memory survives screen activity until explicitly cleared", () => {
   assert.deepEqual(session.conversation(), []);
 });
 
-test("history window trims at a turn boundary without orphan tool messages", () => {
+/**
+ * Mirrors `historyBudget` in session.ts: context minus output minus a 10%
+ * reserve (at least 1024). `newSession` uses an unknown provider, which
+ * gets the small 8192/2048 fallback, so the budget is 5120 tokens.
+ */
+function budgetFor(provider: string, model: string): number {
+  const { context, output } = modelLimit(provider, model);
+  return context - output - Math.max(1_024, Math.ceil(context * 0.1));
+}
+
+/** A tool-using turn whose file read weighs about `tokens` tokens. */
+function toolTurn(turn: number, tokens: number): ChatMessage[] {
+  return [
+    { role: "user", content: `u${turn}` },
+    {
+      role: "assistant",
+      content: "",
+      toolCalls: [{ id: `t${turn}`, name: "readFile", arguments: "{}" }],
+    },
+    { role: "tool", toolCallId: `t${turn}`, content: "x".repeat(tokens * 4) },
+    { role: "assistant", content: `a${turn}` },
+  ];
+}
+
+test("history is compacted to the token budget at a turn boundary", () => {
   const session = newSession();
-  for (let turn = 0; turn < 30; turn += 1) {
-    session.appendTurn([
-      { role: "user", content: `u${turn}` },
-      {
-        role: "assistant",
-        content: "",
-        toolCalls: [{ id: `t${turn}`, name: "readFile", arguments: "{}" }],
-      },
-      { role: "tool", toolCallId: `t${turn}`, content: "data" },
-      { role: "assistant", content: `a${turn}` },
-    ]);
-  }
+  let dropped = 0;
+  for (let turn = 0; turn < 30; turn += 1)
+    dropped += session.appendTurn(toolTurn(turn, 1_000)).dropped;
   const history = session.conversation();
-  assert.ok(history.length <= 40);
+  assert.ok(dropped > 0, "30k tokens of history cannot fit 5k");
+  assert.ok(estimateTokens(history) <= budgetFor("test", "model"));
   assert.equal(history[0]?.role, "user");
+  assert.equal(history.at(-1)?.content, "a29", "the newest turn is kept");
   for (let index = 0; index < history.length; index += 1) {
     if (history[index]?.role !== "tool") continue;
-    assert.equal(history[index - 1]?.role, "assistant");
+    assert.equal(history[index - 1]?.role, "assistant", "no orphan tool");
   }
+});
+
+test("a single turn over the budget is kept whole", () => {
+  const session = newSession();
+  const turn = toolTurn(0, 20_000);
+  assert.equal(session.appendTurn(turn).dropped, 0);
+  assert.equal(session.conversation().length, turn.length);
+});
+
+test("small conversations are never trimmed and show no notice", () => {
+  const written: string[] = [];
+  const session = newSession((text) => written.push(text));
+  for (let turn = 0; turn < 30; turn += 1)
+    assert.equal(session.appendTurn(toolTurn(turn, 10)).dropped, 0);
+  assert.equal(session.conversation().length, 120);
+  assert.ok(!written.some((text) => text.includes("Context trimmed")));
+});
+
+test("dropping messages tells the user how many were dropped", () => {
+  const written: string[] = [];
+  const session = newSession((text) => written.push(text));
+  session.appendTurn(toolTurn(0, 3_000));
+  const { dropped } = session.appendTurn(toolTurn(1, 3_000));
+  assert.equal(dropped, 4);
+  assert.ok(
+    written.some((text) =>
+      text.includes("Context trimmed: 4 older messages dropped"),
+    ),
+  );
+});
+
+test("switching to a smaller window compacts the existing history", () => {
+  const session = new Session(
+    { provider: "openai", model: "gpt-4.1-mini" },
+    {
+      question: async () => undefined,
+      write: () => undefined,
+      close: () => undefined,
+    },
+    silentWriter(),
+  );
+  // About 150k tokens: fits the ~1M window of gpt-4.1-mini.
+  for (let turn = 0; turn < 10; turn += 1)
+    session.appendTurn(toolTurn(turn, 15_000));
+  assert.equal(session.conversation().length, 40);
+  // An uncatalogued model falls back to 128k / 16k: the budget is ~99k.
+  session.selectModel("not-a-real-model");
+  const history = session.conversation();
+  assert.ok(history.length < 40);
+  assert.ok(estimateTokens(history) <= budgetFor("openai", "not-a-real-model"));
+  assert.equal(history[0]?.role, "user");
 });

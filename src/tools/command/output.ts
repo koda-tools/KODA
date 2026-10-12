@@ -32,7 +32,11 @@ export function truncate(text: string, budget = DEFAULT_BUDGET): Truncation {
   const head = text.slice(0, headEnd);
   const tail = text.slice(Math.max(headEnd, tailStart));
   const omitted = total - Buffer.byteLength(head + tail, "utf8");
-  return { text: `${head}[... ${kb(omitted)} omitted ...]\n${tail}`, omitted, total };
+  return {
+    text: `${head}[... ${kb(omitted)} omitted ...]\n${tail}`,
+    omitted,
+    total,
+  };
 }
 
 function kb(bytes: number): string {

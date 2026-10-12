@@ -110,7 +110,7 @@ export class MarkdownStream {
       return blanks;
     }
     this.open = { kind: "text", pendingBlanks: 0 };
-    return [finished(this.text.header())];
+    return [finished(this.text.header()), finished(this.text.blank())];
   }
 
   private async openCode(info: string): Promise<Segment[]> {
@@ -134,7 +134,10 @@ export class MarkdownStream {
     if (open === undefined) return [];
     if (open.kind === "code" && open.raw.length > 0)
       this.onCodeBlock?.(open.raw.join("\n"));
-    return [finished(BLOCK_SEPARATOR)];
+    return [
+      finished(open.kind === "text" ? this.text.blank() : open.block.spacer()),
+      finished(BLOCK_SEPARATOR),
+    ];
   }
 
   /** Render a code line; `commit` records it and advances grammar state. */

@@ -1,9 +1,16 @@
 import { ScrollbarSets, type Screen } from "@termuijs/core";
 import { Widget } from "@termuijs/widgets";
 
-const SYMBOLS = ScrollbarSets.VERTICAL;
-const TRACK_COLOR = { type: "named", name: "brightBlack" } as const;
-const THUMB_COLOR = { type: "named", name: "white" } as const;
+/** TermUI's vertical set, with solid triangles instead of the ↑/↓ arrows. */
+const SYMBOLS = {
+  ...ScrollbarSets.VERTICAL,
+  begin: "▪",
+  end: "▪",
+  track: "▐",
+  thumb: "▐",
+};
+const TRACK_COLOR = { type: "rgb", r: 34, g: 34, b: 34 } as const;
+const THUMB_COLOR = { type: "rgb", r: 72, g: 72, b: 72 } as const;
 
 /**
  * Vertical scrollbar that always shows the up/down arrows, even when all
@@ -42,14 +49,17 @@ export class TrackScrollbar extends Widget {
     const { x, y, width, height } = this._getContentRect();
     if (width <= 0 || height <= 0) return;
     const column = x + width - 1;
+    // Keep the style's background (e.g. the sidebar's) behind the glyphs.
+    const bg = this._style.bg === undefined ? {} : { bg: this._style.bg };
     if (height === 1) {
-      screen.setCell(column, y, { char: SYMBOLS.track, fg: TRACK_COLOR });
+      screen.setCell(column, y, { char: SYMBOLS.track, fg: TRACK_COLOR, ...bg });
       return;
     }
-    screen.setCell(column, y, { char: SYMBOLS.begin, fg: TRACK_COLOR });
+    screen.setCell(column, y, { char: SYMBOLS.begin, fg: TRACK_COLOR, ...bg });
     screen.setCell(column, y + height - 1, {
       char: SYMBOLS.end,
       fg: TRACK_COLOR,
+      ...bg,
     });
     const trackLength = height - 2;
     if (trackLength <= 0) return;
@@ -59,6 +69,7 @@ export class TrackScrollbar extends Widget {
       screen.setCell(column, y + 1 + i, {
         char: isThumb ? SYMBOLS.thumb : SYMBOLS.track,
         fg: isThumb ? THUMB_COLOR : TRACK_COLOR,
+        ...bg,
       });
     }
   }

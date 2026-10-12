@@ -87,6 +87,12 @@ export class AnsiLogView extends Widget {
   protected _renderSelf(screen: Screen): void {
     const { x, y, width, height } = this._getContentRect();
     if (width <= 0 || height <= 0) return;
+    // With a style `bg`, the whole view uses it and text without its own
+    // background is drawn on top of it.
+    const base = this._style.bg;
+    if (base !== undefined)
+      for (let row = 0; row < height; row++)
+        screen.writeString(x, y + row, " ".repeat(width), { bg: base });
     const rows = this.rows();
     const top = this.follow ? Math.max(0, rows.length - height) : this.top;
     rows.slice(top, top + height).forEach((visual, row) => {
@@ -94,7 +100,9 @@ export class AnsiLogView extends Widget {
       for (const span of visual.spans) {
         const text = clip(span.text, width - column);
         if (text === "") continue;
-        screen.writeString(x + column, y + row, text, span.style);
+        const style =
+          base === undefined ? span.style : { bg: base, ...span.style };
+        screen.writeString(x + column, y + row, text, style);
         column += stringWidth(text);
       }
       if (visual.fill !== undefined && column < width)

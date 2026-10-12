@@ -21,10 +21,18 @@ const BORDER_COLOR: Readonly<Record<BlockVariant, string>> = {
  * Dark gray fill behind each block, set per variant so text and code can
  * diverge later. The transcript extends it to the full row width.
  */
+export const BLOCK_BACKGROUND_RGB = { r: 40, g: 40, b: 40 } as const;
+
+const BLOCK_BG = bgRgb(
+  BLOCK_BACKGROUND_RGB.r,
+  BLOCK_BACKGROUND_RGB.g,
+  BLOCK_BACKGROUND_RGB.b,
+);
+
 const BACKGROUND: Readonly<Record<BlockVariant, string>> = {
-  user: bgRgb(40, 40, 40),
-  assistant: bgRgb(40, 40, 40),
-  code: bgRgb(40, 40, 40),
+  user: "",
+  assistant: "",
+  code: BLOCK_BG,
 };
 
 /** Keep the block background on after every reset inside the content. */

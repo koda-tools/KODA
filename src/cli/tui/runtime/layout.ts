@@ -28,9 +28,9 @@ function createChatColumn(parts: LayoutParts): Box {
 }
 
 /**
- * The body: sidebar (fixed width, collapses to 0 when hidden) beside the
- * chat column. Not built with quick's `row()`, which forces `flexGrow: 1`
- * on fixed-width children and would split the width evenly.
+ * The body: the chat column with the sidebar on its right (fixed width,
+ * collapses to 0 when hidden). Not built with quick's `row()`, which forces
+ * `flexGrow: 1` on fixed-width children and would split the width evenly.
  */
 function createBody(parts: LayoutParts): Box {
   const body = new Box({
@@ -40,13 +40,13 @@ function createBody(parts: LayoutParts): Box {
     flexShrink: 1,
     width: "100%",
   });
-  body.addChild(parts.sidebar.widget);
   body.addChild(createChatColumn(parts));
+  body.addChild(parts.sidebar.widget);
   return body;
 }
 
 /**
- * Top to bottom: the two-column body (sidebar + chat) that fills the screen,
+ * Top to bottom: the two-column body (chat + sidebar) that fills the screen,
  * then the key-hints footer.
  */
 export function buildApp(parts: LayoutParts): AppBuilder {

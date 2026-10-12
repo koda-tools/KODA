@@ -23,7 +23,8 @@ function scrollStep(key: string, targets: KeyboardTargets): number | undefined {
 
 /**
  * Session shortcuts: Ctrl+N new, Ctrl+B sidebar, Alt+S opens the switcher,
- * Tab / Shift+Tab cycle the primary agent (as in OpenCode). Only reached
+ * Alt+A / Alt+Shift+A cycle the primary agent (Alt+Tab never reaches a
+ * terminal: the desktop uses it to switch windows). Only reached
  * when no choice list or completion is open, so a modal never gets reopened
  * or bypassed. Returns true when the key was handled.
  */
@@ -32,8 +33,8 @@ function handleSessionKey(event: KeyEvent, targets: KeyboardTargets): boolean {
   else if (event.ctrl && event.key === "b") targets.toggleSidebar();
   else if (event.alt && !event.ctrl && event.key === "s")
     targets.openSessionPicker();
-  else if (event.key === "tab" && !event.ctrl && !event.alt)
-    targets.cycleAgent(event.shift ? -1 : 1);
+  else if (event.alt && !event.ctrl && event.key.toLowerCase() === "a")
+    targets.cycleAgent(event.shift || event.key === "A" ? -1 : 1);
   else return false;
   return true;
 }

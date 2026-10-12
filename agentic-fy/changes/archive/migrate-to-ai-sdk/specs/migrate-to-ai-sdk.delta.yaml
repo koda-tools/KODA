@@ -1,0 +1,68 @@
+# Spec delta for the "migrate-to-ai-sdk" capability.
+capability: migrate-to-ai-sdk
+purpose: Run every LLM provider through the Vercel AI SDK behind the ILLMProvider contract, with behavior parity proven by wire-level tests.
+
+operations:
+  - op: add
+    id: ai-sdk-single-adapter
+    title: One AI SDK adapter serves every provider
+    statement: OpenAI, Anthropic, Gemini and Ollama SHALL be served by a single adapter in src/providers/adapters/ai-sdk built on the ai package with @ai-sdk/openai (Chat Completions), @ai-sdk/anthropic, @ai-sdk/google and @ai-sdk/openai-compatible, and the openai, @anthropic-ai/sdk and @google/genai packages SHALL NOT be dependencies or be imported.
+    verify: npm test -- test/providers-structure.test.ts
+    scenarios:
+      - when: the providers source tree is listed
+        then: the only adapter folder is adapters/ai-sdk
+      - when: package.json dependencies are inspected
+        then: openai, @anthropic-ai/sdk and @google/genai are absent and ai, @ai-sdk/* and zod are pinned to exact versions
+
+  - op: add
+    id: ai-sdk-wire-parity
+    title: Wire-level parity with the previous adapters
+    statement: For every provider, the HTTP requests sent and the normalized results returned SHALL satisfy the same wire-level suite that passed on the previous vendor-SDK adapters, covering text, streaming deltas, tool definitions, tool calls and results across turns, images, system instructions, usage and cancellation.
+    verify: npm test -- test/provider-wire.test.ts
+    scenarios:
+      - when: a conversation with a tool call and its tool result is sent to any provider
+        then: the request body carries the call and the matching result in that vendor's format and the response yields normalized tool calls
+      - when: the vendor streams several text chunks
+        then: the provider yields one text-delta per chunk followed by tool-call, usage and done events
+      - when: a caller aborts a streaming request
+        then: the stream ends right after the abort without a further request
+
+  - op: add
+    id: ai-sdk-uniform-cancellation
+    title: Cancelling a stream raises on every provider
+    statement: When a streaming request is cancelled, every provider SHALL raise a ProviderError instead of closing the stream with a partial response, so the caller never mistakes cancelled output for a complete answer.
+    verify: npm test -- test/provider-wire.test.ts
+    scenarios:
+      - when: a caller aborts a stream after the first text delta
+        then: the provider raises a ProviderError and emits no done event
+
+  - op: add
+    id: ai-sdk-explicit-provider-instances
+    title: Requests go only to the configured vendor endpoint
+    statement: The adapter SHALL build language models from explicit provider instances configured from the catalog and SHALL NOT resolve string model identifiers through the AI SDK global default provider or the Vercel AI Gateway.
+    verify: npm test -- test/provider-wire.test.ts
+    scenarios:
+      - when: any provider sends a request
+        then: the request URL host is that vendor's API host or the configured base URL
+
+  - op: add
+    id: ai-sdk-failures
+    title: Failures keep the normalized ProviderError shape
+    statement: Completion, streaming and model-listing failures, including stream error parts and exhausted retries, SHALL surface as ProviderError with the existing HTTP status or connection hint, SHALL retry at most twice, and SHALL NOT include API keys.
+    verify: npm test -- test/provider-wire.test.ts
+    scenarios:
+      - when: the vendor answers 401
+        then: the provider throws ProviderError mentioning HTTP 401 and the invalid key hint without the key value
+      - when: the vendor answers 429 on every attempt
+        then: the provider sends three requests in total and throws ProviderError with the HTTP 429 hint
+      - when: the network connection fails
+        then: the provider throws ProviderError with the connection hint
+
+  - op: add
+    id: ai-sdk-runtime-requirements
+    title: Node 22 runtime requirement
+    statement: package.json SHALL declare engines.node >=22.0.0, as required by the AI SDK packages, and the README SHALL state the same requirement.
+    verify: npm test -- test/providers-structure.test.ts
+    scenarios:
+      - when: package.json is inspected
+        then: engines.node is >=22.0.0

@@ -112,5 +112,10 @@ export function statusLine(text: string): BlockLine {
 export function userMessage(text: string): BlockLine[] {
   const block = new TextBlock("user");
   const lines = sanitize(text).replace(/\s+$/, "").split("\n");
-  return [block.header(), ...lines.map((line) => block.literal(line))];
+  return [
+    block.header(),
+    block.blank(),
+    ...lines.map((line) => block.literal(line)),
+    block.blank(),
+  ];
 }

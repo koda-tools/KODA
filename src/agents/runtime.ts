@@ -95,7 +95,7 @@ export class AgentRuntime {
     return this.options.catalog.agents.find((agent) => agent.name === name);
   }
 
-  /** Agents Tab cycles through (`primary` or `all`, not hidden). */
+  /** Agents Alt+A cycles through (`primary` or `all`, not hidden). */
   public primaryAgents(): readonly AgentDefinition[] {
     return this.options.catalog.agents.filter(
       (agent) => agent.mode !== "subagent" && !agent.hidden,

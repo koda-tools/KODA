@@ -1,24 +1,17 @@
 import type { ProviderName } from "../catalog/types.js";
 
-interface RemoteProviderConfig<P extends ProviderName> {
-  readonly provider: P;
-  readonly apiKey: string;
-  readonly model?: string;
-}
-
-export interface OllamaProviderConfig {
-  readonly provider: "ollama";
+/**
+ * A resolved provider configuration. `apiKey` is required at runtime only
+ * when the catalog entry sets `apiKeyRequired`; `baseURL` and `toolSupport`
+ * apply to providers whose catalog entry declares those variables.
+ */
+export interface ProviderConfig {
+  readonly provider: ProviderName;
   readonly apiKey?: string;
   readonly model?: string;
   readonly baseURL?: string;
   readonly toolSupport?: boolean;
 }
-
-export type ProviderConfig =
-  | RemoteProviderConfig<"openai">
-  | RemoteProviderConfig<"anthropic">
-  | RemoteProviderConfig<"gemini">
-  | OllamaProviderConfig;
 
 export interface ProviderIdentity {
   readonly provider: ProviderName;

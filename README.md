@@ -20,7 +20,7 @@ KODA reads your project, edits files, and executes commands—always asking for 
 
 ## Requirements
 
-- Node.js >= 20
+- Node.js >= 22
 
 ## Installation
 
@@ -48,15 +48,36 @@ Provider and model are configured via environment variables.
 ```bash
 export KODA_PROVIDER=anthropic          # default: openai
 export ANTHROPIC_API_KEY=sk-...
-export ANTHROPIC_MODEL=claude-3-5-sonnet-latest
+export ANTHROPIC_MODEL=claude-sonnet-4-6
 ```
 
 | Provider  | Key                | Model            | Default Model             |
 | --------- | ------------------ | ---------------- | ------------------------- |
-| openai    | `OPENAI_API_KEY`   | `OPENAI_MODEL`   | `gpt-4o-mini`             |
-| anthropic | `ANTHROPIC_API_KEY`| `ANTHROPIC_MODEL`| `claude-3-5-sonnet-latest`|
-| gemini    | `GEMINI_API_KEY`   | `GEMINI_MODEL`   | `gemini-2.5-flash`        |
+| openai    | `OPENAI_API_KEY`   | `OPENAI_MODEL`   | `gpt-4.1-mini`             |
+| anthropic | `ANTHROPIC_API_KEY`| `ANTHROPIC_MODEL`| `claude-sonnet-4-6`       |
+| gemini    | `GEMINI_API_KEY`   | `GEMINI_MODEL`   | `gemini-3.8-flash`        |
 | ollama    | `OLLAMA_API_KEY` (optional) | `OLLAMA_MODEL` | `llama3.2`      |
+
+### More providers
+
+Besides the four above, KODA ships catalog entries for the hosted providers that speak the
+OpenAI-compatible API — OpenRouter, Groq, Cerebras, Together, Fireworks, DeepInfra, Nebius,
+Baseten, DeepSeek, xAI, Mistral, Moonshot, Z.AI and NVIDIA — and the local servers LM Studio,
+vLLM and llama.cpp. Each uses `<NAME>_API_KEY`, `<NAME>_MODEL` and `<NAME>_BASE_URL`
+(for example `GROQ_API_KEY`). Connect one with `/connect` and select it with
+`KODA_PROVIDER=<name>`; no extra package is needed. Run `koda connect` to see the full list.
+
+Adding another OpenAI-compatible provider is a catalog entry, not code: a provider id is an
+open string validated against the catalog, and the factory builds every provider from its
+SDK kind. Note for SDK users: the exported `ProviderName` type is now `string`; the
+built-in four are available as `BuiltInProvider`.
+
+Default model prices, context limits and tool support are kept in a catalog refreshed
+automatically from [models.dev](https://models.dev) in the background, cached under
+`~/.config/koda/catalog-cache.json` for up to 7 days. KODA ships with a built-in snapshot
+and never blocks on the network: a session always starts on the cache or snapshot it
+already has, and a stale cache refreshes quietly for the *next* session. `/model` lists the
+models each connected provider currently serves.
 
 To use local Ollama:
 

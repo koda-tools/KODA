@@ -38,7 +38,10 @@ export async function getFileInfoTool(
   args: GetFileInfoArgs,
   options: GetFileInfoOptions,
 ): Promise<string> {
-  const target = await resolveSafeExistingPath(options.workspaceRoot, args.path);
+  const target = await resolveSafeExistingPath(
+    options.workspaceRoot,
+    args.path,
+  );
   const link = await lstat(target);
   const metadata = link.isSymbolicLink() ? await stat(target) : link;
   const kind = toKind(link);

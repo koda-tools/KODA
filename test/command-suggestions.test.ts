@@ -51,7 +51,10 @@ test("combines built-ins and custom commands without duplicates", () => {
     items.map((item) => item.name),
     [...BUILT_IN_SUGGESTIONS.map((item) => item.name), "comand-a", "comand-x"],
   );
-  assert.equal(items.find((item) => item.name === "comand-a")?.description, "First");
+  assert.equal(
+    items.find((item) => item.name === "comand-a")?.description,
+    "First",
+  );
 });
 
 test("only single-line slash text without arguments is a query", () => {
@@ -125,7 +128,10 @@ test("Escape only closes the list; other keys go to the prompt", async () => {
   const prompt = new FakePrompt();
   suggestions.update("/h");
   assert.equal(suggestions.handleKey(key("x"), prompt), false);
-  assert.equal(suggestions.handleKey(key("enter", { alt: true }), prompt), false);
+  assert.equal(
+    suggestions.handleKey(key("enter", { alt: true }), prompt),
+    false,
+  );
   assert.equal(suggestions.handleKey(key("escape"), prompt), true);
   assert.equal(suggestions.isOpen, false);
   assert.equal(suggestions.handleKey(key("escape"), prompt), false);

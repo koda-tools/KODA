@@ -48,7 +48,7 @@ test("code outside the TUI imports it only through the barrel", () => {
   const offenders = outside.flatMap((file) =>
     [...source(file).matchAll(deepImport)]
       .map((match) => match[0])
-      .filter((specifier) => !specifier.endsWith("tui/index.js\""))
+      .filter((specifier) => !specifier.endsWith('tui/index.js"'))
       .map((specifier) => `${path.basename(file)}: ${specifier}`),
   );
   assert.deepEqual(offenders, []);

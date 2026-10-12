@@ -149,10 +149,11 @@ export async function loadIgnores(
     const file = path.join(current, ".gitignore");
     const content = await readIgnoreFile(file);
     if (content !== undefined) {
-      const directoryRelative = toPosix(
-        path.relative(workspaceRoot, current),
-      );
-      layers.push({ directory: directoryRelative, rules: parseGitignore(content) });
+      const directoryRelative = toPosix(path.relative(workspaceRoot, current));
+      layers.push({
+        directory: directoryRelative,
+        rules: parseGitignore(content),
+      });
     }
     if (depth < segments.length) {
       const segment = segments[depth] as string;

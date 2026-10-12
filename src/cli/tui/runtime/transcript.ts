@@ -16,9 +16,6 @@ export class Transcript {
     flexGrow: 1,
     flexShrink: 1,
     height: "100%",
-    border: "single",
-    borderColor: { type: "named", name: "brightBlack" },
-    padding: 1,
   });
   private readonly scrollbar = new TrackScrollbar({
     width: 1,
@@ -51,6 +48,8 @@ export class Transcript {
       flexGrow: 1,
       flexShrink: 1,
       width: "100%",
+      border: "none",
+      padding: 1,
     });
     row.addChild(this.view);
     row.addChild(this.scrollbar);
@@ -92,7 +91,7 @@ export class Transcript {
   }
 
   private viewportLines(): number {
-    const height = this.view.rect.height - LAYOUT.transcriptChromeRows;
+    const height = this.view.rect.height;
     return height > 0 ? height : LAYOUT.fallbackViewportLines;
   }
 

@@ -199,7 +199,7 @@ async function runAgentRoute(
   deps.writer.write(`${text}\n`);
 }
 
-/** Keybind intents: sessions (Ctrl+N, Alt+S) and agents (Tab/Shift+Tab). */
+/** Keybind intents: sessions (Ctrl+N, Alt+S) and agents (Alt+A / Alt+Shift+A). */
 function handleIntent(deps: Dependencies, intent: SessionIntent): void {
   const agents = deps.options.agents;
   switch (intent) {
@@ -292,7 +292,7 @@ async function runSession(
     exitRequested = true;
     io.close();
   });
-  // Navigation raised from the UI (Ctrl+N, Alt+S, Tab / Shift+Tab).
+  // Navigation raised from the UI (Ctrl+N, Alt+S, Alt+A / Alt+Shift+A).
   const unsubIntent = io.onSessionIntent?.((intent) =>
     handleIntent(deps, intent),
   );

@@ -81,7 +81,11 @@ test("malformed arguments become failed observations", async () => {
       ["listDirectory", JSON.stringify({ includeHidden: "yes" }), /boolean/],
       ["searchFiles", "{}", /non-empty query/],
       ["getFileInfo", JSON.stringify({ path: "" }), /non-empty path/],
-      ["readFile", JSON.stringify({ filePath: "a.ts", startLine: 0 }), /positive integer/],
+      [
+        "readFile",
+        JSON.stringify({ filePath: "a.ts", startLine: 0 }),
+        /positive integer/,
+      ],
     ] as const) {
       const result = await tools.execute(name, args);
       assert.equal(result.ok, false, `${name} ${args}`);

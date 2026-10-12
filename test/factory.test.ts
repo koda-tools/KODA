@@ -1,75 +1,59 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  AnthropicProvider,
-  GeminiProvider,
-  OllamaProvider,
-  OpenAIProvider,
   PROVIDERS,
+  PROVIDER_NAMES,
   ProviderFactory,
   configFromEnvironment,
   estimateCost,
+  providerSpec,
   resolveProviderIdentity,
-  type ILLMProvider,
-  type ProviderConfig,
-  type ProviderName,
 } from "../src/providers/index.js";
 import { ProviderError } from "../src/utils/errors.js";
-
-type ProviderClass = abstract new (...args: never[]) => ILLMProvider;
-
-interface ProviderCase {
-  readonly type: ProviderClass;
-  readonly config: ProviderConfig;
-  readonly env: NodeJS.ProcessEnv;
-}
-
-/** `satisfies Record<ProviderName, …>` forces a case for every provider. */
-const CASES = {
-  openai: {
-    type: OpenAIProvider,
-    config: { provider: "openai", apiKey: "test" },
-    env: { OPENAI_API_KEY: "test" },
-  },
-  anthropic: {
-    type: AnthropicProvider,
-    config: { provider: "anthropic", apiKey: "test" },
-    env: { KODA_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "test" },
-  },
-  gemini: {
-    type: GeminiProvider,
-    config: { provider: "gemini", apiKey: "test" },
-    env: { KODA_PROVIDER: "gemini", GEMINI_API_KEY: "test" },
-  },
-  ollama: {
-    type: OllamaProvider,
-    config: { provider: "ollama" },
-    env: { KODA_PROVIDER: "ollama", OPENCODE_PROVIDER: "openai" },
-  },
-} as const satisfies Record<ProviderName, ProviderCase>;
-
-const entries = Object.values(CASES);
 
 function isProviderError(pattern: RegExp) {
   return (error: unknown): boolean =>
     error instanceof ProviderError && pattern.test(error.message);
 }
 
-test("creates every supported provider from explicit configuration", () => {
-  for (const { type, config } of entries)
-    assert.ok(ProviderFactory.create(config) instanceof type, config.provider);
+/** An env that satisfies one provider: its key when the catalog needs one. */
+function envFor(provider: string): NodeJS.ProcessEnv {
+  const spec = providerSpec(provider);
+  const env: NodeJS.ProcessEnv = { KODA_PROVIDER: provider };
+  if (spec.apiKeyRequired) env[spec.apiKeyEnv] = "test-key";
+  return env;
+}
+
+test("creates and streams every catalog provider from the environment", () => {
+  for (const provider of PROVIDER_NAMES) {
+    const built = ProviderFactory.fromEnvironment(envFor(provider));
+    assert.equal(built.capabilities().streaming, true, provider);
+  }
 });
 
-test("selects providers from environment with canonical precedence", () => {
-  for (const { type, env } of entries)
-    assert.ok(ProviderFactory.fromEnvironment(env) instanceof type, type.name);
+test("every provider that needs a key fails with its declared variable", () => {
+  for (const provider of PROVIDER_NAMES) {
+    const spec = providerSpec(provider);
+    if (!spec.apiKeyRequired) continue;
+    assert.throws(
+      () => ProviderFactory.fromEnvironment({ KODA_PROVIDER: provider }),
+      isProviderError(new RegExp(spec.apiKeyEnv)),
+      provider,
+    );
+  }
 });
 
-test("rejects missing secrets, unknown providers, and invalid Ollama URLs", () => {
-  assert.throws(
-    () => ProviderFactory.fromEnvironment({ KODA_PROVIDER: "anthropic" }),
-    isProviderError(/ANTHROPIC_API_KEY/),
-  );
+test("local providers need no key", () => {
+  for (const provider of PROVIDER_NAMES) {
+    if (providerSpec(provider).apiKeyRequired) continue;
+    assert.doesNotThrow(
+      () => ProviderFactory.fromEnvironment({ KODA_PROVIDER: provider }),
+      provider,
+    );
+  }
+});
+
+test("rejects unknown providers and invalid base URLs", () => {
   assert.throws(
     () =>
       ProviderFactory.fromEnvironment({
@@ -88,20 +72,6 @@ test("rejects missing secrets, unknown providers, and invalid Ollama URLs", () =
       }),
     isProviderError(/HTTP/),
   );
-});
-
-test("reports provider capabilities without network requests", () => {
-  for (const { config } of entries)
-    assert.equal(
-      ProviderFactory.create(config).capabilities().streaming,
-      true,
-      config.provider,
-    );
-  const local = ProviderFactory.create({
-    provider: "ollama",
-    toolSupport: false,
-  });
-  assert.equal(local.supportsTools(), false);
 });
 
 test("resolves provider identity from the shared catalog", () => {
@@ -123,7 +93,7 @@ test("resolves provider identity from the shared catalog", () => {
   );
 });
 
-test("rejects unknown providers in identity resolution like the factory (bug 7)", () => {
+test("rejects unknown providers in identity resolution like the factory", () => {
   assert.throws(
     () => resolveProviderIdentity({ KODA_PROVIDER: "other" }),
     isProviderError(/Unsupported provider 'other'/),
@@ -153,6 +123,14 @@ test("derives environment variable names from the catalog", () => {
     }),
     { provider: "ollama", baseURL: "http://host:1/v1", toolSupport: true },
   );
+});
+
+test("builds a catalog-only OpenAI-compatible provider with no dedicated class", () => {
+  const built = ProviderFactory.fromEnvironment({
+    KODA_PROVIDER: "groq",
+    GROQ_API_KEY: "test-key",
+  });
+  assert.equal(built.capabilities().streaming, true);
 });
 
 test("estimates cost from catalog prices", () => {

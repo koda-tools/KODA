@@ -24,8 +24,7 @@ test("confines vendor SDK imports to provider adapters", async () => {
     (file) =>
       !file.includes(`${path.sep}providers${path.sep}adapters${path.sep}`),
   );
-  const vendorImport =
-    /from\s+["'](?:openai|@anthropic-ai\/sdk|@google\/genai)["']/;
+  const vendorImport = /from\s+["'](?:ai|@ai-sdk\/[^"']+)["']/;
   for (const file of files)
     assert.doesNotMatch(await readFile(file, "utf8"), vendorImport, file);
 });
