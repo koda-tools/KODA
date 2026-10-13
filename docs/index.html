@@ -23,7 +23,7 @@
 █▀█▀█
 ▀▀▀▀▀</div>
     <h1 class="logo">KODA</h1>
-    <div class="ver">0.2.0</div>
+    <div class="ver">0.2.1</div>
     <a class="gh" href="https://github.com/koda-tools/KODA" target="_blank" rel="noopener noreferrer" aria-label="KODA on GitHub"><svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span>koda-tools/KODA</span></a>
     <button class="toggle" id="theme-toggle" type="button" aria-label="Toggle theme">◐ theme: dark</button>
     <button class="menu-btn" id="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
@@ -160,10 +160,22 @@ export OLLAMA_TOOL_SUPPORT=true</code></pre>
         <tr><td>/skills</td><td>Lists skills</td></tr>
         <tr><td>/connect [provider]</td><td>Saves a provider's API key</td></tr>
         <tr><td>/mcp</td><td>Shows MCP servers and their status</td></tr>
+        <tr><td>/init</td><td>Creates the <code>.koda/</code> folder in the project</td></tr>
         <tr><td>/clear</td><td>Clears the conversation context (asks for confirmation)</td></tr>
         <tr><td>/exit</td><td>Exits KODA</td></tr>
       </table>
       <p>Use <code>@agent task</code> to delegate to a subagent.</p>
+      <h3>START A PROJECT (INIT)</h3>
+      <p>Run <code>koda init</code> in the project root, or <code>/init</code> inside a session, to create the folders KODA reads its extensions from. It needs no API key and no interactive terminal.</p>
+<pre><code><span class="c"># from the terminal</span>
+koda init
+
+<span class="c"># or inside KODA</span>
+/init</code></pre>
+<pre><code>Created  .koda/commands
+Created  .koda/skills
+Created  .koda/agents</code></pre>
+      <div class="box"><b>Safe to repeat:</b> existing folders and files are never touched, and the output marks them as <code>Exists</code>. If a file named <code>.koda</code> is in the way, <code>init</code> fails with an error and creates nothing. Only the exact command <code>koda init</code> runs this; <code>koda init something</code> is still sent to the model as a prompt.</div>
     </section>
 
     <section id="agents">
@@ -232,7 +244,7 @@ export OLLAMA_TOOL_SUPPORT=true</code></pre>
 
     <section id="custom-commands">
       <h2>Custom commands</h2>
-      <p>Create a Markdown file in <code>.koda/commands/</code>. The file name becomes the command.</p>
+      <p>Create a Markdown file in <code>.koda/commands/</code> (run <code>koda init</code> to create the folder). The file name becomes the command.</p>
 <pre><code><span class="c"># .koda/commands/review.md</span>
 ---
 description: Reviews a file

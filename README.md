@@ -111,7 +111,7 @@ Type `/` at the prompt to see suggestions.
 
 Use `@agent task` to delegate a task to a subagent.
 
-To start a project from scratch, run `koda init` (or `/init` in a session). It creates `.koda/commands`, `.koda/skills` and `.koda/agents` in the current folder, needs no API key, and never overwrites anything that already exists.
+To start a project from scratch, run `koda init` (or `/init` in a session). It creates `.koda/commands`, `.koda/skills` and `.koda/agents` in the current folder, needs no API key, and never overwrites anything that already exists. If a file named `.koda` is in the way it fails and creates nothing. Only the exact command `koda init` runs this; `koda init something` is still sent to the model as a prompt.
 
 ## Tools
 
@@ -157,7 +157,7 @@ permission:
 
 ## Extension
 
-Files are located in `.koda/` at the root of the project.
+Files are located in `.koda/` at the root of the project. Run `koda init` (or `/init`) to create `.koda/commands`, `.koda/skills` and `.koda/agents`; it is safe to repeat and never overwrites existing files.
 
 ### Custom Commands
 
