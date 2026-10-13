@@ -136,6 +136,11 @@ test("routes built-ins, plain prompts, custom commands, and subagent commands", 
   assert.deepEqual(await routeInput("/mcp", registry, process.cwd()), {
     type: "mcp",
   });
+  assert.deepEqual(await routeInput("/init", registry, process.cwd()), {
+    type: "init",
+  });
+  const help = await routeInput("/help", registry, process.cwd());
+  assert.ok(help.type === "message" && help.content.includes("/init"));
   assert.deepEqual(await routeInput("/connect", registry, process.cwd()), {
     type: "connect",
   });

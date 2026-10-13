@@ -1,6 +1,7 @@
 import { CommandRegistry, discoverCommands } from "../../commands/discovery.js";
 import { routeInput, type RouteResult } from "../../commands/router.js";
 import { formatMcpStatus } from "../../../mcp/index.js";
+import { formatInitResult, initWorkspace } from "../../init/workspace.js";
 import { runConnectCommand } from "../commands/connect-command.js";
 import { decide } from "../commands/decision.js";
 import { runModelCommand } from "../commands/model-command.js";
@@ -156,6 +157,11 @@ async function handleRoute(
     case "mcp":
       deps.writer.write(
         `${deps.options.mcp === undefined ? "MCP is not available in this session." : formatMcpStatus(deps.options.mcp)}\n`,
+      );
+      break;
+    case "init":
+      deps.writer.write(
+        `${formatInitResult(await initWorkspace(deps.options.workspaceRoot))}\n`,
       );
       break;
     case "connect":

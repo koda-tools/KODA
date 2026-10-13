@@ -23,6 +23,7 @@ import { computeFileDiff } from "../utils/diff.js";
 import { McpManager, loadMcpConfig } from "../mcp/index.js";
 import { ProviderError } from "../utils/errors.js";
 import { runConnect } from "./connect/flow.js";
+import { formatInitResult, initWorkspace } from "./init/workspace.js";
 import { createReadlineUI } from "./connect/readline-ui.js";
 import type { ConnectionSettings } from "./connect/types.js";
 import {
@@ -271,6 +272,12 @@ export async function runCli(runtime: CliEnvironment): Promise<number> {
   }
   let mcp: McpManager | undefined;
   try {
+    if (runtime.argv[0] === "init" && runtime.argv.length === 1) {
+      runtime.stdout.write(
+        `${formatInitResult(await initWorkspace(runtime.cwd))}\n`,
+      );
+      return 0;
+    }
     void initCatalog(
       globalRoots(runtime).globalKodaRoot,
       runtime.fetch ?? globalThis.fetch,

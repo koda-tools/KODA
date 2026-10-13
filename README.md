@@ -105,10 +105,13 @@ Type `/` at the prompt to see suggestions.
 | `/skills`             | Lists skills                                |
 | `/connect [provider]` | Saves a provider's API key                  |
 | `/mcp`                | Shows MCP servers and their status          |
+| `/init`               | Creates the `.koda/` folder in the project  |
 | `/clear`              | Clears conversation context                 |
 | `/exit`               | Exits KODA                                  |
 
 Use `@agent task` to delegate a task to a subagent.
+
+To start a project from scratch, run `koda init` (or `/init` in a session). It creates `.koda/commands`, `.koda/skills` and `.koda/agents` in the current folder, needs no API key, and never overwrites anything that already exists.
 
 ## Tools
 
