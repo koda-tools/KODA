@@ -11,7 +11,7 @@ KODA reads your project, edits files, and executes commands—always asking for 
 
 ## Features
 
-- **Multi-provider:** OpenAI, Anthropic, Gemini, and Ollama (local).
+- **Multi-provider:** OpenAI, Anthropic, Gemini, 14 OpenAI-compatible hosted providers (OpenRouter, Groq, DeepSeek, xAI, Mistral...) and the local servers Ollama, LM Studio, vLLM and llama.cpp.
 - **Secure by default:** write operations and shell commands require approval. Commands feature risk classification, limited output, and allowlisted environment variables.
 - **Agents:** `build` and `plan` (primary), `general` and `explore` (subagents), plus your own custom ones.
 - **Extensible:** custom commands, custom agents, and skills in Markdown.
@@ -41,6 +41,12 @@ npm start
 
 To compile and start in a single step: `npm run koda`. The `koda` binary is exposed via `packages/koda/bin/koda.js`.
 
+To update:
+
+```bash
+npm update -g @koda-tools/koda
+```
+
 ## Configuration
 
 Provider and model are configured via environment variables.
@@ -51,21 +57,49 @@ export ANTHROPIC_API_KEY=sk-...
 export ANTHROPIC_MODEL=claude-sonnet-4-6
 ```
 
-| Provider  | Key                | Model            | Default Model             |
-| --------- | ------------------ | ---------------- | ------------------------- |
-| openai    | `OPENAI_API_KEY`   | `OPENAI_MODEL`   | `gpt-4.1-mini`             |
-| anthropic | `ANTHROPIC_API_KEY`| `ANTHROPIC_MODEL`| `claude-sonnet-4-6`       |
-| gemini    | `GEMINI_API_KEY`   | `GEMINI_MODEL`   | `gemini-3.8-flash`        |
-| ollama    | `OLLAMA_API_KEY` (optional) | `OLLAMA_MODEL` | `llama3.2`      |
+Every provider uses `<NAME>_API_KEY`, `<NAME>_MODEL` and `<NAME>_BASE_URL` (the base URL overrides the default below). Hosted providers require their key; local servers do not.
 
-### More providers
+| Provider   | Default model                                | Default base URL                        |
+| ---------- | -------------------------------------------- | --------------------------------------- |
+| openai     | `gpt-4.1-mini`                               | —                                       |
+| anthropic  | `claude-sonnet-4-6`                          | —                                       |
+| gemini     | `gemini-3.8-flash`                           | —                                       |
+| openrouter | `anthropic/claude-sonnet-4.5`                | `https://openrouter.ai/api/v1`          |
+| groq       | `moonshotai/kimi-k2-instruct`                | `https://api.groq.com/openai/v1`        |
+| cerebras   | `qwen-3-coder-480b`                          | `https://api.cerebras.ai/v1`            |
+| together   | `moonshotai/Kimi-K2-Instruct`                | `https://api.together.xyz/v1`           |
+| fireworks  | `accounts/fireworks/models/kimi-k2-instruct` | `https://api.fireworks.ai/inference/v1` |
+| deepinfra  | `moonshotai/Kimi-K2-Instruct`                | `https://api.deepinfra.com/v1/openai`   |
+| nebius     | `moonshotai/Kimi-K2-Instruct`                | `https://api.studio.nebius.com/v1`      |
+| baseten    | `moonshotai/Kimi-K2-Instruct`                | `https://inference.baseten.co/v1`       |
+| deepseek   | `deepseek-chat`                              | `https://api.deepseek.com/v1`           |
+| xai        | `grok-code-fast-1`                           | `https://api.x.ai/v1`                   |
+| mistral    | `devstral-medium-latest`                     | `https://api.mistral.ai/v1`             |
+| moonshot   | `kimi-k2-0905-preview`                       | `https://api.moonshot.ai/v1`            |
+| zai        | `glm-4.6`                                    | `https://api.z.ai/api/paas/v4`          |
+| nvidia     | `moonshotai/kimi-k2-instruct`                | `https://integrate.api.nvidia.com/v1`   |
+| ollama     | `llama3.2` (local, key optional)             | `http://127.0.0.1:11434/v1`             |
+| lmstudio   | `qwen2.5-coder-7b-instruct` (local, key optional) | `http://127.0.0.1:1234/v1`         |
+| vllm       | `Qwen/Qwen2.5-Coder-7B-Instruct` (local, key optional) | `http://127.0.0.1:8000/v1`    |
+| llamacpp   | `default` (local, key optional)              | `http://127.0.0.1:8080/v1`              |
 
-Besides the four above, KODA ships catalog entries for the hosted providers that speak the
-OpenAI-compatible API — OpenRouter, Groq, Cerebras, Together, Fireworks, DeepInfra, Nebius,
-Baseten, DeepSeek, xAI, Mistral, Moonshot, Z.AI and NVIDIA — and the local servers LM Studio,
-vLLM and llama.cpp. Each uses `<NAME>_API_KEY`, `<NAME>_MODEL` and `<NAME>_BASE_URL`
-(for example `GROQ_API_KEY`). Connect one with `/connect` and select it with
-`KODA_PROVIDER=<name>`; no extra package is needed. Run `koda connect` to see the full list.
+Every provider past the first three is OpenAI-compatible and served from the catalog, with no extra package needed.
+
+### Connect a provider
+
+Instead of exporting variables, save the key with `/connect` inside KODA, or with `koda connect` from the terminal (requires an interactive terminal).
+
+```bash
+/connect                 # pick from a list (↑/↓, Enter, Esc cancels)
+/connect anthropic       # or pass the provider directly
+koda connect anthropic
+```
+
+The list covers every hosted provider and shows whether each one is `connected`, `from environment` or `not connected`. Local servers need no key. The key is typed hidden and saved to `~/.config/koda/auth.json` with permission `600`.
+
+The first connected provider becomes the default. Environment variables take precedence over the saved key. Restart KODA to use the new provider (or set `KODA_PROVIDER=<name>`).
+
+### Provider catalog
 
 Adding another OpenAI-compatible provider is a catalog entry, not code: a provider id is an
 open string validated against the catalog, and the factory builds every provider from its
@@ -106,16 +140,42 @@ Type `/` at the prompt to see suggestions.
 | `/connect [provider]` | Saves a provider's API key                  |
 | `/mcp`                | Shows MCP servers and their status          |
 | `/init`               | Creates the `.koda/` folder in the project  |
-| `/clear`              | Clears conversation context                 |
+| `/clear`              | Clears conversation context (asks for confirmation) |
 | `/exit`               | Exits KODA                                  |
 
 Use `@agent task` to delegate a task to a subagent.
 
-To start a project from scratch, run `koda init` (or `/init` in a session). It creates `.koda/commands`, `.koda/skills` and `.koda/agents` in the current folder, needs no API key, and never overwrites anything that already exists. If a file named `.koda` is in the way it fails and creates nothing. Only the exact command `koda init` runs this; `koda init something` is still sent to the model as a prompt.
+### Start a project (init)
+
+Run `koda init` in the project root, or `/init` inside a session, to create the folders KODA reads its extensions from. It needs no API key and no interactive terminal.
+
+```
+Created  .koda/commands
+Created  .koda/skills
+Created  .koda/agents
+```
+
+It is safe to repeat: existing folders and files are never touched, and the output marks them as `Exists`. If a file named `.koda` is in the way, `init` fails with an error and creates nothing. Only the exact command `koda init` runs this; `koda init something` is still sent to the model as a prompt.
+
+## Agents
+
+| Name      | Mode     | Description                                       |
+| --------- | -------- | ------------------------------------------------- |
+| `build`   | primary  | Default. All tools available.                     |
+| `plan`    | primary  | Analyzes and proposes plans, without editing files. |
+| `general` | subagent | Research and multi-step tasks.                    |
+| `explore` | subagent | Read-only. Searches files and code.               |
 
 ## Tools
 
-`readFile`, `writeFile`, `listDirectory`, `searchFiles`, `getFileInfo`, and `runCommand`.
+| Tool            | What it does                                                                  |
+| --------------- | ----------------------------------------------------------------------------- |
+| `readFile`      | Reads files, with line ranges                                                 |
+| `writeFile`     | Creates or changes files (with approval)                                      |
+| `listDirectory` | Lists directories                                                             |
+| `searchFiles`   | Searches the project                                                          |
+| `getFileInfo`   | File metadata                                                                 |
+| `runCommand`    | Runs commands with risk classification, bounded output and an allowlisted env |
 
 ## MCP servers
 
@@ -166,18 +226,25 @@ Files are located in `.koda/` at the root of the project. Run `koda init` (or `/
 ---
 description: Reviews a file
 agent: plan
+model: openai/gpt-4.1-mini
+subagent: false
 ---
 Review file $1 with a focus on $2.
+Full arguments: $ARGUMENTS
 ```
 
-Usage: `/review src/index.ts security`. Placeholders: `$1`, `$2`, ... and `$ARGUMENTS`.
+The file name becomes the command. Usage: `/review src/index.ts security`. Placeholders: `$1`, `$2`, ... and `$ARGUMENTS`.
 
 ### Custom Agents
+
+Defined in Markdown (body = prompt) or JSON, in the same directories as commands.
 
 ```md
 ---
 description: Security reviewer
 mode: subagent
+model: anthropic/claude-sonnet-4-6
+temperature: 0.1
 steps: 15
 permission:
   edit: deny
@@ -188,7 +255,23 @@ You review code looking for vulnerabilities.
 
 ### Skills
 
-A folder containing a `SKILL.md` file: `.koda/skills/<name>/SKILL.md`.
+A folder containing a `SKILL.md` file: `.koda/skills/<name>/SKILL.md`. The `.opencode`, `.claude` and `.agents` folders are also read. List them with `/skills`.
+
+### Permissions
+
+Each action resolves to `allow`, `ask` or `deny`. With glob patterns, the last matching rule wins.
+
+```yaml
+permission:
+  read: allow
+  edit: ask
+  bash:
+    "*": ask
+    "git status": allow
+    "rm *": deny
+```
+
+Keys: `read`, `edit`, `list`, `glob`, `grep`, `bash`, `task`, `skill`, `mcp`.
 
 ### Precedence
 
