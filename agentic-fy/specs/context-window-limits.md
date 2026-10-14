@@ -7,7 +7,7 @@ Keep every request inside the selected model's context window and let each model
 
 ### Requirement: Each model has effective context and output limits {#catalog-model-limits}
 The system SHALL resolve a context limit and an output limit for any provider and model, taking them from the model catalog when the model is catalogued and from the provider's default otherwise, SHALL cap the output limit so a single reply cannot reserve the whole window, and these limits SHALL be the single source for request output caps and conversation budgets.
-> verify: `node --test --import tsx test/model-catalog.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/model-catalog.test.ts`
 
 #### Scenario:
 - WHEN a catalogued model is resolved
@@ -23,7 +23,7 @@ The system SHALL resolve a context limit and an output limit for any provider an
 
 ### Requirement: Every provider receives an explicit output limit {#explicit-output-limit}
 Each completion and streaming request SHALL carry an output-token limit resolved for the model of that request, and an explicit maxTokens from the caller SHALL take precedence.
-> verify: `node --test --import tsx test/provider-wire.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN a request is sent without an explicit maxTokens
@@ -39,7 +39,7 @@ Each completion and streaming request SHALL carry an output-token limit resolved
 
 ### Requirement: The conversation is compacted by token budget {#token-aware-compaction}
 The interactive session SHALL keep its conversation within a budget derived from the model's context limit minus its output limit and a reserve for the system prompt, tool definitions and next prompt, dropping whole oldest turns first, never dropping the system prompt and never leaving an orphan tool reply, and SHALL re-apply the budget when the user switches model.
-> verify: `node --test --import tsx test/conversation-context.test.ts`
+> verify: `cd packages/koda && node --conditions=development --test --import tsx test/conversation-context.test.ts`
 
 #### Scenario:
 - WHEN the accumulated conversation exceeds the budget
@@ -55,7 +55,7 @@ The interactive session SHALL keep its conversation within a budget derived from
 
 ### Requirement: Dropped turns are reported {#compaction-notice}
 When compaction drops messages, the session SHALL report how many were dropped so the user knows the context was shortened.
-> verify: `node --test --import tsx test/conversation-context.test.ts`
+> verify: `cd packages/koda && node --conditions=development --test --import tsx test/conversation-context.test.ts`
 
 #### Scenario:
 - WHEN compaction drops older messages
@@ -67,7 +67,7 @@ When compaction drops messages, the session SHALL report how many were dropped s
 
 ### Requirement: Token estimation without a new dependency {#token-estimation}
 The system SHALL estimate the token size of a conversation from its content without a tokenizer dependency, erring high for ordinary text, counting wide-script characters individually, and charging a fixed cost per message and per image part.
-> verify: `node --test --import tsx test/tokens.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/tokens.test.ts`
 
 #### Scenario:
 - WHEN plain text is measured

@@ -8,7 +8,7 @@ operations:
     id: model-discovery
     title: Every provider can list its models
     statement: Each provider adapter SHALL be able to list the chat-capable model identifiers its vendor currently serves, excluding models the vendor reports as deprecated or retired and excluding models that cannot generate chat content, and SHALL send credentials in request headers rather than in URLs.
-    verify: node --test --import tsx test/list-models.test.ts test/tui.test.ts
+    verify: cd packages/core && node --conditions=development --test --import tsx test/list-models.test.ts && cd ../koda && node --conditions=development --test --import tsx test/tui.test.ts
     scenarios:
       - when: the model picker is opened on Anthropic or Gemini
         then: it lists models returned by that vendor instead of showing nothing

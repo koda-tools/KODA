@@ -7,7 +7,7 @@ Keep model facts — price, limits, tool support — sourced from a maintained c
 
 ### Requirement: Model facts come from a refreshed catalog, never blocking the session {#runtime-model-catalog}
 The provider catalog SHALL resolve model price, context limit, output limit and tool support synchronously from a disk cache when one is present and valid, and otherwise from a snapshot shipped with KODA; when the cache is missing or older than its time-to-live it SHALL refresh it in the background for the next session, without delaying the current one and without failing when the network is unavailable.
-> verify: `node --test --import tsx test/catalog-startup.test.ts test/catalog-cache.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/catalog-startup.test.ts test/catalog-cache.test.ts`
 
 #### Scenario:
 - WHEN a valid cache younger than its time-to-live exists
@@ -27,7 +27,7 @@ The provider catalog SHALL resolve model price, context limit, output limit and 
 
 ### Requirement: Only models a coding agent can drive enter the catalog {#catalog-usability-filter}
 The catalog SHALL keep only models that support tool calling, produce text, accept a temperature parameter and are not deprecated, mapping each KODA provider to its upstream catalog entry.
-> verify: `node --test --import tsx test/catalog-fetch.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/catalog-fetch.test.ts`
 
 #### Scenario:
 - WHEN an upstream model lacks tool calling, rejects temperature, is deprecated or outputs no text
@@ -43,7 +43,7 @@ The catalog SHALL keep only models that support tool calling, produce text, acce
 
 ### Requirement: Cost resolves for every catalogued model {#priced-models-from-catalog}
 Cost estimation SHALL resolve a price for any model present in the catalog by exact identifier, keeping its existing provider-neutral signature and per-million-token arithmetic, SHALL report zero cost for the local provider, and SHALL report no estimate for models it cannot price.
-> verify: `node --test --import tsx test/model-catalog.test.ts test/tui.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/model-catalog.test.ts && cd ../koda && node --conditions=development --test --import tsx test/tui.test.ts`
 
 #### Scenario:
 - WHEN a user switches to any catalogued model and completes a turn
@@ -59,7 +59,7 @@ Cost estimation SHALL resolve a price for any model present in the catalog by ex
 
 ### Requirement: Default models are current, tool-capable and honour temperature {#current-default-models}
 Each hosted provider's default model SHALL be an identifier the vendor currently serves, SHALL support tool calling, SHALL NOT be marked deprecated, and SHALL receive the temperature the agent sends rather than having it dropped by the vendor or by the transport.
-> verify: `node --test --import tsx test/model-catalog.test.ts test/provider-wire.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/model-catalog.test.ts test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN a user runs KODA without setting a model environment variable
@@ -71,7 +71,7 @@ Each hosted provider's default model SHALL be an identifier the vendor currently
 
 ### Requirement: A stale default fails the build {#default-model-staleness-guard}
 An automated test SHALL fail when any hosted provider's default model has no price, has no context limit, does not support tool calling, or belongs to a known family that drops temperature, so that catalog rot surfaces as a build failure instead of as a blank cost readout.
-> verify: `node --test --import tsx test/model-catalog.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/model-catalog.test.ts`
 
 #### Scenario:
 - WHEN a default model is changed to an identifier missing from the shipped snapshot

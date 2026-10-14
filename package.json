@@ -1,57 +1,21 @@
 {
-  "name": "@koda-tools/koda",
-  "version": "0.2.1",
-  "description": "A secure TypeScript AI coding agent CLI and SDK",
-  "type": "module",
-  "license": "Unlicense",
-  "publishConfig": {
-    "access": "public"
-  },
-  "bin": {
-    "koda": "bin/koda.js"
-  },
-  "exports": {
-    ".": "./dist/src/index.js"
-  },
-  "files": [
-    "bin",
-    "dist/src"
+  "name": "koda-workspace",
+  "private": true,
+  "description": "Workspace root of KODA. The SDK lives in packages/core and the CLI in packages/koda.",
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "prepublishOnly": "npm run build",
-    "koda": "tsc -p tsconfig.json && node ./bin/koda.js",
-    "start": "node ./bin/koda.js",
-    "check": "tsc -p tsconfig.json --noEmit",
-    "lint": "tsc -p tsconfig.json --noEmit",
-    "format:check": "prettier --check package.json tsconfig.json \"src/**/*.ts\" \"test/**/*.ts\"",
-    "format": "prettier --write package.json tsconfig.json \"src/**/*.ts\" \"test/**/*.ts\"",
-    "test": "node --test --import tsx \"test/**/*.test.ts\""
+    "build": "npm run build -w @koda-tools/core && npm run build -w @koda-tools/koda",
+    "koda": "npm run build -w @koda-tools/core && npm run koda -w @koda-tools/koda",
+    "start": "npm run start -w @koda-tools/koda",
+    "check": "npm run build -w @koda-tools/core && npm run check -w @koda-tools/core && npm run check -w @koda-tools/koda",
+    "lint": "npm run check",
+    "format": "npm run format -w @koda-tools/core && npm run format -w @koda-tools/koda",
+    "format:check": "npm run format:check -w @koda-tools/core && npm run format:check -w @koda-tools/koda",
+    "test": "npm run test --workspaces --if-present"
   },
   "engines": {
     "node": ">=22.0.0"
-  },
-  "dependencies": {
-    "@ai-sdk/anthropic": "4.0.78",
-    "@ai-sdk/google": "4.0.93",
-    "@ai-sdk/openai": "4.0.91",
-    "@ai-sdk/openai-compatible": "3.0.67",
-    "@modelcontextprotocol/sdk": "1.31.0",
-    "@termuijs/quick": "0.1.7",
-    "@termuijs/store": "0.1.7",
-    "@termuijs/ui": "0.1.7",
-    "@termuijs/widgets": "0.1.7",
-    "ai": "7.0.137",
-    "diff": "9.0.0",
-    "jsonc-parser": "3.3.1",
-    "shiki": "4.4.3",
-    "yaml": "2.9.1",
-    "zod": "4.6.5"
-  },
-  "devDependencies": {
-    "@types/node": "24.10.0",
-    "prettier": "3.6.2",
-    "tsx": "4.20.6",
-    "typescript": "5.9.3"
   }
 }

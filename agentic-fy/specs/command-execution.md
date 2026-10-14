@@ -7,7 +7,7 @@ Let the agent run project commands under explicit user control, with risk classi
 
 ### Requirement: runCommand executes inside the workspace {#run-command-tool}
 A runCommand tool SHALL run a shell command with the workspace as the default working directory, returning exit code, duration, stdout and stderr, and SHALL report a non-zero exit as a failed observation that still carries the full captured output.
-> verify: `npm test -- test/run-command.test.ts`
+> verify: `cd packages/core && npm test -- test/run-command.test.ts`
 
 #### Scenario:
 - WHEN a command exits with zero
@@ -27,7 +27,7 @@ A runCommand tool SHALL run a shell command with the workspace as the default wo
 
 ### Requirement: Commands are classified before running {#command-risk-classification}
 Commands SHALL be classified as deny, confirm or allow per segment split on shell operators; deny SHALL refuse without asking and SHALL take precedence over the allowlist; everything not denied or allowlisted SHALL require user confirmation.
-> verify: `npm test -- test/command-risk.test.ts`
+> verify: `cd packages/core && npm test -- test/command-risk.test.ts`
 
 #### Scenario:
 - WHEN the command escalates privileges or deletes outside the workspace
@@ -51,7 +51,7 @@ Commands SHALL be classified as deny, confirm or allow per segment split on shel
 
 ### Requirement: Output is bounded, keeping both ends {#command-output-limits}
 Captured output SHALL be truncated to a byte budget per stream, preserving the beginning and the end with an explicit note of the omitted amount, and SHALL NOT fail the command because it produced too much output.
-> verify: `npm test -- test/command-output.test.ts`
+> verify: `cd packages/core && npm test -- test/command-output.test.ts`
 
 #### Scenario:
 - WHEN output fits the budget
@@ -71,7 +71,7 @@ Captured output SHALL be truncated to a byte budget per stream, preserving the b
 
 ### Requirement: Timeout and cancellation kill the process tree {#command-timeout-and-cancellation}
 runCommand SHALL enforce a configurable timeout and honor an AbortSignal, terminating the whole process tree in two stages (graceful then forced), and SHALL report whether it timed out or was cancelled.
-> verify: `npm test -- test/run-command.test.ts`
+> verify: `cd packages/core && npm test -- test/run-command.test.ts`
 
 #### Scenario:
 - WHEN a command exceeds its timeout
@@ -87,7 +87,7 @@ runCommand SHALL enforce a configurable timeout and honor an AbortSignal, termin
 
 ### Requirement: Environment is an allowlist without secrets {#command-environment-allowlist}
 The child environment SHALL be built from an allowlist of safe variables plus operator-provided extras, and SHALL exclude any variable whose name looks like a credential, even when explicitly provided.
-> verify: `npm test -- test/command-environment.test.ts`
+> verify: `cd packages/core && npm test -- test/command-environment.test.ts`
 
 #### Scenario:
 - WHEN the parent environment holds an API key or token

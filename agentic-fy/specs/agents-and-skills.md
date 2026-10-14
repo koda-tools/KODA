@@ -7,7 +7,7 @@ Agents e skills no formato do OpenCode (lidos de .koda com prioridade e de .open
 
 ### Requirement: Descoberta e validação de agents {#agent-discovery}
 O sistema DEVE carregar agents de agents/<nome>.md e da chave agent em koda.jsonc/opencode.jsonc, em .koda (prioridade), .opencode e nos diretórios globais, aplicando os campos do OpenCode, personalizando os embutidos build, plan, general e explore, e reportando arquivos inválidos como diagnóstico sem interromper o CLI.
-> verify: `node --test --import tsx test/agents-catalog.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/agents-catalog.test.ts`
 
 #### Scenario:
 - WHEN existe .koda/agents/review.md e .opencode/agents/review.md
@@ -23,7 +23,7 @@ O sistema DEVE carregar agents de agents/<nome>.md e da chave agent em koda.json
 
 ### Requirement: Descoberta de skills e ferramenta skill {#skill-discovery}
 O sistema DEVE descobrir skills em skills/<nome>/SKILL.md (.koda, .opencode, .claude, .agents, do diretório atual até a raiz do git e globais), validar name e description como o OpenCode, listá-las na descrição da ferramenta skill e entregar o conteúdo sob demanda.
-> verify: `node --test --import tsx test/agents-catalog.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/agents-catalog.test.ts`
 
 #### Scenario:
 - WHEN o name não bate com a pasta ou viola o padrão
@@ -35,7 +35,7 @@ O sistema DEVE descobrir skills em skills/<nome>/SKILL.md (.koda, .opencode, .cl
 
 ### Requirement: Permissões allow, ask e deny {#agent-permissions}
 O sistema DEVE aplicar permissões por ferramenta e por padrão glob, escondendo e bloqueando deny, pedindo aprovação em ask e liberando allow, mantendo escrita e comandos em ask por padrão e sem permitir que um subagente exceda as permissões do agente pai.
-> verify: `node --test --import tsx test/agent-permissions.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/agent-permissions.test.ts`
 
 #### Scenario:
 - WHEN o agente tem edit deny
@@ -51,7 +51,7 @@ O sistema DEVE aplicar permissões por ferramenta e por padrão glob, escondendo
 
 ### Requirement: Agents primários na sessão {#primary-agents}
 O sistema DEVE manter um agente primário por sessão, alternável com Alt+A e Alt+Shift+A e por /agent, exibido na sidebar, listado em /agents e usado pelos comandos que declaram agent, com o seletor de sessões em Alt+S.
-> verify: `node --test --import tsx test/agents-session.test.ts test/keyboard.test.ts`
+> verify: `cd packages/koda && node --conditions=development --test --import tsx test/agents-session.test.ts test/keyboard.test.ts`
 
 #### Scenario:
 - WHEN o usuário aperta Alt+A
@@ -67,7 +67,7 @@ O sistema DEVE manter um agente primário por sessão, alternável com Alt+A e A
 
 ### Requirement: Delegação a subagentes {#subagent-delegation}
 O sistema DEVE permitir delegar a subagentes pela ferramenta task, por @nome e por comandos com subagent true, executando o filho com seu prompt, permissões, steps e tempo limite, sem a ferramenta task (profundidade 1), em uma sessão filha, propagando cancelamento e somando o uso na sessão pai.
-> verify: `node --test --import tsx test/subagents.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/subagents.test.ts`
 
 #### Scenario:
 - WHEN o agente chama task com explore
@@ -83,7 +83,7 @@ O sistema DEVE permitir delegar a subagentes pela ferramenta task, por @nome e p
 
 ### Requirement: Provider por agente e limite de passos {#agent-provider-and-steps}
 O sistema DEVE executar cada agente com o provider e modelo do seu campo model, mesmo diferente do provider da sessão, e ao atingir steps DEVE pedir um resumo final sem ferramentas em vez de falhar.
-> verify: `node --test --import tsx test/subagents.test.ts test/agent.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/subagents.test.ts test/agent.test.ts`
 
 #### Scenario:
 - WHEN o agente declara model anthropic/x e a sessão usa openai

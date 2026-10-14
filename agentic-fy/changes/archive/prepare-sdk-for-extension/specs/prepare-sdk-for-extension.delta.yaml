@@ -1,0 +1,91 @@
+# Spec delta for the "prepare-sdk-for-extension" capability.
+capability: prepare-sdk-for-extension
+
+purpose: Let a host other than the terminal (such as a VS Code extension) assemble KODA through the SDK, in a workspace layout ready for an extension package, while the CLI keeps working unchanged.
+
+operations:
+  - op: add
+    id: bootstrap-without-terminal
+    title: The SDK can assemble KODA without a terminal
+    statement: The system SHALL provide a bootstrap API that builds the provider, agent catalog, MCP manager and agent runtime from a working directory and connection settings, without reading from or writing to the process terminal.
+    verify: cd packages/core && node --conditions=development --import tsx --test test/bootstrap.test.ts
+    scenarios:
+      - when: a host calls the bootstrap with a cwd, a connection and its own approval policies
+        then: it receives a ready agent runtime and nothing is written to stdout or stderr
+
+  - op: add
+    id: bootstrap-fails-on-missing-key-first
+    title: A missing provider key fails before anything else loads
+    statement: The system SHALL fail the bootstrap with the provider error before the policy factory, catalog or MCP are loaded when the selected provider has no key.
+    verify: cd packages/core && node --conditions=development --import tsx --test test/bootstrap.test.ts
+    scenarios:
+      - when: no credentials are configured and the bootstrap runs with a lazy policy factory
+        then: the provider error is raised and the factory is never called
+
+  - op: add
+    id: cli-behavior-unchanged
+    title: The CLI behaves exactly as before
+    statement: The system SHALL keep the behavior, output and exit codes of `koda`, `koda init`, `koda connect` and every slash command unchanged after the bootstrap is extracted and after the layout move.
+    verify: cd packages/koda && node --conditions=development --import tsx --test test/tui.test.ts test/init.test.ts && cd ../core && node --conditions=development --import tsx --test test/commands.test.ts
+    scenarios:
+      - when: the existing CLI tests run against the refactored entry point
+        then: they pass without modification to their expectations
+
+  - op: add
+    id: main-entry-has-no-terminal-code
+    title: The main entry point has no terminal UI
+    statement: The system SHALL NOT reach the terminal UI (`src/cli/tui`) or `@termuijs/*` from the package main entry point `src/index.ts`, directly or transitively.
+    verify: cd packages/koda && node --conditions=development --import tsx --test test/core-reexport.test.ts
+    scenarios:
+      - when: the static imports of src/index.ts are followed transitively
+        then: none resolves into src/cli/tui or a @termuijs package
+
+  - op: add
+    id: tui-subpath-export
+    title: The terminal UI stays available through a subpath
+    statement: The system SHALL expose the terminal UI (`runInteractive`, `renderHeader` and related types) through the `@koda-tools/koda/tui` export.
+    verify: cd packages/koda && node --conditions=development --import tsx --test test/core-reexport.test.ts
+    scenarios:
+      - when: package.json exports is read
+        then: 'the "./tui" export points at the built terminal UI entry and the "." export does not include runInteractive'
+
+  - op: add
+    id: workspace-layout
+    title: The repository is an npm workspace with the CLI in packages/koda
+    statement: The system SHALL keep the CLI and SDK as the single package `@koda-tools/koda` under `packages/koda`, with the same `bin`, `exports` and published files, in a private root workspace whose `packages/*` can host further packages.
+    verify: cd packages/koda && node --conditions=development --import tsx --test test/workspace-layout.test.ts
+    scenarios:
+      - when: the root `npm run build` and `npm test` run
+        then: they build and test the workspace package like they did the flat package
+      - when: the workspace package is packed
+        then: the tarball contains bin/koda.js, dist/src, README.md and LICENSE (copied from the root by a prepack script) and has the same name and version as before
+
+  - op: add
+    id: bin-stays-lf
+    title: The bin entry keeps LF line endings after the move
+    statement: The system SHALL keep `packages/koda/bin/koda.js` with LF line endings and a Git attribute that forces LF, so the shebang works on Linux.
+    verify: cd packages/koda && node --conditions=development --import tsx --test test/workspace-layout.test.ts
+    scenarios:
+      - when: the file is checked out on Windows with core.autocrlf=true
+        then: it still ends its lines with LF
+
+  - op: add
+    id: release-targets-the-package
+    title: The release workflow publishes the workspace package
+    statement: The system SHALL check the release tag against `packages/koda/package.json` and publish the `@koda-tools/koda` workspace in the release workflow.
+    verify: >-
+      grep -q "packages/koda/package.json" .github/workflows/release.yml && grep -q -e "-w @koda-tools/koda" .github/workflows/release.yml
+    scenarios:
+      - when: a GitHub Release is published
+        then: the version check reads packages/koda/package.json and npm publish targets the workspace
+
+  - op: add
+    id: verify-commands-follow-the-move
+    title: Spec verify commands still point at real files
+    statement: The system SHALL run `verify:` commands in `agentic-fy/` that call `node --test` directly from `packages/koda`, because the tests resolve paths from the working directory, and SHALL keep `npm test`, `npm run check` and `npm run build` working from the repository root.
+    verify: cd packages/koda && node --conditions=development --import tsx --test test/workspace-layout.test.ts
+    scenarios:
+      - when: a verify command that calls node --test runs from the repository root
+        then: it first changes into packages/koda and finds the test file
+      - when: a verify command runs `npm test -- test/x.test.ts` from the repository root
+        then: the root script forwards the argument to the workspace

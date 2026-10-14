@@ -1,0 +1,50 @@
+{
+  "name": "@koda-tools/koda",
+  "version": "1.0.0",
+  "description": "A secure TypeScript AI coding agent CLI and SDK",
+  "type": "module",
+  "license": "Unlicense",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "koda": "bin/koda.js"
+  },
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./tui": "./dist/src/cli/tui/index.js"
+  },
+  "files": [
+    "bin",
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "node scripts/copy-root-files.mjs",
+    "prepublishOnly": "npm run build",
+    "koda": "tsc -p tsconfig.json && node ./bin/koda.js",
+    "start": "node ./bin/koda.js",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "format:check": "prettier --check package.json tsconfig.json \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write package.json tsconfig.json \"src/**/*.ts\" \"test/**/*.ts\"",
+    "test": "node --conditions=development --test --import tsx \"test/**/*.test.ts\""
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@koda-tools/core": "0.2.1",
+    "@termuijs/quick": "0.1.7",
+    "@termuijs/store": "0.1.7",
+    "@termuijs/ui": "0.1.7",
+    "@termuijs/widgets": "0.1.7",
+    "shiki": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.0",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

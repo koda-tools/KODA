@@ -6,7 +6,7 @@ operations:
     id: providers-folders-by-purpose
     title: Providers are organized in purpose folders
     statement: Every TypeScript file under src/providers SHALL live inside a purpose folder (contracts, catalog, config, factory, shared, adapters/<vendor>), except the barrel src/providers/index.ts, and exported interfaces and type aliases SHALL be declared only in types.ts files.
-    verify: npm test -- test/providers-structure.test.ts
+    verify: cd packages/core && npm test -- test/providers-structure.test.ts
     scenarios:
       - when: the providers source tree is listed
         then: the only file directly under src/providers is index.ts
@@ -17,7 +17,7 @@ operations:
     id: providers-shared-helpers
     title: Adapters reuse SDK-free shared helpers
     statement: Error wrapping, system extraction, tool-call argument parsing, optional request fields, usage mapping, and stream accumulation SHALL be implemented once in src/providers/shared, which SHALL NOT import vendor SDKs or adapters.
-    verify: npm test -- test/providers-structure.test.ts
+    verify: cd packages/core && npm test -- test/providers-structure.test.ts
     scenarios:
       - when: shared, contracts, catalog or config modules are inspected
         then: they import no vendor SDK and nothing from adapters
@@ -28,7 +28,7 @@ operations:
     id: providers-single-catalog
     title: Single provider catalog with pricing
     statement: Provider names, default models, model and API key environment variables, default max tokens, and model prices SHALL be defined once in src/providers/catalog, and the factory, identity resolution, and TUI cost estimation SHALL derive from it.
-    verify: npm test -- test/factory.test.ts
+    verify: cd packages/core && npm test -- test/factory.test.ts
     scenarios:
       - when: the provider is selected from the environment
         then: the API key and model variables come from the catalog entry
@@ -39,7 +39,7 @@ operations:
     id: providers-real-streaming
     title: Real streaming on every provider
     statement: Anthropic and Gemini adapters SHALL stream incrementally from their SDKs, emitting text-delta events as chunks arrive, followed by tool-call, usage and done events, and SHALL honor options.signal.
-    verify: npm test -- test/provider-adapters.test.ts
+    verify: cd packages/core && npm test -- test/provider-adapters.test.ts
     scenarios:
       - when: the vendor stream yields several text chunks
         then: the adapter emits one text-delta per chunk before done
@@ -50,7 +50,7 @@ operations:
     id: providers-bug-fixes
     title: Known adapter bugs are fixed
     statement: Gemini SHALL send the function name in functionResponse, forward the abort signal and report finishReason; Anthropic SHALL send image parts and SHALL NOT send empty text blocks; adapters SHALL NOT re-wrap ProviderError.
-    verify: npm test -- test/provider-adapters.test.ts
+    verify: cd packages/core && npm test -- test/provider-adapters.test.ts
     scenarios:
       - when: a Gemini tool message answers a previous call
         then: functionResponse.name is the called function name

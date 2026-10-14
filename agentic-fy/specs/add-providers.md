@@ -7,7 +7,7 @@ Make every provider a catalog entry instead of code, so connecting and using an 
 
 ### Requirement: The provider catalog is an open registry {#catalog-open-registry}
 Provider identity SHALL be defined by the catalog rather than by a closed type union, validated at every boundary against the catalog, so adding a provider is a catalog entry and requires no change to the factory, the configuration types or the connect flow.
-> verify: `node --test --import tsx test/factory.test.ts test/provider-registry.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/factory.test.ts test/provider-registry.test.ts`
 
 #### Scenario:
 - WHEN a provider entry is added to the catalog
@@ -19,7 +19,7 @@ Provider identity SHALL be defined by the catalog rather than by a closed type u
 
 ### Requirement: The factory dispatches by SDK kind {#factory-dispatch-by-sdk}
 The factory SHALL build every provider from its catalog entry by dispatching on the entry's SDK kind, and the provider layer SHALL NOT branch on individual provider names in the factory, config or catalog modules.
-> verify: `node --test --import tsx test/provider-registry.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/provider-registry.test.ts`
 
 #### Scenario:
 - WHEN the factory creates any catalog provider
@@ -31,7 +31,7 @@ The factory SHALL build every provider from its catalog entry by dispatching on 
 
 ### Requirement: OpenAI-compatible vendors come from the catalog {#openai-compatible-vendors}
 The catalog SHALL include the OpenAI-compatible hosted and local vendors, each with its base URL, API key variable, model variable and default model, served by the shared AI SDK adapter without a dedicated package or module.
-> verify: `node --test --import tsx test/provider-wire.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN a catalog-only OpenAI-compatible provider sends a request
@@ -43,7 +43,7 @@ The catalog SHALL include the OpenAI-compatible hosted and local vendors, each w
 
 ### Requirement: Connect lists every provider that needs a key {#connect-lists-every-provider}
 The connect flow SHALL offer every catalog provider that requires an API key, with its connection status, SHALL exclude local providers that need no key, and SHALL save the key under the variable declared by the catalog entry.
-> verify: `node --test --import tsx test/connect-flow.test.ts`
+> verify: `cd packages/koda && node --conditions=development --test --import tsx test/connect-flow.test.ts`
 
 #### Scenario:
 - WHEN the connect selector is opened

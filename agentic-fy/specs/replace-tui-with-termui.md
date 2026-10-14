@@ -19,7 +19,7 @@ The interactive KODA CLI SHALL initialize the pinned TermUI implementation inste
 
 ### Requirement: Preserve interactive behavior {#interactive-behavior-parity}
 The TermUI implementation SHALL preserve prompt input, streamed output, status updates, scrolling, model selection, custom command routing, and conversation clearing.
-> verify: `npm test -- test/tui.test.ts`
+> verify: `cd packages/koda && npm test -- test/tui.test.ts`
 
 #### Scenario:
 - WHEN the provider emits streamed text
@@ -31,7 +31,7 @@ The TermUI implementation SHALL preserve prompt input, streamed output, status u
 
 ### Requirement: Preserve approval and cancellation controls {#approval-and-cancellation-parity}
 The TermUI implementation SHALL preserve explicit approval for writes and shell commands and SHALL propagate cancellation to the active request.
-> verify: `npm test -- test/tui.test.ts test/shell.test.ts`
+> verify: `cd packages/koda && npm test -- test/tui.test.ts && cd ../core && npm test -- test/shell.test.ts`
 
 #### Scenario:
 - WHEN a write or shell approval is requested
@@ -43,7 +43,7 @@ The TermUI implementation SHALL preserve explicit approval for writes and shell 
 
 ### Requirement: Restore terminal state safely {#terminal-lifecycle-safety}
 The TermUI implementation SHALL restore terminal state and release listeners on normal exit, cancellation, provider failure, approval rejection, and startup failure.
-> verify: `npm test -- test/tui.test.ts`
+> verify: `cd packages/koda && npm test -- test/tui.test.ts`
 
 #### Scenario:
 - WHEN an interactive session exits or fails

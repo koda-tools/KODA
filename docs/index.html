@@ -298,8 +298,19 @@ You review code looking for vulnerabilities.</code></pre>
 
     <section id="sdk">
       <h2>Use as a library</h2>
-      <p>The package exports the SDK at <code>dist/src/index.js</code>.</p>
-<pre><code>import * as koda from "@koda-tools/koda";</code></pre>
+      <p>The SDK is its own package, <code>@koda-tools/core</code>, with no terminal dependencies, so it is light to install and safe to bundle in other hosts such as an editor extension. <code>@koda-tools/koda</code> re-exports everything from it, so existing imports keep working.</p>
+<pre><code>npm install @koda-tools/core</code></pre>
+<pre><code>import { bootstrapKoda, loadConnection } from "@koda-tools/core";
+
+const connection = await loadConnection({ env: process.env });
+const koda = await bootstrapKoda({
+  cwd: process.cwd(),
+  connection,
+  policies: { approve: async (title) => askUser(title) },
+});
+await koda.close();</code></pre>
+      <p>Approvals are supplied by the host, as an object or as a function run once the provider is built (a missing API key fails before it is called). The terminal UI (<code>runInteractive</code>, <code>renderHeader</code>) is a separate export:</p>
+<pre><code>import { runInteractive } from "@koda-tools/koda/tui";</code></pre>
     </section>
 
     <footer>KODA &copy; · made with pixels.</footer>

@@ -1,0 +1,2 @@
+# The npm bin shebang must stay LF, or Linux fails to find "node" (CRLF).
+/packages/koda/bin/koda.js text eol=lf

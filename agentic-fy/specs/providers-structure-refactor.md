@@ -7,7 +7,7 @@ Keep the LLM provider layer organized by purpose, with shared SDK-free helpers, 
 
 ### Requirement: Providers are organized in purpose folders {#providers-folders-by-purpose}
 Every TypeScript file under src/providers SHALL live inside a purpose folder (contracts, catalog, config, factory, auth, shared, adapters/ai-sdk), except the barrel src/providers/index.ts, and exported interfaces and type aliases SHALL be declared only in types.ts files.
-> verify: `npm test -- test/providers-structure.test.ts`
+> verify: `cd packages/core && npm test -- test/providers-structure.test.ts`
 
 #### Scenario:
 - WHEN the providers source tree is listed
@@ -19,7 +19,7 @@ Every TypeScript file under src/providers SHALL live inside a purpose folder (co
 
 ### Requirement: Adapters reuse SDK-free shared helpers {#providers-shared-helpers}
 Error wrapping, system extraction, tool-call argument parsing, optional request fields, usage mapping, and stream accumulation SHALL be implemented once in src/providers/shared, which SHALL NOT import vendor SDKs or adapters.
-> verify: `npm test -- test/providers-structure.test.ts`
+> verify: `cd packages/core && npm test -- test/providers-structure.test.ts`
 
 #### Scenario:
 - WHEN shared, contracts, catalog or config modules are inspected
@@ -31,7 +31,7 @@ Error wrapping, system extraction, tool-call argument parsing, optional request 
 
 ### Requirement: Single provider catalog with pricing {#providers-single-catalog}
 Provider names, the AI SDK provider kind, default models, model and API key environment variables, default max tokens, and model prices SHALL be defined once in src/providers/catalog, and the factory, the AI SDK adapter, identity resolution, and TUI cost estimation SHALL derive from it.
-> verify: `npm test -- test/factory.test.ts`
+> verify: `cd packages/core && npm test -- test/factory.test.ts`
 
 #### Scenario:
 - WHEN the provider is selected from the environment
@@ -43,7 +43,7 @@ Provider names, the AI SDK provider kind, default models, model and API key envi
 
 ### Requirement: Real streaming on every provider {#providers-real-streaming}
 Every provider SHALL stream incrementally through the AI SDK full stream, emitting text-delta events as chunks arrive, followed by tool-call, usage and done events, and SHALL honor options.signal.
-> verify: `npm test -- test/provider-wire.test.ts`
+> verify: `cd packages/core && npm test -- test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN the vendor stream yields several text chunks
@@ -55,7 +55,7 @@ Every provider SHALL stream incrementally through the AI SDK full stream, emitti
 
 ### Requirement: Known adapter bugs are fixed {#providers-bug-fixes}
 Gemini SHALL send the function name in functionResponse, forward the abort signal and report finishReason; Anthropic SHALL send image parts and SHALL NOT send empty text blocks; adapters SHALL NOT re-wrap ProviderError.
-> verify: `npm test -- test/provider-wire.test.ts`
+> verify: `cd packages/core && npm test -- test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN a Gemini tool message answers a previous call

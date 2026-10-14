@@ -6,3 +6,8 @@ dist/
 *.log
 tmp
 .wrangler
+# Copied from the repository root by the prepack script
+/packages/koda/README.md
+/packages/koda/LICENSE
+/packages/core/README.md
+/packages/core/LICENSE

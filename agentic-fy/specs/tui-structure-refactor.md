@@ -7,7 +7,7 @@ Keep the interactive TUI organized by purpose, with types separated from impleme
 
 ### Requirement: TUI is organized in purpose folders {#tui-folders-by-purpose}
 Every TypeScript file under src/cli/tui SHALL live inside a purpose folder, except the public barrel src/cli/tui/index.ts.
-> verify: `npm test -- test/tui-structure.test.ts`
+> verify: `cd packages/koda && npm test -- test/tui-structure.test.ts`
 
 #### Scenario:
 - WHEN the TUI source tree is listed
@@ -19,7 +19,7 @@ Every TypeScript file under src/cli/tui SHALL live inside a purpose folder, exce
 
 ### Requirement: Shared code is isolated {#tui-shared-boundary}
 Code used by two or more TUI purpose folders SHALL live in src/cli/tui/shared, and shared SHALL NOT import from any other TUI folder.
-> verify: `npm test -- test/tui-structure.test.ts`
+> verify: `cd packages/koda && npm test -- test/tui-structure.test.ts`
 
 #### Scenario:
 - WHEN a module in shared is inspected
@@ -43,7 +43,7 @@ Code outside src/cli/tui SHALL import TUI modules only through src/cli/tui/index
 
 ### Requirement: No unused TUI code {#tui-no-dead-code}
 The TUI SHALL NOT contain the legacy Screen renderer, a duplicated approval flow, or exported symbols, interface members, or store fields that nothing reads.
-> verify: `npm test -- test/tui-structure.test.ts`
+> verify: `cd packages/koda && npm test -- test/tui-structure.test.ts`
 
 #### Scenario:
 - WHEN the TUI tree is searched

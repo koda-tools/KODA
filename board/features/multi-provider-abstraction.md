@@ -59,7 +59,7 @@ All providers expose normalized text completion and streaming. OpenAI and Anthro
 ## Definition of done
 - Changing only provider environment configuration selects a backend.
 - OpenAI and Anthropic execute identical normalized tool-call flows.
-- No vendor SDK type escapes `src/providers/adapters/`.
+- No vendor SDK type escapes `packages/core/src/providers/adapters/`.
 - Every adapter has offline request, response, stream, tool, and error mapping tests.
 - Missing credentials and unsupported capabilities produce actionable errors without exposing secrets.
 

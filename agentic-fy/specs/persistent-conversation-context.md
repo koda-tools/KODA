@@ -59,7 +59,7 @@ O sistema DEVE oferecer um comando built-in para descartar intencionalmente o hi
 
 ### Requirement: Memória de conversa na sessão {#session-conversation-memory}
 A sessão interativa DEVE acumular o histórico de conversa entre turnos, fornecê-lo à execução seguinte e limitá-lo a um orçamento de tokens derivado do limite de contexto do modelo, sem descartar o system prompt nem deixar mensagens de tool órfãs.
-> verify: `node --test --import tsx test/conversation-context.test.ts`
+> verify: `cd packages/koda && node --conditions=development --test --import tsx test/conversation-context.test.ts`
 
 #### Scenario:
 - WHEN dois prompts são enviados em sequência

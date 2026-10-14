@@ -7,7 +7,7 @@ operations:
     id: agent-discovery
     title: Descoberta e validação de agents
     statement: O sistema DEVE carregar agents de agents/<nome>.md e da chave agent em koda.jsonc/opencode.jsonc, em .koda (prioridade), .opencode e nos diretórios globais, aplicando os campos do OpenCode, personalizando os embutidos build, plan, general e explore, e reportando arquivos inválidos como diagnóstico sem interromper o CLI.
-    verify: node --test --import tsx test/agents-catalog.test.ts
+    verify: cd packages/core && node --conditions=development --test --import tsx test/agents-catalog.test.ts
     scenarios:
       - when: existe .koda/agents/review.md e .opencode/agents/review.md
         then: vale o de .koda
@@ -20,7 +20,7 @@ operations:
     id: skill-discovery
     title: Descoberta de skills e ferramenta skill
     statement: O sistema DEVE descobrir skills em skills/<nome>/SKILL.md (.koda, .opencode, .claude, .agents, do diretório atual até a raiz do git e globais), validar name e description como o OpenCode, listá-las na descrição da ferramenta skill e entregar o conteúdo sob demanda.
-    verify: node --test --import tsx test/agents-catalog.test.ts
+    verify: cd packages/core && node --conditions=development --test --import tsx test/agents-catalog.test.ts
     scenarios:
       - when: o name não bate com a pasta ou viola o padrão
         then: a skill é ignorada com diagnóstico
@@ -31,7 +31,7 @@ operations:
     id: agent-permissions
     title: Permissões allow, ask e deny
     statement: O sistema DEVE aplicar permissões por ferramenta e por padrão glob, escondendo e bloqueando deny, pedindo aprovação em ask e liberando allow, mantendo escrita e comandos em ask por padrão e sem permitir que um subagente exceda as permissões do agente pai.
-    verify: node --test --import tsx test/agent-permissions.test.ts
+    verify: cd packages/core && node --conditions=development --test --import tsx test/agent-permissions.test.ts
     scenarios:
       - when: o agente tem edit deny
         then: writeFile não é oferecido e uma chamada direta é recusada
@@ -44,7 +44,7 @@ operations:
     id: primary-agents
     title: Agents primários na sessão
     statement: O sistema DEVE manter um agente primário por sessão, alternável com Alt+A e Alt+Shift+A e por /agent, exibido na sidebar, listado em /agents e usado pelos comandos que declaram agent, com o seletor de sessões em Alt+S.
-    verify: node --test --import tsx test/agents-session.test.ts test/keyboard.test.ts
+    verify: cd packages/koda && node --conditions=development --test --import tsx test/agents-session.test.ts test/keyboard.test.ts
     scenarios:
       - when: o usuário aperta Alt+A
         then: o próximo agente primário se torna o agente da sessão
@@ -57,7 +57,7 @@ operations:
     id: subagent-delegation
     title: Delegação a subagentes
     statement: O sistema DEVE permitir delegar a subagentes pela ferramenta task, por @nome e por comandos com subagent true, executando o filho com seu prompt, permissões, steps e tempo limite, sem a ferramenta task (profundidade 1), em uma sessão filha, propagando cancelamento e somando o uso na sessão pai.
-    verify: node --test --import tsx test/subagents.test.ts
+    verify: cd packages/core && node --conditions=development --test --import tsx test/subagents.test.ts
     scenarios:
       - when: o agente chama task com explore
         then: o resultado do filho volta como observação da ferramenta
@@ -70,7 +70,7 @@ operations:
     id: agent-provider-and-steps
     title: Provider por agente e limite de passos
     statement: O sistema DEVE executar cada agente com o provider e modelo do seu campo model, mesmo diferente do provider da sessão, e ao atingir steps DEVE pedir um resumo final sem ferramentas em vez de falhar.
-    verify: node --test --import tsx test/subagents.test.ts test/agent.test.ts
+    verify: cd packages/core && node --conditions=development --test --import tsx test/subagents.test.ts test/agent.test.ts
     scenarios:
       - when: o agente declara model anthropic/x e a sessão usa openai
         then: a execução usa o provider anthropic

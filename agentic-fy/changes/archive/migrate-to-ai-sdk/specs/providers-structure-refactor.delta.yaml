@@ -16,12 +16,12 @@ operations:
     id: providers-real-streaming
     set:
       statement: Every provider SHALL stream incrementally through the AI SDK full stream, emitting text-delta events as chunks arrive, followed by tool-call, usage and done events, and SHALL honor options.signal.
-      verify: npm test -- test/provider-wire.test.ts
+      verify: cd packages/core && npm test -- test/provider-wire.test.ts
 
   - op: modify
     id: providers-bug-fixes
     set:
-      verify: npm test -- test/provider-wire.test.ts
+      verify: cd packages/core && npm test -- test/provider-wire.test.ts
 
   - op: modify
     id: providers-public-barrel

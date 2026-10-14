@@ -39,7 +39,7 @@ O sistema DEVE isolar o buffer de transcript por sessão, exibindo no store apen
 
 ### Requirement: Navegação e criação de sessão por teclado {#session-switch-navigation}
 O sistema DEVE permitir criar uma nova sessão com Ctrl+N, alternar a visibilidade da sidebar com Ctrl+B e abrir um modal seletor de sessão (reusando o componente de lista existente) com Alt+S; o Alt+A fica reservado para alternar o agente primário (change agents-and-skills).
-> verify: `node --test --import tsx test/keyboard.test.ts`
+> verify: `cd packages/koda && node --conditions=development --test --import tsx test/keyboard.test.ts`
 
 #### Scenario:
 - WHEN o usuário pressiona Ctrl+N

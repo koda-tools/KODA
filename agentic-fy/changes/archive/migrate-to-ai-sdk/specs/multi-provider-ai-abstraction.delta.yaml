@@ -6,19 +6,19 @@ operations:
     id: streaming-openai-adapter
     set:
       statement: The system SHALL provide an OpenAI adapter, built on the AI SDK OpenAI Chat Completions model, that maps normalized completion and streaming requests, multimodal content, and native function calls using a configurable model.
-      verify: npm test -- test/provider-wire.test.ts
+      verify: cd packages/core && npm test -- test/provider-wire.test.ts
 
   - op: modify
     id: anthropic-provider-adapter
     set:
       statement: The system SHALL provide an Anthropic adapter, built on @ai-sdk/anthropic, that maps normalized messages, system instructions, tools, tool results, completions, streams, usage, and failures to and from the Claude Messages API.
-      verify: npm test -- test/provider-wire.test.ts
+      verify: cd packages/core && npm test -- test/provider-wire.test.ts
 
   - op: modify
     id: gemini-provider-adapter
     set:
       statement: The system SHALL provide a Gemini adapter, built on @ai-sdk/google, that maps normalized text and image content, function declarations and calls, completions, streams, usage, and failures to and from the Gemini API.
-      verify: npm test -- test/provider-wire.test.ts
+      verify: cd packages/core && npm test -- test/provider-wire.test.ts
     removeScenarios:
       - Gemini omits a function-call identifier
     addScenarios:
@@ -29,13 +29,13 @@ operations:
     id: ollama-provider-adapter
     set:
       statement: The system SHALL provide an Ollama adapter, built on @ai-sdk/openai-compatible, using the OpenAI-compatible local API with configurable model and base URL, no mandatory API key, normalized streaming, and explicit tool capability reporting.
-      verify: npm test -- test/provider-wire.test.ts
+      verify: cd packages/core && npm test -- test/provider-wire.test.ts
 
   - op: modify
     id: vendor-boundary-enforcement
     set:
       statement: The system SHALL confine AI SDK imports (ai, @ai-sdk/*) and vendor payload types to src/providers/adapters and expose only provider-neutral types through public SDK exports, including provider option types.
-      verify: npm test -- test/provider-boundary.test.ts
+      verify: cd packages/core && npm test -- test/provider-boundary.test.ts
     removeScenarios:
       - static boundary tests inspect src/core, src/cli, tools, and public provider contracts
     addScenarios:

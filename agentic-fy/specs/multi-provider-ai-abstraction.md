@@ -23,7 +23,7 @@ The system SHALL expose strictly typed provider-neutral contracts for text and i
 
 ### Requirement: Streaming OpenAI adapter {#streaming-openai-adapter}
 The system SHALL provide an OpenAI adapter, built on the AI SDK OpenAI Chat Completions model, that maps normalized completion and streaming requests, multimodal content, and native function calls using a configurable model.
-> verify: `npm test -- test/provider-wire.test.ts`
+> verify: `cd packages/core && npm test -- test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN OpenAI returns text or native function calls
@@ -35,7 +35,7 @@ The system SHALL provide an OpenAI adapter, built on the AI SDK OpenAI Chat Comp
 
 ### Requirement: Anthropic provider adapter {#anthropic-provider-adapter}
 The system SHALL provide an Anthropic adapter, built on @ai-sdk/anthropic, that maps normalized messages, system instructions, tools, tool results, completions, streams, usage, and failures to and from the Claude Messages API.
-> verify: `npm test -- test/provider-wire.test.ts`
+> verify: `cd packages/core && npm test -- test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN normalized history includes a system message and a readFile tool definition
@@ -51,7 +51,7 @@ The system SHALL provide an Anthropic adapter, built on @ai-sdk/anthropic, that 
 
 ### Requirement: Gemini provider adapter {#gemini-provider-adapter}
 The system SHALL provide a Gemini adapter, built on @ai-sdk/google, that maps normalized text and image content, function declarations and calls, completions, streams, usage, and failures to and from the Gemini API.
-> verify: `npm test -- test/provider-wire.test.ts`
+> verify: `cd packages/core && npm test -- test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN a normalized request contains text, image content, and tools
@@ -63,7 +63,7 @@ The system SHALL provide a Gemini adapter, built on @ai-sdk/google, that maps no
 
 ### Requirement: Ollama provider adapter {#ollama-provider-adapter}
 The system SHALL provide an Ollama adapter, built on @ai-sdk/openai-compatible, using the OpenAI-compatible local API with configurable model and base URL, no mandatory API key, normalized streaming, and explicit tool capability reporting.
-> verify: `npm test -- test/provider-wire.test.ts`
+> verify: `cd packages/core && npm test -- test/provider-wire.test.ts`
 
 #### Scenario:
 - WHEN Ollama is selected without a base URL
@@ -111,7 +111,7 @@ The system SHALL run the agent through an injected ILLMProvider and create the C
 
 ### Requirement: Vendor dependency boundary {#vendor-boundary-enforcement}
 The system SHALL confine AI SDK imports (ai, @ai-sdk/*) and vendor payload types to src/providers/adapters and expose only provider-neutral types through public SDK exports, including provider option types.
-> verify: `npm test -- test/provider-boundary.test.ts`
+> verify: `cd packages/core && npm test -- test/provider-boundary.test.ts`
 
 #### Scenario:
 - WHEN static boundary tests inspect src/core, src/cli, tools, and public provider contracts
@@ -123,7 +123,7 @@ The system SHALL confine AI SDK imports (ai, @ai-sdk/*) and vendor payload types
 
 ### Requirement: Every provider can list its models {#model-discovery}
 Each provider adapter SHALL be able to list the chat-capable model identifiers its vendor currently serves, excluding models the vendor reports as deprecated or retired and excluding models that cannot generate chat content, and SHALL send credentials in request headers rather than in URLs.
-> verify: `node --test --import tsx test/list-models.test.ts test/tui.test.ts`
+> verify: `cd packages/core && node --conditions=development --test --import tsx test/list-models.test.ts && cd ../koda && node --conditions=development --test --import tsx test/tui.test.ts`
 
 #### Scenario:
 - WHEN the model picker is opened on Anthropic or Gemini

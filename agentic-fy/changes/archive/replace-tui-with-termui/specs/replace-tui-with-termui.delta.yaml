@@ -17,7 +17,7 @@ operations:
     id: interactive-behavior-parity
     title: Preserve interactive behavior
     statement: The TermUI implementation SHALL preserve prompt input, streamed output, status updates, scrolling, model selection, custom command routing, and conversation clearing.
-    verify: npm test -- test/tui.test.ts
+    verify: cd packages/koda && npm test -- test/tui.test.ts
     scenarios:
       - when: the provider emits streamed text
         then: the transcript updates incrementally without blocking the event loop
@@ -28,7 +28,7 @@ operations:
     id: approval-and-cancellation-parity
     title: Preserve approval and cancellation controls
     statement: The TermUI implementation SHALL preserve explicit approval for writes and shell commands and SHALL propagate cancellation to the active request.
-    verify: npm test -- test/tui.test.ts test/shell.test.ts
+    verify: cd packages/koda && npm test -- test/tui.test.ts && cd ../core && npm test -- test/shell.test.ts
     scenarios:
       - when: a write or shell approval is requested
         then: the user can approve or reject it through a TermUI interaction
@@ -39,7 +39,7 @@ operations:
     id: terminal-lifecycle-safety
     title: Restore terminal state safely
     statement: The TermUI implementation SHALL restore terminal state and release listeners on normal exit, cancellation, provider failure, approval rejection, and startup failure.
-    verify: npm test -- test/tui.test.ts
+    verify: cd packages/koda && npm test -- test/tui.test.ts
     scenarios:
       - when: an interactive session exits or fails
         then: raw input state, listeners, timers, and TermUI resources are released

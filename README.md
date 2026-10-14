@@ -39,7 +39,7 @@ npm run build
 npm start
 ```
 
-To compile and start in a single step: `npm run koda`. The `koda` binary is exposed via `bin/koda.js`.
+To compile and start in a single step: `npm run koda`. The `koda` binary is exposed via `packages/koda/bin/koda.js`.
 
 ## Configuration
 
@@ -194,13 +194,57 @@ A folder containing a `SKILL.md` file: `.koda/skills/<name>/SKILL.md`.
 
 `.koda/` > `koda.json` > `.opencode/` > `opencode.json` > global configuration. Duplicates at the same level will throw an error.
 
-## Development
+## SDK
+
+The SDK is published as its own package, `@koda-tools/core`, with no terminal dependencies, so it is light to install and safe to bundle in other hosts such as an editor extension:
 
 ```bash
-npm run check          # typecheck
-npm test               # tests
+npm install @koda-tools/core
+```
+
+`@koda-tools/koda` (the CLI) re-exports everything from `@koda-tools/core`, so existing imports from it keep working. The terminal UI lives in a separate `@koda-tools/koda/tui` export.
+
+```ts
+import { bootstrapKoda, loadConnection } from "@koda-tools/core";
+
+const connection = await loadConnection({ env: process.env });
+const koda = await bootstrapKoda({
+  cwd: process.cwd(),
+  connection,
+  // Approvals are supplied by the host: an object, or a function run once the
+  // provider is built (a missing API key fails before it is called).
+  policies: { approve: async (title) => askUser(title) },
+});
+void koda.mcp.start();
+const prepared = koda.agents.prepare(koda.agents.defaultAgent().name, {});
+console.log(await prepared.agent.run("Summarize this project"));
+await koda.close();
+```
+
+`runInteractive`, `renderHeader` and the other terminal UI exports: `import { runInteractive } from "@koda-tools/koda/tui"`.
+
+## Development
+
+The repository is an npm workspace with two packages; the root only holds the workspace, the shared `tsconfig.base.json`, the docs and the CI:
+
+- `packages/core`: `@koda-tools/core`, the SDK (agent loop, providers, tools, MCP, custom commands, bootstrap). No terminal dependencies.
+- `packages/koda`: `@koda-tools/koda`, the CLI and terminal UI (`bin/koda.js`). It depends on the core package at the same version.
+
+Run everything from the root:
+
+```bash
+npm install
+npm run check          # builds core, then typechecks both packages
+npm run build          # compile core, then koda, to each package's dist
+npm test               # tests of both packages
 npm run format         # prettier
 ```
+
+Tests in `packages/koda` import `@koda-tools/core` from its sources through the `development` export condition (the test scripts pass `--conditions=development`), so you do not need to rebuild core between edits. Typechecking `packages/koda` reads core's built declarations, which `npm run check` builds first.
+
+To run a single test file, run it from its package: `cd packages/core && node --conditions=development --import tsx --test test/commands.test.ts`.
+
+Both packages are released together with the same version: bump `packages/core/package.json`, `packages/koda/package.json` and the `@koda-tools/core` dependency in koda, then publish a GitHub Release with the matching tag.
 
 ## Documentation
 

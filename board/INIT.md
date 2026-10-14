@@ -23,7 +23,7 @@ Feature specifications are maintained individually in [`docs/features/`](./featu
 | Interactive TUI | Streaming output, spinner/status, markdown/code highlighting, cancellation, model selection | Done |
 | Diff preview | Human-readable previews before approved writes | Done |
 | Custom commands | Markdown/JSONC discovery, arguments, model overrides, approved shell blocks | Done |
-| SDK surface | Public exports through `src/index.ts` | Done |
+| SDK surface | Public exports through `packages/core/src/index.ts` | Done |
 | Automated tests | Coverage for security, providers, agent loop, tools, commands, TUI, and diffs | Done |
 
 ### Important current limitations

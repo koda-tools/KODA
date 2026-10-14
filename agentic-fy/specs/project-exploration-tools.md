@@ -7,7 +7,7 @@ Let the KODA agent discover a workspace through bounded listing, search, inspect
 
 ### Requirement: listDirectory lists a bounded tree {#list-directory-tool}
 A `listDirectory` tool SHALL return the entries of a workspace directory up to a configurable depth and entry limit, respect `.gitignore`, skip sensitive and build directories, and never leave the workspace sandbox.
-> verify: `npm test -- test/list-directory.test.ts`
+> verify: `cd packages/core && npm test -- test/list-directory.test.ts`
 
 #### Scenario:
 - WHEN a directory contains a .gitignore that excludes build output
@@ -23,7 +23,7 @@ A `listDirectory` tool SHALL return the entries of a workspace directory up to a
 
 ### Requirement: searchFiles finds text and regex matches {#search-files-tool}
 A `searchFiles` tool SHALL search workspace files for literal text or a regular expression, honor case sensitivity, include and exclude globs, enforce file, total match and per-file limits, skip binary files, and support cancellation.
-> verify: `npm test -- test/search-files.test.ts`
+> verify: `cd packages/core && npm test -- test/search-files.test.ts`
 
 #### Scenario:
 - WHEN a regular expression matches lines in several files
@@ -39,7 +39,7 @@ A `searchFiles` tool SHALL search workspace files for literal text or a regular 
 
 ### Requirement: getFileInfo returns safe metadata {#get-file-info-tool}
 A `getFileInfo` tool SHALL return path, kind, size, modified time and text-or-binary classification for an existing workspace entry, without reading the whole file.
-> verify: `npm test -- test/get-file-info.test.ts`
+> verify: `cd packages/core && npm test -- test/get-file-info.test.ts`
 
 #### Scenario:
 - WHEN the path points to a UTF-8 text file
@@ -51,7 +51,7 @@ A `getFileInfo` tool SHALL return path, kind, size, modified time and text-or-bi
 
 ### Requirement: readFile supports a line range {#read-file-line-range}
 readFile SHALL accept optional 1-indexed inclusive startLine and endLine arguments, return only the requested range with a header listing the file path and the range, and keep the whole-file behavior when the range is omitted.
-> verify: `npm test -- test/read-file-range.test.ts`
+> verify: `cd packages/core && npm test -- test/read-file-range.test.ts`
 
 #### Scenario:
 - WHEN a valid line range is requested
@@ -67,7 +67,7 @@ readFile SHALL accept optional 1-indexed inclusive startLine and endLine argumen
 
 ### Requirement: Shared ignore and binary helpers {#tools-ignore-and-binary-helpers}
 Exploration tools SHALL share a `.gitignore` matcher and a text-or-binary heuristic in `src/utils`, with no external dependency and documented limitations.
-> verify: `npm test -- test/gitignore.test.ts test/binary.test.ts`
+> verify: `cd packages/core && npm test -- test/gitignore.test.ts test/binary.test.ts`
 
 #### Scenario:
 - WHEN a nested .gitignore reintroduces a path with `!`
@@ -79,7 +79,7 @@ Exploration tools SHALL share a `.gitignore` matcher and a text-or-binary heuris
 
 ### Requirement: Exploration tools stay in the sandbox {#exploration-tools-sandbox}
 Every new tool SHALL resolve requested paths through the existing workspace sandbox, deny access to sensitive files and directories, and accept an `AbortSignal` to cancel long operations.
-> verify: `npm test -- test/registry.test.ts`
+> verify: `cd packages/core && npm test -- test/registry.test.ts`
 
 #### Scenario:
 - WHEN an absolute path or a path containing `..` is requested

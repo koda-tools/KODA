@@ -26,7 +26,7 @@ operations:
     id: single-source-provider-defaults
     title: Single source of provider defaults
     statement: The system SHALL define provider identifiers and default model names in one module used by both the CLI and the provider factory.
-    verify: npm test -- test/factory.test.ts
+    verify: cd packages/core && npm test -- test/factory.test.ts
     scenarios:
       - when: KODA_PROVIDER selects a provider without an explicit model variable
         then: the CLI header and the created provider report the same default model
@@ -37,7 +37,7 @@ operations:
     id: shared-provider-error-description
     title: Shared provider error description
     statement: The system SHALL describe provider failures through a shared helper that includes the HTTP status and a short hint while never including API keys, headers, or request bodies.
-    verify: npm test -- test/provider-adapters.test.ts
+    verify: cd packages/core && npm test -- test/provider-adapters.test.ts
     scenarios:
       - when: a provider API call fails with a known HTTP status
         then: the error message includes the status and a hint
@@ -59,7 +59,7 @@ operations:
     id: architecture-boundaries-preserved
     title: Architecture boundaries preserved
     statement: The system SHALL keep vendor SDK imports confined to provider adapters and keep provider names out of the core agent after the refactor.
-    verify: npm test -- test/provider-boundary.test.ts
+    verify: cd packages/core && npm test -- test/provider-boundary.test.ts
     scenarios:
       - when: the boundary test scans source files
         then: no SDK import exists outside src/providers/adapters and no provider name exists in src/core

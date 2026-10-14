@@ -1,0 +1,59 @@
+# Spec delta for the "split-core-and-cli-packages" capability.
+capability: split-core-and-cli-packages
+
+purpose: Ship the SDK as its own package without terminal dependencies, and keep the CLI package and its binary working as before.
+
+operations:
+  - op: add
+    id: core-has-no-terminal-dependencies
+    title: The core package has no terminal dependencies
+    statement: The system SHALL provide `@koda-tools/core` without `@termuijs/*` or `shiki` in its dependencies, and its sources SHALL NOT import from `@koda-tools/koda`.
+    verify: cd packages/core && node --conditions=development --import tsx --test test/split-packages.test.ts
+    scenarios:
+      - when: the core manifest and sources are inspected
+        then: no terminal dependency is declared and no file imports the CLI package
+
+  - op: add
+    id: koda-reexports-the-sdk
+    title: The CLI package keeps exporting the SDK
+    statement: The system SHALL keep the main entry of `@koda-tools/koda` exporting everything `@koda-tools/core` exports, and keep the `./tui` export, so existing SDK consumers do not break.
+    verify: cd packages/koda && node --conditions=development --import tsx --test test/core-reexport.test.ts
+    scenarios:
+      - when: the main entry of the CLI package is imported
+        then: it exposes every export of the core package
+
+  - op: add
+    id: cli-behavior-unchanged
+    title: The CLI behaves exactly as before the split
+    statement: The system SHALL keep the behavior, output and exit codes of `koda`, `koda init`, `koda connect` and every slash command unchanged after the split.
+    verify: cd packages/koda && node --conditions=development --import tsx --test test/cli.test.ts test/tui.test.ts test/init.test.ts && cd ../core && node --conditions=development --import tsx --test test/commands.test.ts
+    scenarios:
+      - when: the existing CLI and TUI tests run against the split packages
+        then: they pass without changes to their expectations
+
+  - op: add
+    id: packages-are-packable
+    title: Both packages pack with the expected files
+    statement: The system SHALL produce tarballs for `@koda-tools/core` and `@koda-tools/koda` that contain their built output, README.md and LICENSE, and the `koda` tarball SHALL contain `bin/koda.js` and depend on the core package at the same exact version.
+    verify: cd packages/core && node --conditions=development --import tsx --test test/split-packages.test.ts && cd ../koda && node --conditions=development --import tsx --test test/core-reexport.test.ts test/workspace-layout.test.ts
+    scenarios:
+      - when: each workspace is packed in dry-run mode
+        then: the file lists include the built entry, README.md and LICENSE, and the koda manifest pins the core version
+
+  - op: add
+    id: release-publishes-core-first
+    title: The release publishes core before the CLI and checks both versions
+    statement: The system SHALL check the release tag against the versions of both packages and publish `@koda-tools/core` before `@koda-tools/koda` in the release workflow.
+    verify: grep -q "@koda-tools/core" .github/workflows/release.yml && grep -q "packages/core/package.json" .github/workflows/release.yml
+    scenarios:
+      - when: a GitHub Release is published
+        then: the workflow fails if either version differs from the tag, and publishes core first
+
+  - op: add
+    id: verify-commands-follow-moved-tests
+    title: Spec verify commands still point at real files
+    statement: The system SHALL run each `verify:` command that calls `node --test` from the package that holds the named test file.
+    verify: cd packages/koda && node --conditions=development --import tsx --test test/workspace-layout.test.ts
+    scenarios:
+      - when: a verify command for a moved test runs from the repository root
+        then: it changes into the package that now holds the test

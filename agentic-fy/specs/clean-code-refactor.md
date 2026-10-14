@@ -27,7 +27,7 @@ The system SHALL keep all source and test files formatted according to the proje
 
 ### Requirement: Single source of provider defaults {#single-source-provider-defaults}
 The system SHALL define provider identifiers and default model names in one module used by both the CLI and the provider factory.
-> verify: `npm test -- test/factory.test.ts`
+> verify: `cd packages/core && npm test -- test/factory.test.ts`
 
 #### Scenario:
 - WHEN KODA_PROVIDER selects a provider without an explicit model variable
@@ -39,7 +39,7 @@ The system SHALL define provider identifiers and default model names in one modu
 
 ### Requirement: Shared provider error description {#shared-provider-error-description}
 The system SHALL describe provider failures through a shared helper that includes the HTTP status and a short hint while never including API keys, headers, or request bodies.
-> verify: `npm test -- test/provider-adapters.test.ts`
+> verify: `cd packages/core && npm test -- test/provider-adapters.test.ts`
 
 #### Scenario:
 - WHEN a provider API call fails with a known HTTP status
@@ -63,7 +63,7 @@ The system SHALL separate agent execution, interactive session orchestration, mo
 
 ### Requirement: Architecture boundaries preserved {#architecture-boundaries-preserved}
 The system SHALL keep vendor SDK imports confined to provider adapters and keep provider names out of the core agent after the refactor.
-> verify: `npm test -- test/provider-boundary.test.ts`
+> verify: `cd packages/core && npm test -- test/provider-boundary.test.ts`
 
 #### Scenario:
 - WHEN the boundary test scans source files
