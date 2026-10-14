@@ -1,6 +1,6 @@
 {
   "name": "@koda-tools/core",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "The KODA SDK: agent loop, providers, tools, MCP and bootstrap, without the terminal UI",
   "type": "module",
   "license": "Unlicense",

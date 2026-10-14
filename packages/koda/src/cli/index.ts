@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runQuietly } from "@koda-tools/core";
+import { initWorkspace, runQuietly } from "@koda-tools/core";
 import {
   bootstrapKoda,
   loadConnection,
@@ -11,7 +11,7 @@ import type { CommandPolicy } from "@koda-tools/core";
 import { computeFileDiff } from "@koda-tools/core";
 import { ProviderError } from "@koda-tools/core";
 import { runConnect } from "./connect/flow.js";
-import { formatInitResult, initWorkspace } from "./init/workspace.js";
+import { formatInitResult } from "./init/format.js";
 import { createReadlineUI } from "./connect/readline-ui.js";
 import type { ConnectionSettings } from "./connect/types.js";
 import {

@@ -1,7 +1,7 @@
 import { CommandRegistry, discoverCommands } from "@koda-tools/core";
 import { routeInput, type RouteResult } from "@koda-tools/core";
-import { formatMcpStatus } from "@koda-tools/core";
-import { formatInitResult, initWorkspace } from "../../init/workspace.js";
+import { formatMcpStatus, initWorkspace } from "@koda-tools/core";
+import { formatInitResult } from "../../init/format.js";
 import { runConnectCommand } from "../commands/connect-command.js";
 import { decide } from "../commands/decision.js";
 import { runModelCommand } from "../commands/model-command.js";
