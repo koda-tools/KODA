@@ -50,7 +50,7 @@ a { color: var(--strong); text-underline-offset: 4px; }
 a:hover { background: var(--accent); color: var(--accent-ink); }
 h1, h2, h3, .px { font-family: "Press Start 2P", monospace; font-weight: normal; line-height: 1.6; color: var(--strong); }
 
-.layout { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+.layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; }
 aside {
   position: sticky; top: 0; height: 100vh; overflow: auto; background: var(--panel);
   border-right: 3px solid var(--strong); padding: 24px 20px;
@@ -75,7 +75,7 @@ nav a::before { content: "> "; color: var(--dim); }
 nav a:hover { background: var(--accent); color: var(--accent-ink); border-left-color: var(--accent); }
 nav a:hover::before { color: var(--accent-ink); }
 
-main { padding: 56px 56px 110px; max-width: 920px; }
+main { padding: 56px 56px 110px; max-width: 920px; min-width: 0; }
 .hero h1 { font-size: 40px; margin: 0 0 18px; text-shadow: 4px 4px 0 var(--shadow); }
 .hero p { font-size: 17px; margin: 0 0 22px; color: var(--strong); max-width: 600px; }
 .blink { animation: blink 1s steps(2) infinite; }
@@ -112,7 +112,7 @@ footer { margin-top: 80px; color: var(--dim); border-top: 3px dashed var(--line)
 .menu-btn { display: none; }
 
 @media (max-width: 800px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
   aside { position: sticky; top: 0; z-index: 10; height: auto; max-height: 100vh; border-right: 0; border-bottom: 3px solid var(--strong); }
   .menu-btn {
     display: flex; flex-direction: column; justify-content: center; gap: 5px;
@@ -158,7 +158,7 @@ footer { margin-top: 80px; color: var(--dim); border-top: 3px dashed var(--line)
 .demo-status { min-height: 1.5em; color: var(--t-dim); }
 .demo-suggest, .demo-choice { border: 1px solid var(--t-cyan); padding: 2px 8px; margin: 4px 0; }
 .demo-choice { border-color: var(--t-yellow); }
-.demo-suggest .row, .demo-choice .row { display: flex; gap: 12px; padding: 0 4px; }
+.demo-suggest .row, .demo-choice .row { display: flex; flex-wrap: wrap; gap: 0 12px; padding: 0 4px; }
 .demo-suggest .row span:first-child { min-width: 9ch; }
 .demo-suggest .row span:last-child { color: var(--t-dim); }
 .demo-suggest .row.on, .demo-choice .row.on { background: var(--t-ink); color: #000; }
@@ -168,7 +168,7 @@ footer { margin-top: 80px; color: var(--dim); border-top: 3px dashed var(--line)
 .demo-prompt { background: var(--t-box); border-left: 4px solid var(--t-cyan); padding: 6px 12px; margin-top: 6px; }
 .demo-input-row { min-height: 3em; overflow-wrap: anywhere; }
 #demo-input:empty::before { content: "Message..."; color: var(--t-dim); }
-.demo-footer { display: flex; justify-content: space-between; gap: 12px; color: var(--t-dim); }
+.demo-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 12px; color: var(--t-dim); }
 .demo .cursor { display: inline-block; width: .6em; height: 1.1em; background: var(--t-ink); vertical-align: text-bottom; margin-left: 1px; animation: blink 1s steps(2) infinite; }
 .demo-side { background: var(--t-side); padding: 10px 12px; overflow: hidden; font-size: 12px; }
 .demo-side .art { font-size: 12px; line-height: 1.1; color: var(--t-ink); text-shadow: none; margin-bottom: 14px; }
