@@ -49,12 +49,40 @@
 
   <main>
     <div class="hero" id="intro">
-      <div class="art" aria-hidden="true"> ▀ ▀
-█▀█▀█
-▀▀▀▀▀</div>
-      <h1>KODA</h1>
+      
       <p>A secure coding agent for the terminal, written in TypeScript. CLI and SDK.</p>
-      <pre><code>$ koda<span class="blink"> _</span></code></pre>
+      <div class="demo" id="demo" role="group" aria-label="KODA demo">
+        <div class="demo-bar">
+          <span>$ koda</span>
+          <button type="button" id="demo-toggle" aria-pressed="false">❚❚ pause</button>
+        </div>
+        <p class="sr">Animated terminal demo: slash commands are typed and answered, then a prompt asks the solution-architect agent to create a NestJS API. KODA thinks, replies, and asks for approval before writing a file.</p>
+        <div class="demo-screen" aria-hidden="true">
+          <div class="demo-chat">
+            <div class="demo-log" id="demo-log"></div>
+            <div class="demo-status" id="demo-status"></div>
+            <div class="demo-suggest" id="demo-suggest" hidden></div>
+            <div class="demo-choice" id="demo-choice" hidden></div>
+            <div class="demo-prompt">
+              <div class="demo-input-row"><span id="demo-input"></span><span class="cursor"></span></div>
+              <div class="demo-footer"><span>solution-architect · gpt-4.1-mini</span><span>Enter ↵ send</span></div>
+            </div>
+          </div>
+          <div class="demo-side">
+            <div class="art"> ▀ ▀   KODA
+█▀█▀█  AI Coding Agent
+▀▀▀▀▀</div>
+            <div class="side-h">SESSIONS</div>
+            <div id="demo-session">● New session</div>
+            <div class="side-dim">+ New session</div>
+            <div class="side-h">CURRENT</div>
+            <div class="side-row"><span>Agent</span><span>solution-archi…</span></div>
+            <div class="side-row"><span>Model</span><span>gpt-4.1-mini</span></div>
+            <div class="side-row"><span>Provider</span><span>openai</span></div>
+            <div class="side-row"><span>Tokens</span><span id="demo-tokens">0</span></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <section>
@@ -341,6 +369,143 @@ await koda.close();</code></pre>
       localStorage.setItem("koda-theme", next);
       label();
     });
+  })();
+</script>
+<script>
+  (function () {
+    var root = document.getElementById("demo");
+    if (!root) return;
+    var $ = function (id) { return document.getElementById(id); };
+    var log = $("demo-log"), input = $("demo-input"), status = $("demo-status"),
+        suggest = $("demo-suggest"), choice = $("demo-choice"), tokens = $("demo-tokens"),
+        session = $("demo-session"), btn = $("demo-toggle");
+    var COMMANDS = [
+      ["help", "Show built-in commands"], ["commands", "List custom commands"],
+      ["model", "Switch model"], ["agents", "List agents"], ["agent", "Switch the primary agent"],
+      ["skills", "List skills"], ["connect", "Connect a provider (API key)"], ["mcp", "Show MCP servers"],
+      ["init", "Create the .koda folder"], ["clear", "Clear conversation context"], ["exit", "Leave KODA"]
+    ];
+    var AGENTS = [
+      "Primary agents (Alt+A / Alt+Shift+A, /agent <name>):",
+      "  ○ build — Default agent for development work with every tool available.",
+      "  ○ plan — Analyzes code and proposes plans without changing files.",
+      "  ● solution-architect — Designs APIs and project structure. (.koda/agents/solution-architect.md)",
+      "",
+      "Subagents (@name <task>, or the task tool):",
+      "  ○ general — General-purpose subagent for researching complex questions and multi-step tasks.",
+      "  ○ explore — Fast read-only subagent for finding files, searching code and answering questions about the codebase."
+    ];
+    var SPIN = ["◜", "◠", "◝", "◞", "◡", "◟"];
+    var paused = false, onScreen = typeof IntersectionObserver === "undefined", waiter = null;
+
+    function active() { return !paused && onScreen && !document.hidden; }
+    function wake() { if (waiter && active()) { var r = waiter; waiter = null; r(); } }
+    function sleep(ms) {
+      return new Promise(function (r) { setTimeout(r, ms); }).then(function () {
+        return active() ? null : new Promise(function (r) { waiter = r; });
+      });
+    }
+    async function type(text, ms) {
+      for (var i = 0; i < text.length; i++) {
+        input.textContent += text[i];
+        suggestions();
+        await sleep(ms + Math.random() * ms * 0.6);
+      }
+    }
+    function suggestions() {
+      var typed = input.textContent;
+      var items = typed.charAt(0) === "/" && typed.indexOf(" ") < 0
+        ? COMMANDS.filter(function (c) { return c[0].indexOf(typed.slice(1)) === 0; }) : [];
+      suggest.hidden = items.length === 0;
+      suggest.innerHTML = items.map(function (c, i) {
+        return '<div class="row' + (i === 0 ? " on" : "") + '"><span>/' + c[0] + "</span><span>" + c[1] + "</span></div>";
+      }).join("");
+    }
+    function line(text, cls) {
+      var d = document.createElement("div");
+      d.className = "ln " + (cls || "");
+      d.textContent = text;
+      log.appendChild(d);
+      while (log.children.length > 60) log.removeChild(log.firstChild);
+      return d;
+    }
+    function setTokens(n) { tokens.textContent = n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n); }
+    async function countTo(from, to, steps) {
+      for (var i = 1; i <= steps; i++) { setTokens(Math.round(from + (to - from) * i / steps)); await sleep(40); }
+    }
+    async function typeLine(text, cls, ms) {
+      var d = line("", cls);
+      for (var i = 0; i < text.length; i++) { d.textContent += text[i]; await sleep(ms); }
+    }
+    async function think(ms) {
+      for (var t = 0; t < ms; t += 110) { status.textContent = SPIN[(t / 110) % 6 | 0] + " Thinking..."; await sleep(110); }
+      status.textContent = "";
+    }
+    function showChoice(selected) {
+      var opts = ["Accept", "Reject"];
+      choice.hidden = false;
+      choice.innerHTML = '<div class="ttl">Write  src/main.ts</div>' + opts.map(function (o, i) {
+        return '<div class="row' + (i === selected ? " on" : "") + '">' + (i === selected ? "> " : "  ") + o + "</div>";
+      }).join("") + '<div class="hint">↑/↓ choose · Enter confirm · Esc reject</div>';
+    }
+    function reset() {
+      log.textContent = ""; input.textContent = ""; status.textContent = "";
+      suggest.hidden = true; choice.hidden = true; setTokens(0);
+      session.textContent = "● New session";
+    }
+    async function play() {
+      for (;;) {
+        reset();
+        await sleep(1000);
+        await type("/", 160);
+        await sleep(800);
+        await type("agents", 140);
+        await sleep(600);
+        input.textContent = ""; suggestions();
+        for (var i = 0; i < AGENTS.length; i++) { line(AGENTS[i]); await sleep(90); }
+        await sleep(2200);
+        line("");
+        var prompt = "@solution-architect create a nestjs api for tasks";
+        await type(prompt, 45);
+        await sleep(700);
+        input.textContent = "";
+        line("TEXT · USER", "blk u hd"); line("", "blk u"); line(prompt, "blk u"); line("", "blk u");
+        session.textContent = "● @solution-archite…";
+        await sleep(300);
+        await think(2000);
+        await countTo(0, 2100, 8);
+        line("");
+        line("TEXT · KODA", "blk k hd"); line("", "blk k");
+        await typeLine("I'll scaffold a NestJS app with a tasks module, DTOs and a controller.", "blk k", 22);
+        await typeLine("First I'll write src/main.ts, then ask you to approve it.", "blk k", 22);
+        line("", "blk k");
+        await countTo(2100, 3800, 8);
+        await sleep(600);
+        showChoice(0);
+        await sleep(1800);
+        choice.hidden = true;
+        line("→ Accept", "blk k");
+        line("✓ writeFile src/main.ts", "blk k");
+        await think(1200);
+        await countTo(3800, 6400, 8);
+        line("");
+        line("TEXT · KODA", "blk k hd"); line("", "blk k");
+        await typeLine("Done. Run npm install && npm run start:dev to try it.", "blk k", 22);
+        line("", "blk k");
+        await sleep(4500);
+      }
+    }
+
+    btn.addEventListener("click", function () {
+      paused = !paused;
+      btn.setAttribute("aria-pressed", paused);
+      btn.textContent = paused ? "▶ play" : "❚❚ pause";
+      wake();
+    });
+    document.addEventListener("visibilitychange", wake);
+    if (typeof IntersectionObserver !== "undefined")
+      new IntersectionObserver(function (entries) { onScreen = entries[0].isIntersecting; wake(); }, { threshold: 0.25 }).observe(root);
+    play();
   })();
 </script>
 </body>
