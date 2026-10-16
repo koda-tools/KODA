@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { access } from "node:fs/promises";
+import { join } from "node:path";
 import { test } from "node:test";
 import { ToolRegistry } from "../src/index.js";
 import { withWorkspace } from "./helpers/workspace.js";
@@ -139,5 +141,37 @@ test("cancellation reaches the exploration tools", async () => {
     );
     assert.equal(result.ok, false);
     assert.match(result.content, /Cancelled by user/);
+  });
+});
+
+test("a cancelled write never proceeds after a delayed approval", async () => {
+  await withWorkspace({}, async (root) => {
+    let resolveApproval!: (allowed: boolean) => void;
+    let approvalRequested!: () => void;
+    const requested = new Promise<void>((resolve) => {
+      approvalRequested = resolve;
+    });
+    const tools = new ToolRegistry({
+      workspaceRoot: root,
+      writePolicy: {
+        confirm: () => {
+          approvalRequested();
+          return new Promise<boolean>((resolve) => {
+            resolveApproval = resolve;
+          });
+        },
+      },
+    });
+    const controller = new AbortController();
+    const running = tools.execute(
+      "writeFile",
+      JSON.stringify({ filePath: "cancelled.txt", content: "private" }),
+      controller.signal,
+    );
+    await requested;
+    controller.abort();
+    resolveApproval(true);
+    assert.equal((await running).ok, false);
+    await assert.rejects(access(join(root, "cancelled.txt")));
   });
 });

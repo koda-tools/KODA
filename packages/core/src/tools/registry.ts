@@ -366,7 +366,10 @@ export class ToolRegistry implements ToolExecutor {
             ),
           };
         case WRITE_FILE_DEFINITION.name:
-          return await this.write(parseWriteFileArgs(serializedArguments));
+          return await this.write(
+            parseWriteFileArgs(serializedArguments),
+            signal,
+          );
         case LIST_DIRECTORY_DEFINITION.name:
           return {
             ok: true,
@@ -443,12 +446,17 @@ export class ToolRegistry implements ToolExecutor {
   }
 
   /** Writes go through the approval policy and report the diff summary. */
-  private async write(args: WriteFileArgs): Promise<ToolObservation> {
+  private async write(
+    args: WriteFileArgs,
+    signal?: AbortSignal,
+  ): Promise<ToolObservation> {
+    signal?.throwIfAborted();
     const policy = this.options.writePolicy;
     if (policy === undefined)
       return failure("Write denied; no approval policy is configured.");
     const toolOptions = this.byteOptions();
     const previous = await readPreviousContent(toolOptions, args.filePath);
+    signal?.throwIfAborted();
     const approved = await policy.confirm({
       filePath: args.filePath,
       before: previous.before,
@@ -456,11 +464,13 @@ export class ToolRegistry implements ToolExecutor {
       ...(previous.skipped === undefined ? {} : { skipped: previous.skipped }),
     });
     if (!approved) return failure("Write denied by user.");
+    signal?.throwIfAborted();
     return {
       ok: true,
       content: await writeFileTool(args, {
         ...toolOptions,
         previousContent: previous.before,
+        ...(signal === undefined ? {} : { signal }),
       }),
     };
   }

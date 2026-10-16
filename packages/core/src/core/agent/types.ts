@@ -31,7 +31,8 @@ export interface ToolExecutor {
 
 /** Optional hooks to follow a run as it happens. */
 export interface AgentObserver {
-  onTextDelta?(text: string): void;
+  /** Awaited by the provider loop so hosts can apply backpressure. */
+  onTextDelta?(text: string): Promise<void> | void;
   onStatus?(label: string | undefined): void;
   onToolStart?(call: ToolCall): Promise<void> | void;
   onToolResult?(

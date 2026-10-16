@@ -34,11 +34,15 @@
     "node": ">=22.0.0"
   },
   "dependencies": {
-    "@koda-tools/core": "1.0.0",
+    "@effect/cli": "0.77.2",
+    "@effect/platform-node": "0.108.3",
+    "@koda-tools/acp": "1.0.0",
+    "@koda-tools/core": "1.1.0",
     "@termuijs/quick": "0.1.7",
     "@termuijs/store": "0.1.7",
     "@termuijs/ui": "0.1.7",
     "@termuijs/widgets": "0.1.7",
+    "effect": "3.22.3",
     "shiki": "4.4.3"
   },
   "devDependencies": {

@@ -35,7 +35,9 @@ test("built-in agents are available without any file", async () => {
     );
     assert.deepEqual(agent(catalog, "plan")?.permission, {
       edit: "deny",
-      bash: "ask",
+      bash: "deny",
+      mcp: "deny",
+      task: "deny",
     });
     assert.deepEqual(catalog.diagnostics, []);
   });

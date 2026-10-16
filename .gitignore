@@ -11,3 +11,4 @@ tmp
 /packages/koda/LICENSE
 /packages/core/README.md
 /packages/core/LICENSE
+*.vsix

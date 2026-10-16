@@ -96,6 +96,7 @@ export class CodeAgent {
     const completion = this.completionOptions(model, options.signal);
     let usage: Usage = EMPTY_USAGE;
     for (let iteration = 0; iteration < this.maxIterations; iteration += 1) {
+      options.signal?.throwIfAborted();
       observer.onStatus?.(THINKING_STATUS);
       const response = await requestResponse(
         this.provider,
@@ -104,6 +105,7 @@ export class CodeAgent {
         observer.onTextDelta?.bind(observer),
       );
       usage = sumUsage(usage, response.usage);
+      options.signal?.throwIfAborted();
       messages.push(toAssistantMessage(response));
       if (response.toolCalls.length === 0)
         return this.result(response, usage, model, messages.slice(turnStart));

@@ -133,7 +133,12 @@ export function withStoredCredentials(
     const stored = auth.providers[name];
     if (stored !== undefined) fill(providerSpec(name).apiKeyEnv, stored.key);
   }
-  if (auth.default !== undefined) fill(PROVIDER_ENV, auth.default);
+  if (
+    auth.default !== undefined &&
+    optionalEnv(env.KODA_PROVIDER) === undefined &&
+    optionalEnv(env.OPENCODE_PROVIDER) === undefined
+  )
+    fill(PROVIDER_ENV, auth.default);
   return merged;
 }
 

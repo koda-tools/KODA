@@ -11,6 +11,8 @@ import {
 } from "../src/bootstrap/index.js";
 import { ProviderError } from "../src/utils/errors.js";
 import { saveApiKey } from "../src/providers/index.js";
+import { initWorkspace } from "../src/init/index.js";
+import { saveProjectProvider } from "../src/bootstrap/project-provider.js";
 
 const offlineFetch = (async () => {
   throw new TypeError("fetch failed");
@@ -64,6 +66,46 @@ test("loadConnection merges stored credentials; real variables win", async () =>
       configRoot: config,
     });
     assert.equal(real.env["OPENAI_API_KEY"], "sk-real");
+  });
+});
+
+test("project provider overrides stored default but not an explicit environment choice", async () => {
+  await withTempDir(async (config) => {
+    await initWorkspace(config);
+    await saveProjectProvider(config, "anthropic");
+    const first = await loadConnection({ env: {}, configRoot: config });
+    await saveApiKey(first.authFile, "openai", "sk-openai");
+    await saveApiKey(first.authFile, "anthropic", "sk-anthropic");
+    const project = await bootstrapKoda({
+      cwd: config,
+      connection: await loadConnection({ env: {}, configRoot: config }),
+      configRoot: config,
+      fetch: offlineFetch,
+    });
+    assert.equal(project.identity.provider, "anthropic");
+    await project.close();
+    const explicit = await bootstrapKoda({
+      cwd: config,
+      connection: await loadConnection({
+        env: { KODA_PROVIDER: "openai" },
+        configRoot: config,
+      }),
+      configRoot: config,
+      fetch: offlineFetch,
+    });
+    assert.equal(explicit.identity.provider, "openai");
+    await explicit.close();
+    const opencode = await bootstrapKoda({
+      cwd: config,
+      connection: await loadConnection({
+        env: { OPENCODE_PROVIDER: "anthropic" },
+        configRoot: config,
+      }),
+      configRoot: config,
+      fetch: offlineFetch,
+    });
+    assert.equal(opencode.identity.provider, "anthropic");
+    await opencode.close();
   });
 });
 

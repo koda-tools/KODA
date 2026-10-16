@@ -1,0 +1,57 @@
+capability: koda-acp-server
+purpose: Expose KODA as an ACP v1 agent server through the koda acp command while reusing the existing Core.
+
+operations:
+  - op: add
+    id: acp-stdio-server
+    title: Start an ACP server over stdio
+    statement: The system SHALL provide koda acp using the stable ACP v1 SDK and JSON-RPC/NDJSON over stdio, with stdout reserved exclusively for protocol traffic and diagnostics sent to stderr.
+    scenarios:
+      - when: an ACP-compatible client starts koda acp
+        then: the process negotiates ACP without emitting non-protocol text on stdout
+  - op: add
+    id: acp-core-adapter
+    title: Reuse the existing KODA Core
+    statement: The independent @koda-tools/acp package SHALL reuse bootstrapKoda, AgentRuntime, CodeAgent, existing providers, tools, MCP, models, and permission policies without importing the CLI/TUI or creating parallel implementations.
+    scenarios:
+      - when: an ACP prompt is received
+        then: KODA Core executes it and the existing CLI/TUI behavior remains unchanged
+  - op: add
+    id: acp-sessions
+    title: Isolate ACP sessions and workspaces
+    statement: The server SHALL create independent ACP sessions bound to canonical workspace identities, preventing history, tools, runtimes, approvals, or MCP resources from crossing sessions or workspaces.
+    scenarios:
+      - when: two clients create sessions for different workspaces
+        then: each prompt uses only its own workspace-bound Core runtime and history
+  - op: add
+    id: acp-prompts-and-streaming
+    title: Execute and stream ACP prompts
+    statement: The server SHALL support prompt turns, ordered incremental updates, tool progress, completion, errors, and cancellation through the ACP v1 protocol.
+    scenarios:
+      - when: Core emits text deltas
+        then: the ACP client receives incremental session updates in order
+      - when: the client cancels a prompt
+        then: Core receives cancellation and active work stops where supported
+  - op: add
+    id: acp-modes-and-permissions
+    title: Preserve Build, Plan, and approvals
+    statement: The server SHALL expose Build and Plan as ACP session modes backed by existing Core agents, enforce Plan's no-write/no-command/no-MCP/no-delegation policy at Core authorization, and forward approval requests to the ACP client without auto-approving.
+    scenarios:
+      - when: Plan requests a write or side-effecting command
+        then: Core denies the operation before execution
+      - when: a sensitive operation requires approval
+        then: the ACP client can approve or reject it and cancellation rejects pending approval
+  - op: add
+    id: acp-shutdown
+    title: Clean up ACP resources
+    statement: The server SHALL cancel active turns, reject pending approvals, close sessions and MCP connections, and terminate child processes where supported on shutdown or disconnect.
+    scenarios:
+      - when: the ACP transport disconnects
+        then: the server releases owned resources without corrupting protocol output
+  - op: add
+    id: cli-regression
+    title: Preserve the existing CLI/TUI
+    statement: The existing KODA CLI/TUI commands and behavior SHALL remain functional after adding koda acp.
+    scenarios:
+      - when: the existing Core and CLI/TUI test suites run
+        then: they pass without requiring an ACP client

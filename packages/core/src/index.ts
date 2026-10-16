@@ -104,6 +104,11 @@ export {
   type PolicySource,
 } from "./bootstrap/index.js";
 export { initWorkspace, type InitResult } from "./init/index.js";
+export {
+  projectConfigPath,
+  readProjectProvider,
+  saveProjectProvider,
+} from "./bootstrap/project-provider.js";
 export { estimateCost } from "./providers/index.js";
 export {
   readFileTool,

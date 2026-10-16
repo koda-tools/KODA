@@ -17,6 +17,7 @@ import type { CommandPolicy } from "../tools/command/types.js";
 import { ToolRegistry, type WritePolicy } from "../tools/registry.js";
 import type { Connection } from "./connection.js";
 import { globalRoots, type GlobalRoots } from "./roots.js";
+import { readProjectProvider } from "./project-provider.js";
 
 /** How the host asks the user to approve writes, commands and other tools. */
 export interface BootstrapPolicies {
@@ -64,7 +65,14 @@ export async function bootstrapKoda(
   options: BootstrapOptions,
 ): Promise<KodaRuntime> {
   const { cwd, connection } = options;
-  const env = connection.env;
+  const projectProvider =
+    connection.providerFromEnvironment === false
+      ? await readProjectProvider(cwd)
+      : undefined;
+  const env =
+    projectProvider === undefined
+      ? connection.env
+      : { ...connection.env, KODA_PROVIDER: projectProvider };
   const roots = globalRoots(options.configRoot);
   void initCatalog(roots.globalKodaRoot, options.fetch);
   const provider = ProviderFactory.fromEnvironment(env);

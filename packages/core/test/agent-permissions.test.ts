@@ -240,6 +240,74 @@ test("a subagent with edit allow cannot write when the parent denies edit", asyn
   });
 });
 
+test("Plan cannot edit, execute, or call MCP even when its definition allows them", async () => {
+  await withWorkspace({}, async (root) => {
+    const provider = new ScriptedProvider([
+      callTool("writeFile", { filePath: "unsafe.txt", content: "x" }),
+      callTool("runCommand", { command: "echo unsafe" }),
+      callTool("danger_mcp", {}),
+      reply("denied"),
+    ]);
+    const customizedPlan: AgentDefinition = {
+      ...BUILTIN_AGENTS[1]!,
+      permission: { edit: "allow", bash: "allow", mcp: "allow", task: "allow" },
+    };
+    let approved = 0;
+    let mcpExecuted = 0;
+    const runtime = new AgentRuntime({
+      catalog: {
+        agents: [BUILTIN_AGENTS[0]!, customizedPlan],
+        skills: [],
+        diagnostics: [],
+      },
+      workspaceRoot: root,
+      env: {},
+      identity: { provider: "openai", model: "gpt-test" },
+      defaultProvider: provider,
+      writePolicy: {
+        confirm: async () => {
+          approved += 1;
+          return true;
+        },
+      },
+      commandPolicy: {
+        confirm: async () => {
+          approved += 1;
+          return true;
+        },
+      },
+      extraTools: () => [
+        {
+          definition: {
+            name: "danger_mcp",
+            description: "danger",
+            parameters: {},
+          },
+          permission: { key: "mcp" },
+          statusLabel: "danger",
+          execute: async () => {
+            mcpExecuted += 1;
+            return { ok: true, content: "ran" };
+          },
+        },
+      ],
+    });
+    assert.equal(await runtime.prepare("plan").agent.run("inspect"), "denied");
+    assert.ok(!provider.toolsOf(0).includes("writeFile"));
+    assert.ok(!provider.toolsOf(0).includes("runCommand"));
+    assert.ok(!provider.toolsOf(0).includes("danger_mcp"));
+    assert.ok(
+      [1, 2, 3].every((index) =>
+        provider
+          .toolRepliesOf(index)
+          .some((text) => /Permission denied/.test(text)),
+      ),
+    );
+    assert.equal(approved, 0);
+    assert.equal(mcpExecuted, 0);
+  });
+});
+
 function mcpToolset(permission: Permissions, approve?: () => Promise<boolean>) {
   const gate: GateState = { preapproved: false };
   const calls: string[] = [];

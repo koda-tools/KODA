@@ -11,7 +11,7 @@ import {
 } from "../providers/index.js";
 import { ToolRegistry } from "../tools/registry.js";
 import { AGENT_NAME } from "./agent-file.js";
-import { BUILTIN_AGENTS } from "./builtins.js";
+import { BUILTIN_AGENTS, PLAN_READ_ONLY_PERMISSIONS } from "./builtins.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { createSkillTool } from "./skill-tool.js";
 import { createTaskTool } from "./task-tool.js";
@@ -227,6 +227,7 @@ export class AgentRuntime {
     const layers: readonly Permissions[] = [
       ...(context.parentLayers ?? []),
       definition.permission,
+      ...(definition.name === "plan" ? [PLAN_READ_ONLY_PERMISSIONS] : []),
     ];
     const { provider, identity } = this.resolveModel(
       context.model ?? definition.model ?? context.fallbackModel,

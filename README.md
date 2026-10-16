@@ -87,17 +87,20 @@ Every provider past the first three is OpenAI-compatible and served from the cat
 
 ### Connect a provider
 
-Instead of exporting variables, save the key with `/connect` inside KODA, or with `koda connect` from the terminal (requires an interactive terminal).
+Instead of exporting variables, save the key with `/connect` inside KODA, or with `koda connect` from an interactive terminal. For automation, pipe the key to `koda connect <provider> --token-stdin`; do not pass credentials in command-line arguments.
 
 ```bash
 /connect                 # pick from a list (↑/↓, Enter, Esc cancels)
 /connect anthropic       # or pass the provider directly
 koda connect anthropic
+printf '%s' "$OPENAI_API_KEY" | koda connect openai --token-stdin
 ```
+
+In PowerShell, use `$env:OPENAI_API_KEY | koda connect openai --token-stdin`.
 
 The list covers every hosted provider and shows whether each one is `connected`, `from environment` or `not connected`. Local servers need no key. The key is typed hidden and saved to `~/.config/koda/auth.json` with permission `600`.
 
-The first connected provider becomes the default. Environment variables take precedence over the saved key. Restart KODA to use the new provider (or set `KODA_PROVIDER=<name>`).
+The first connected provider becomes the global default. A project preference in `.koda/koda.json` overrides that default; an explicit `KODA_PROVIDER` or `OPENCODE_PROVIDER` overrides the project. API keys always stay outside the project in the global auth file. Restart KODA to use a new provider.
 
 ### Provider catalog
 
@@ -147,7 +150,7 @@ Use `@agent task` to delegate a task to a subagent.
 
 ### Start a project (init)
 
-Run `koda init` in the project root, or `/init` inside a session, to create the folders KODA reads its extensions from. It needs no API key and no interactive terminal.
+Run `koda init` in the project root, or `/init` inside a session, to create the folders KODA reads its extensions from. Use `koda init --provider=openai` to also select a project provider. It needs no API key and no interactive terminal. `koda --help` and `koda --version` work without a connection.
 
 ```
 Created  .koda/commands
@@ -155,7 +158,7 @@ Created  .koda/skills
 Created  .koda/agents
 ```
 
-It is safe to repeat: existing folders and files are never touched, and the output marks them as `Exists`. If a file named `.koda` is in the way, `init` fails with an error and creates nothing. Only the exact command `koda init` runs this; `koda init something` is still sent to the model as a prompt.
+It is safe to repeat: existing folders are not removed, and the output marks them as `Exists`. With `--provider`, the provider preference is updated in `.koda/koda.json` while preserving other configuration. If a file named `.koda` is in the way, `init` fails with an error and creates nothing.
 
 ## Agents
 

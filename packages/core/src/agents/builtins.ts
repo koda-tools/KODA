@@ -1,10 +1,18 @@
-import type { AgentDefinition } from "./types.js";
+import type { AgentDefinition, Permissions } from "./types.js";
 
 const BUILT_IN = "built-in";
 
+/** A hard safety layer for the Plan mode, even when its agent file is customized. */
+export const PLAN_READ_ONLY_PERMISSIONS: Permissions = {
+  edit: "deny",
+  bash: "deny",
+  mcp: "deny",
+  task: "deny",
+};
+
 /**
  * OpenCode's built-ins, adapted to KODA's tools. Writes and commands keep
- * asking for approval by default; `plan` and `explore` cannot edit.
+ * asking for approval by default; `plan` and `explore` are read-only.
  */
 export const BUILTIN_AGENTS: readonly AgentDefinition[] = [
   {
@@ -27,7 +35,7 @@ export const BUILTIN_AGENTS: readonly AgentDefinition[] = [
     prompt:
       "You are the plan agent. Analyze the code and propose a concrete plan. Do not change files; explain the changes instead.",
     steps: 25,
-    permission: { edit: "deny", bash: "ask" },
+    permission: PLAN_READ_ONLY_PERMISSIONS,
     hidden: false,
     disable: false,
     source: BUILT_IN,

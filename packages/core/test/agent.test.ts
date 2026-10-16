@@ -53,6 +53,50 @@ test("returns direct answers without tools", async () => {
   assert.equal(provider.calls.length, 1);
 });
 
+test("awaits asynchronous text observers before reading more provider deltas", async () => {
+  let release!: () => void;
+  let firstSeen!: () => void;
+  let secondProduced = false;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const seen = new Promise<void>((resolve) => {
+    firstSeen = resolve;
+  });
+  const provider: ILLMProvider = {
+    complete: async () => direct("firstsecond"),
+    async *stream() {
+      yield { type: "text-delta", text: "first" } as const;
+      secondProduced = true;
+      yield { type: "text-delta", text: "second" } as const;
+      yield { type: "done", response: direct("firstsecond") } as const;
+    },
+    supportsTools: () => false,
+    capabilities: () => ({ tools: false, streaming: true, images: false }),
+  };
+  const run = new CodeAgent(
+    provider,
+    new ToolRegistry({ workspaceRoot: process.cwd() }),
+    {
+      identity: { provider: "openai", model: "test-model" },
+    },
+  ).runDetailed("Hi", {
+    observer: {
+      onTextDelta: async (delta) => {
+        if (delta === "first") {
+          firstSeen();
+          await gate;
+        }
+      },
+    },
+  });
+  await seen;
+  assert.equal(secondProduced, false);
+  release();
+  assert.equal((await run).content, "firstsecond");
+  assert.equal(secondProduced, true);
+});
+
 test("feeds multiple tool observations back with their IDs", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "koda-agent-"));
   try {

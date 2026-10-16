@@ -1,0 +1,41 @@
+{
+  "name": "@koda-tools/acp",
+  "version": "1.0.0",
+  "description": "ACP v1 stdio adapter for KODA Core",
+  "type": "module",
+  "license": "Unlicense",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "files": [
+    "dist/src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "format:check": "prettier --check package.json tsconfig.json \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format": "prettier --write package.json tsconfig.json \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "test": "node --conditions=development --test --test-concurrency=1 --import tsx \"tests/**/*.test.ts\""
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "1.9.0",
+    "@koda-tools/core": "1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.0",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

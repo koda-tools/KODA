@@ -43,6 +43,8 @@ export async function runCommandTool(
     if (!approved) throw new ToolError("Command denied by user.");
   }
 
+  options.signal?.throwIfAborted();
+
   const result = await spawnCommand({
     command,
     cwd,

@@ -1,0 +1,76 @@
+{
+  "name": "koda-tool",
+  "displayName": "Koda-Tool",
+  "publisher": "Koda-Code",
+  "version": "1.0.0",
+  "description": "Run the KODA coding agent in native VS Code Chat with Build and Plan modes.",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://koda.tools/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/koda-tools/KODA.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koda-tools/KODA/issues"
+  },
+  "private": true,
+  "type": "module",
+  "main": "./dist/extension.cjs",
+  "engines": {
+    "vscode": "^1.101.0",
+    "node": ">=22.0.0"
+  },
+  "categories": [
+    "Chat",
+    "AI"
+  ],
+  "keywords": ["koda", "coding agent", "chat", "build", "plan"],
+  "preview": true,
+  "capabilities": {
+    "untrustedWorkspaces": { "supported": false },
+    "virtualWorkspaces": { "supported": false }
+  },
+  "activationEvents": [
+    "onChatParticipant:koda"
+  ],
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "koda",
+        "name": "koda",
+        "fullName": "KODA",
+        "description": "Use the KODA agent in native VS Code Chat",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "build",
+            "description": "Run KODA in Build mode."
+          },
+          {
+            "name": "plan",
+            "description": "Run KODA in Plan mode."
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "build": "npm run check && esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node22 --main-fields=module,main --external:vscode --outfile=dist/extension.cjs --sourcemap",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "node --conditions=development --import tsx --test \"test/**/*.test.ts\"",
+    "test:bundle": "node scripts/smoke-bundle.cjs",
+    "vscode:prepublish": "npm run build && npm run test && npm run test:bundle",
+    "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@koda-tools/core": "1.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "1.101.0",
+    "@vscode/vsce": "3.2.2",
+    "esbuild": "0.25.12",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

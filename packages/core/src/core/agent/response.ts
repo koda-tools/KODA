@@ -10,11 +10,11 @@ async function streamToResponse(
   provider: ILLMProvider,
   messages: readonly ChatMessage[],
   options: CompletionOptions,
-  onTextDelta: (text: string) => void,
+  onTextDelta: (text: string) => Promise<void> | void,
 ): Promise<ChatResponse> {
   let response: ChatResponse | undefined;
   for await (const event of provider.stream(messages, options)) {
-    if (event.type === "text-delta") onTextDelta(event.text);
+    if (event.type === "text-delta") await onTextDelta(event.text);
     else if (event.type === "done") response = event.response;
   }
   if (response === undefined)
@@ -27,7 +27,7 @@ export function requestResponse(
   provider: ILLMProvider,
   messages: readonly ChatMessage[],
   options: CompletionOptions,
-  onTextDelta: ((text: string) => void) | undefined,
+  onTextDelta: ((text: string) => Promise<void> | void) | undefined,
 ): Promise<ChatResponse> {
   return onTextDelta === undefined
     ? provider.complete(messages, options)

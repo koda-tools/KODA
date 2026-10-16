@@ -1,0 +1,16 @@
+.vscode/**
+.git/**
+.github/**
+node_modules/**
+src/**
+test/**
+scripts/**
+docs/**
+dist/src/**
+dist/test/**
+dist/**/*.map
+tsconfig.json
+*.tsbuildinfo
+*.vsix
+README.md
+!media/**

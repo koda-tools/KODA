@@ -13,6 +13,7 @@ export interface WriteFileOptions {
   readonly workspaceRoot: string;
   readonly maxBytes?: number;
   readonly previousContent?: string | undefined;
+  readonly signal?: AbortSignal | undefined;
 }
 
 export type SkippedReason = "binary" | "too-large" | "unreadable";
@@ -58,6 +59,7 @@ export async function writeFileTool(
   args: WriteFileArgs,
   options: WriteFileOptions,
 ): Promise<string> {
+  options.signal?.throwIfAborted();
   const target = await resolveSafeWritePath(
     options.workspaceRoot,
     args.filePath,
@@ -70,7 +72,11 @@ export async function writeFileTool(
     );
   }
   await mkdir(path.dirname(target), { recursive: true });
-  await writeFile(target, args.content, "utf8");
+  options.signal?.throwIfAborted();
+  await writeFile(target, args.content, {
+    encoding: "utf8",
+    signal: options.signal,
+  });
   const summary =
     options.previousContent === undefined
       ? ""

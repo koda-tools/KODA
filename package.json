@@ -6,13 +6,13 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w @koda-tools/core && npm run build -w @koda-tools/koda",
-    "koda": "npm run build -w @koda-tools/core && npm run koda -w @koda-tools/koda",
+    "build": "npm run build -w @koda-tools/core && npm run build -w @koda-tools/acp && npm run build -w @koda-tools/koda",
+    "koda": "npm run build -w @koda-tools/core && npm run build -w @koda-tools/acp && npm run koda -w @koda-tools/koda",
     "start": "npm run start -w @koda-tools/koda",
-    "check": "npm run build -w @koda-tools/core && npm run check -w @koda-tools/core && npm run check -w @koda-tools/koda",
+    "check": "npm run build -w @koda-tools/core && npm run check -w @koda-tools/core && npm run check -w @koda-tools/acp && npm run check -w @koda-tools/koda",
     "lint": "npm run check",
-    "format": "npm run format -w @koda-tools/core && npm run format -w @koda-tools/koda",
-    "format:check": "npm run format:check -w @koda-tools/core && npm run format:check -w @koda-tools/koda",
+    "format": "npm run format -w @koda-tools/core && npm run format -w @koda-tools/acp && npm run format -w @koda-tools/koda",
+    "format:check": "npm run format:check -w @koda-tools/core && npm run format:check -w @koda-tools/acp && npm run format:check -w @koda-tools/koda",
     "test": "npm run test --workspaces --if-present"
   },
   "engines": {

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <title>KODA logo</title>
+  <desc>White geometric robot logo with subtle offset gray shadows and transparent background.</desc>
+  <g fill="#555555" opacity="0.65">
+    <path d="M130 90H183V145H130Z"/>
+    <path d="M228 90H282V145H228Z"/>
+    <path d="M87 177H330V309H87Z"/>
+  </g>
+  <g fill="#ffffff">
+    <path d="M122 82H175V137H122Z"/>
+    <path d="M220 82H273V137H220Z"/>
+    <path fill-rule="evenodd" d="M79 167H321V299H79Z M128 212V253H177V212Z M222 212V253H273V212Z"/>
+  </g>
+  <g fill="#555555" opacity="0.7">
+    <path d="M128 212H177V220H136V253H128Z"/>
+    <path d="M222 212H273V220H230V253H222Z"/>
+  </g>
+</svg>

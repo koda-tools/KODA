@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { runCli } from '../dist/src/cli/index.js';
+import { runKoda } from '../dist/src/cli/entry.js';
 
-runCli({
+runKoda({
   argv: process.argv.slice(2),
   env: process.env,
   cwd: process.cwd(),
